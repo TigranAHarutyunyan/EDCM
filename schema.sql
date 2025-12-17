@@ -45,7 +45,7 @@ CREATE TABLE confidentiality_levels (
 CREATE TABLE approval_statuses (
     id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     code        VARCHAR(50) NOT NULL UNIQUE,   -- 'PENDING','APPROVED','REJECTED','SKIPPED'
-    name        VARCHAR(100) NOT NULL
+    name        VARCHAR(100) NOT NULL           
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE notification_types (
@@ -169,8 +169,6 @@ CREATE TABLE attachments (
 
     KEY idx_attachments_document (document_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 4) Հաստատման գործընթաց
 
 CREATE TABLE approvals (
     id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
