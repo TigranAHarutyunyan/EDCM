@@ -38,5 +38,6 @@ RUN python manage.py collectstatic --noinput
 # Expose port
 EXPOSE 8000
 
-# Start Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "config.wsgi:application"]
+# Start Gunicorn, binding to the port provided by Render
+# We also run migrations here to ensure the DB is up to date
+CMD python manage.py migrate && gunicorn --bind 0.0.0.0:${PORT:-8000} config.wsgi:application
