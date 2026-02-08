@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>All Documents</h2>
+<div style="margin-bottom: 20px;">
+    <a href="{% url 'document_create' %}" class="btn">Create New Document</a>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Type</th>
+            <th>Creator</th>
+            <th>Department</th>
+            <th>Updated</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for doc in documents %}
+        <tr>
+            <td><a href="{% url 'document_detail' doc.pk %}">{{ doc.title }}</a></td>
+            <td><span class="status-badge status-{{ doc.status.name|cut:' ' }}">{{ doc.status.name }}</span></td>
+            <td>{{ doc.document_type }}</td>
+            <td>{{ doc.creator }}</td>
+            <td>{{ doc.department }}</td>
+            <td>{{ doc.updated_at|date:"Y-m-d" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6">No documents found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

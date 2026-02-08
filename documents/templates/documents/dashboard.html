@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Dashboard</h2>
+
+{% if pending_documents %}
+<h3>Documents Pending Approval</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Creator</th>
+            <th>Type</th>
+            <th>Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for doc in pending_documents %}
+        <tr>
+            <td><a href="{% url 'document_detail' doc.pk %}">{{ doc.title }}</a></td>
+            <td>{{ doc.creator }}</td>
+            <td>{{ doc.document_type }}</td>
+            <td>{{ doc.updated_at|date:"Y-m-d" }}</td>
+            <td>
+                <a href="{% url 'document_detail' doc.pk %}" class="btn btn-secondary">View</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+<h3>My Recent Documents</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Type</th>
+            <th>Last Updated</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for doc in my_documents %}
+        <tr>
+            <td><a href="{% url 'document_detail' doc.pk %}">{{ doc.title }}</a></td>
+            <td><span class="status-badge status-{{ doc.status.name|cut:' ' }}">{{ doc.status.name }}</span></td>
+            <td>{{ doc.document_type }}</td>
+            <td>{{ doc.updated_at|date:"Y-m-d H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4">No documents found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

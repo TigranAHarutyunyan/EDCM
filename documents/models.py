@@ -1,0 +1,108 @@
+from django.db import models
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils import timezone
+
+class Department(models.Model):
+    name = models.CharField(max_length=150, unique=True)
+    description = models.TextField(blank=True, null=True)
+    # parent_department support could be added here if needed
+
+    def __str__(self):
+        return self.name
+
+class UserProfile(models.Model):
+    ROLE_CHOICES = [
+        ('Employee', 'Employee'),
+        ('Manager', 'Manager'),
+        ('Admin', 'Admin'),
+    ]
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='Employee')
+    full_name = models.CharField(max_length=150, blank=True)
+
+    def __str__(self):
+        return self.user.username
+
+class DocumentType(models.Model):
+    name = models.CharField(max_length=150)
+    code = models.CharField(max_length=50, unique=True, default='OTHER')
+
+    def __str__(self):
+        return self.name
+
+class DocumentStatus(models.Model):
+    name = models.CharField(max_length=100)
+    code = models.CharField(max_length=50, unique=True, default='DRAFT')
+
+    def __str__(self):
+        return self.name
+
+class ConfidentialityLevel(models.Model):
+    name = models.CharField(max_length=100)
+    code = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
+
+class Document(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True) # Mapped to 'summary' in schema.sql logic
+    document_type = models.ForeignKey(DocumentType, on_delete=models.PROTECT)
+    status = models.ForeignKey(DocumentStatus, on_delete=models.PROTECT)
+    confidentiality_level = models.ForeignKey(ConfidentialityLevel, on_delete=models.PROTECT, null=True, blank=True)
+    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name='created_documents')
+    current_owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='owned_documents')
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
+    
+    external_reference = models.CharField(max_length=100, blank=True, null=True)
+    due_date = models.DateField(null=True, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
+
+class NotificationType(models.Model):
+    name = models.CharField(max_length=100)
+    code = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
+
+class Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    notification_type = models.ForeignKey(NotificationType, on_delete=models.PROTECT)
+    document = models.ForeignKey(Document, on_delete=models.SET_NULL, null=True, blank=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    # Simple JSON-like text field for payload if JSONField isn't strictly needed for querying
+    payload = models.TextField(blank=True, null=True) 
+
+    def __str__(self):
+        return f"{self.notification_type} for {self.user}"
+
+# Renaming AuditLog to ActivityLog to match concept, but keeping class name AuditLog for now to minimize breakage in views
+class AuditLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='audit_logs')
+    action = models.CharField(max_length=100) # Mapping to action_type.code or name
+    timestamp = models.DateTimeField(auto_now_add=True)
+    details = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.document.title} - {self.action}"
+
+# Signals
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    instance.profile.save()

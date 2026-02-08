@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EDCM System</title>
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }
+        header { background-color: #333; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
+        header a { color: white; text-decoration: none; margin-left: 15px; }
+        main { padding: 20px; max-width: 960px; margin: 0 auto; background: white; min-height: 80vh; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2 { color: #333; }
+        .btn { display: inline-block; padding: 8px 15px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; border: none; cursor: pointer; }
+        .btn-danger { background: #dc3545; }
+        .btn-success { background: #28a745; }
+        .btn-secondary { background: #6c757d; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
+        th { background-color: #f8f9fa; }
+        .status-badge { padding: 3px 8px; border-radius: 10px; font-size: 0.8em; }
+        .status-Draft { background: #e2e3e5; color: #383d41; }
+        .status-Pending { background: #fff3cd; color: #856404; }
+        .status-Approved { background: #d4edda; color: #155724; }
+        .status-Rejected { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">EDCM</div>
+        <nav>
+            {% if user.is_authenticated %}
+                <a href="{% url 'dashboard' %}">Dashboard</a>
+                <a href="{% url 'document_list' %}">All Documents</a>
+                <a href="{% url 'document_create' %}">New Document</a>
+                {% if user.is_staff %}
+                    <a href="/admin/">Admin Panel</a>
+                {% endif %}
+                <span>Welcome, {{ user.username }}</span>
+                <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" style="background:none; border:none; color:white; cursor:pointer; text-decoration:underline;">Logout</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}">Login</a>
+            {% endif %}
+        </nav>
+    </header>
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+</body>
+</html>
