@@ -48,6 +48,10 @@ class AuditLogAdmin(admin.ModelAdmin):
     list_display = ('document', 'user', 'action', 'timestamp')
     readonly_fields = ('timestamp',)
 
+@admin.register(NotificationType)
+class NotificationTypeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'code')
+
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
     list_display = ('user', 'notification_type', 'is_read', 'created_at')

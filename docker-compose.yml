@@ -32,7 +32,7 @@ services:
       - .env
     environment:
       - DATABASE_URL=postgresql://${DB_USER:-edcm_user}:${DB_PASSWORD:-secure_password}@db:5432/${DB_NAME:-edcm}
-      - DEBUG=False
+      - DEBUG=True
 
 volumes:
   postgres_data:

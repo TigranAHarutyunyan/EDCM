@@ -33,6 +33,11 @@ class UserSerializer(serializers.ModelSerializer):
         role = validated_data.pop('role', 'Employee')
         department = validated_data.pop('department_id', None)
         
+        # Set administrative flags based on role
+        if role == 'Admin':
+            validated_data['is_staff'] = True
+            validated_data['is_superuser'] = True
+            
         user = User.objects.create_user(**validated_data)
         if password:
             user.set_password(password)
@@ -102,6 +107,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         role = validated_data.pop('role', 'Employee')
         password = validated_data.pop('password')
         
+        # Set administrative flags based on role
+        if role == 'Admin':
+            validated_data['is_staff'] = True
+            validated_data['is_superuser'] = True
+            
         user = User.objects.create_user(**validated_data)
         user.set_password(password)
         user.save()
