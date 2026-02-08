@@ -67,6 +67,10 @@ class DocumentListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
+        # Admins see everything
+        if user.is_staff:
+            return Document.objects.all().order_by('-updated_at')
+            
         if hasattr(user, 'profile') and user.profile.department:
             return Document.objects.filter(
                 Q(department=user.profile.department) | Q(creator=user)
@@ -87,10 +91,19 @@ class DocumentListCreateView(generics.ListCreateAPIView):
             status=status_draft
         )
 
-class DepartmentListView(generics.ListAPIView):
+class DepartmentListCreateView(generics.ListCreateAPIView):
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
-    permission_classes = [permissions.AllowAny] # Allow for registration form
+    
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [permissions.AllowAny()]
+        return [permissions.IsAdminUser()]
+
+class DepartmentDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Department.objects.all()
+    serializer_class = DepartmentSerializer
+    permission_classes = [permissions.IsAdminUser]
 
 class DocumentTypeListView(generics.ListAPIView):
     queryset = DocumentType.objects.all()
@@ -104,31 +117,93 @@ class ConfidentialityLevelListView(generics.ListAPIView):
 
 # Admin User Management Views
 class UserListCreateView(generics.ListCreateAPIView):
-    queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        user = self.request.user
+        # Admins see everyone
+        if user.is_staff or (hasattr(user, 'profile') and user.profile.role == 'Admin'):
+            return User.objects.all()
+        # Managers see only their department
+        if hasattr(user, 'profile') and user.profile.role == 'Manager':
+            return User.objects.filter(profile__department=user.profile.department)
+        # Others see only themselves
+        return User.objects.filter(id=user.id)
+
     def get_permissions(self):
-        # Only admins can access this endpoint
-        if self.request.user.is_staff:
+        user = self.request.user
+        # Only admins and managers can access this endpoint
+        is_admin = user.is_staff or (hasattr(user, 'profile') and user.profile.role == 'Admin')
+        is_manager = hasattr(user, 'profile') and user.profile.role == 'Manager'
+        
+        if is_admin or is_manager:
             return [permissions.IsAuthenticated()]
         return [permissions.IsAdminUser()]
 
     def perform_create(self, serializer):
-        # Create user with profile
-        user = serializer.save()
-        # Profile should be created automatically via signal
-        return user
+        user = self.request.user
+        # If manager, force the department to be their own
+        if hasattr(user, 'profile') and user.profile.role == 'Manager':
+            serializer.save(department_id=user.profile.department)
+        else:
+            serializer.save()
 
-class UserDeleteView(generics.DestroyAPIView):
+class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
-    permission_classes = [permissions.IsAdminUser]
-    
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        obj = super().get_object()
+        user = self.request.user
+        
+        is_admin = user.is_staff or (hasattr(user, 'profile') and user.profile.role == 'Admin')
+        if is_admin:
+            return obj
+            
+        if hasattr(user, 'profile') and user.profile.role == 'Manager':
+            if hasattr(obj, 'profile') and obj.profile.department == user.profile.department:
+                return obj
+        
+        if obj == user:
+            return obj
+            
+        raise permissions.PermissionDenied("You do not have permission to access this user.")
+
     def delete(self, request, *args, **kwargs):
-        user = self.get_object()
-        if user.is_superuser:
+        user_to_delete = self.get_object()
+        if user_to_delete.is_superuser:
             return Response(
                 {"error": "Cannot delete superuser"},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        if user_to_delete == request.user:
+            return Response(
+                {"error": "Cannot delete yourself"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         return super().delete(request, *args, **kwargs)
+
+# UserDeleteView is now integrated into UserDetailView
+
+class DocumentDeleteView(generics.DestroyAPIView):
+    queryset = Document.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        obj = super().get_object()
+        user = self.request.user
+        
+        is_admin = user.is_staff or (hasattr(user, 'profile') and user.profile.role == 'Admin')
+        if is_admin:
+            return obj
+            
+        if hasattr(user, 'profile') and user.profile.role == 'Manager':
+            if obj.department == user.profile.department:
+                return obj
+                
+        if obj.creator == user:
+            return obj
+            
+        raise permissions.PermissionDenied("You do not have permission to delete this document.")

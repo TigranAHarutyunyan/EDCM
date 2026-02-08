@@ -23,7 +23,6 @@ from django.conf.urls.static import static
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("documents.api_urls")),
-    path("", include("documents.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
 ]
 
@@ -31,6 +30,11 @@ urlpatterns = [
 if settings.DEBUG:
     from django.views.static import serve
     urlpatterns += [
-        path('assets/<path:path>', serve, {'document_root': settings.BASE_DIR / 'frontend' / 'dist' / 'assets'}),
+        path('static/<path:path>', serve, {'document_root': settings.BASE_DIR / 'frontend' / 'dist'}),
     ]
+
+# Catch-all should be last
+urlpatterns += [
+    path("", include("documents.urls")),
+]
 

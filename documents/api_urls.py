@@ -1,9 +1,10 @@
 from django.urls import path
 from .api_views import (
     CustomAuthToken, DashboardStatsView, 
-    DocumentListCreateView, DepartmentListView, 
+    DocumentListCreateView, DocumentDeleteView,
+    DepartmentListCreateView, DepartmentDetailView,
     DocumentTypeListView, ConfidentialityLevelListView,
-    UserListCreateView, UserDeleteView
+    UserListCreateView, UserDetailView
 )
 
 urlpatterns = [
@@ -11,11 +12,11 @@ urlpatterns = [
     path('auth/login/', CustomAuthToken.as_view(), name='api_login'),
     path('dashboard/', DashboardStatsView.as_view(), name='api_dashboard'),
     path('documents/', DocumentListCreateView.as_view(), name='api_document_list'),
-    path('departments/', DepartmentListView.as_view(), name='api_department_list'),
-    path('document-types/', DocumentTypeListView.as_view(), name='api_document_type_list'),
-    path('confidentiality-levels/', ConfidentialityLevelListView.as_view(), name='api_confidentiality_level_list'),
+    path('documents/<int:pk>/', DocumentDeleteView.as_view(), name='api_document_delete'),
+    path('departments/', DepartmentListCreateView.as_view(), name='api_department_list'),
+    path('departments/<int:pk>/', DepartmentDetailView.as_view(), name='api_department_detail'),
     
-    # Admin User Management
-    path('admin/users/', UserListCreateView.as_view(), name='api_admin_users'),
-    path('admin/users/<int:pk>/', UserDeleteView.as_view(), name='api_admin_user_delete'),
+    # User Management
+    path('users/', UserListCreateView.as_view(), name='api_users'),
+    path('users/<int:pk>/', UserDetailView.as_view(), name='api_user_detail'),
 ]
