@@ -207,3 +207,8 @@ class DocumentDeleteView(generics.DestroyAPIView):
             return obj
             
         raise permissions.PermissionDenied("You do not have permission to delete this document.")
+
+class DocumentDetailView(generics.RetrieveAPIView):
+    queryset = Document.objects.all()
+    serializer_class = DocumentSerializer
+    permission_classes = [permissions.IsAuthenticated]
