@@ -5,6 +5,10 @@ import { Link } from 'react-router-dom';
 const Dashboard = () => {
     const [stats, setStats] = useState({ pending_count: 0, my_docs_count: 0, recent_docs: [] });
     const [loading, setLoading] = useState(true);
+    const [searchId, setSearchId] = useState('');
+    const [searchResult, setSearchResult] = useState(null);
+    const [searchError, setSearchError] = useState('');
+    const [searching, setSearching] = useState(false);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -20,14 +24,85 @@ const Dashboard = () => {
         fetchStats();
     }, []);
 
+    const handleSearch = async (e) => {
+        e.preventDefault();
+        if (!searchId) return;
+        
+        setSearching(true);
+        setSearchError('');
+        setSearchResult(null);
+        
+        try {
+            const response = await api.get(`documents/${searchId}/`);
+            setSearchResult(response.data);
+        } catch (error) {
+            setSearchError(error.response?.status === 404 ? 'Document not found' : 'Error fetching document');
+        } finally {
+            setSearching(false);
+        }
+    };
+
     if (loading) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div></div>;
 
     return (
         <div className="space-y-6">
-            <header>
-                <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-                <p className="mt-1 text-sm text-gray-500">Overview of your document activities</p>
+            <header className="flex justify-between items-end">
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+                    <p className="mt-1 text-sm text-gray-500">Overview of your document activities</p>
+                </div>
+                
+                {/* Search Bar */}
+                <form onSubmit={handleSearch} className="flex space-x-2">
+                    <input 
+                        type="text" 
+                        placeholder="View Document by ID..." 
+                        className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-64"
+                        value={searchId}
+                        onChange={(e) => setSearchId(e.target.value)}
+                    />
+                    <button 
+                        type="submit" 
+                        disabled={searching}
+                        className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition disabled:opacity-50"
+                    >
+                        {searching ? '...' : 'View'}
+                    </button>
+                </form>
             </header>
+
+            {/* Search Result Section */}
+            {searchError && (
+                <div className="bg-red-50 border-l-4 border-red-400 p-4">
+                    <p className="text-sm text-red-700">{searchError}</p>
+                </div>
+            )}
+
+            {searchResult && (
+                <div className="bg-white shadow rounded-lg p-6 border-2 border-purple-200 animate-fade-in relative">
+                    <button 
+                        onClick={() => setSearchResult(null)}
+                        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                    >
+                        ✕
+                    </button>
+                    <div className="flex justify-between items-start mb-4">
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900">{searchResult.title}</h2>
+                            <p className="text-sm text-gray-500">ID: {searchResult.id} • Department: {searchResult.department?.name || 'N/A'}</p>
+                        </div>
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full 
+                            ${searchResult.status_details?.code === 'APPROVED' ? 'bg-green-100 text-green-800' : 
+                              searchResult.status_details?.code === 'REJECTED' ? 'bg-red-100 text-red-800' : 
+                              'bg-yellow-100 text-yellow-800'}`}>
+                            {searchResult.status_details?.name || 'N/A'}
+                        </span>
+                    </div>
+                    <div className="border-t pt-4">
+                        <p className="text-sm text-gray-600 whitespace-pre-wrap">{searchResult.description}</p>
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {/* Stats Card 1 */}
