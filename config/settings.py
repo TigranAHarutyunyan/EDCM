@@ -89,14 +89,16 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 
 # Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
+# Use DATABASE_URL from environment, fallback to local settings for dev
 DATABASES = {
     'default': dj_database_url.config(
         default=f"postgresql://{os.getenv('DB_USER', 'tigran')}:{os.getenv('DB_PASSWORD', '')}@{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}/{os.getenv('DB_NAME', 'edcm_db')}",
-        conn_max_age=600
+        conn_max_age=600,
+        ssl_require=not DEBUG  # Force SSL in production (Render requires this)
     )
 }
+if os.getenv('DATABASE_URL'):
+    DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
 
 
 # Password validation
