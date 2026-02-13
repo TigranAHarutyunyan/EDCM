@@ -1,4 +1,4 @@
-from rest_framework import serializers
+from rest_framework import generics,serializers
 from django.contrib.auth.models import User
 from .models import Document, Department, UserProfile, DocumentType, DocumentStatus, ConfidentialityLevel
 
@@ -18,38 +18,63 @@ class UserSerializer(serializers.ModelSerializer):
     profile = UserProfileSerializer(read_only=True)
     password = serializers.CharField(write_only=True, required=False)
     full_name = serializers.CharField(write_only=True, required=False)
-    role = serializers.ChoiceField(choices=UserProfile.ROLE_CHOICES, write_only=True, required=False, default='Employee')
-    department_id = serializers.PrimaryKeyRelatedField(
-        queryset=Department.objects.all(), write_only=True, required=False, allow_null=True
+    role = serializers.ChoiceField(
+        choices=UserProfile.ROLE_CHOICES,
+        write_only=True,
+        required=False,
+        default='Employee',
     )
-    
+    department_id = serializers.PrimaryKeyRelatedField(
+        queryset=Department.objects.all(),
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'profile', 'password', 'full_name', 'role', 'department_id']
-    
+        fields = [
+            'id',
+            'username',
+            'email',
+            'profile',
+            'password',
+            'full_name',
+            'role',
+            'department_id',
+        ]
+
     def create(self, validated_data):
+        """
+        Create a new user and align Django admin flags with the business role:
+        - Admin  -> is_staff + is_superuser (full admin panel access)
+        - Manager -> is_staff (limited admin panel access)
+        - Employee -> no staff/superuser flags
+        """
         password = validated_data.pop('password', None)
         full_name = validated_data.pop('full_name', '')
         role = validated_data.pop('role', 'Employee')
         department = validated_data.pop('department_id', None)
-        
+
         # Set administrative flags based on role
         if role == 'Admin':
             validated_data['is_staff'] = True
             validated_data['is_superuser'] = True
-            
+        elif role == 'Manager':
+            validated_data['is_staff'] = True
+
         user = User.objects.create_user(**validated_data)
         if password:
             user.set_password(password)
             user.save()
-        
+
         # Update profile
         profile = user.profile
         profile.full_name = full_name
         profile.role = role
         profile.department = department
         profile.save()
-        
+
         return user
 
 class DocumentTypeSerializer(serializers.ModelSerializer):
@@ -103,24 +128,32 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ['username', 'password', 'email', 'full_name', 'role']
 
     def create(self, validated_data):
+        """
+        Register a new user and align Django admin flags with the chosen role:
+        - Admin  -> is_staff + is_superuser
+        - Manager -> is_staff
+        - Employee -> no staff/superuser flags
+        """
         full_name = validated_data.pop('full_name', '')
         role = validated_data.pop('role', 'Employee')
         password = validated_data.pop('password')
-        
+
         # Set administrative flags based on role
         if role == 'Admin':
             validated_data['is_staff'] = True
             validated_data['is_superuser'] = True
-            
+        elif role == 'Manager':
+            validated_data['is_staff'] = True
+
         user = User.objects.create_user(**validated_data)
         user.set_password(password)
         user.save()
-        
+
         # Profile is created by signal, update it
         profile = user.profile
         profile.full_name = full_name
         profile.role = role
         # Default department could be assigned here if needed
         profile.save()
-        
+
         return user

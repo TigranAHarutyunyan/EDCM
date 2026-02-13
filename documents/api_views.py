@@ -9,10 +9,23 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from .models import Document, Department, DocumentType, DocumentStatus, ConfidentialityLevel
 from .serializers import (
-    UserSerializer, RegisterSerializer, DocumentSerializer, 
-    DepartmentSerializer, DocumentTypeSerializer, DocumentStatusSerializer, 
-    ConfidentialityLevelSerializer
+    UserSerializer,
+    RegisterSerializer,
+    DocumentSerializer,
+    DepartmentSerializer,
+    DocumentTypeSerializer,
+    DocumentStatusSerializer,
+    ConfidentialityLevelSerializer,
 )
+
+class HealthCheckView(APIView):
+    permission_classes = [permissions.AllowAny]
+    
+    def get(self, request):
+        return Response({
+            'status': 'healthy',
+            'message': 'EDCM API is running'
+        }, status=status.HTTP_200_OK)
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -92,7 +105,7 @@ class DocumentListCreateView(generics.ListCreateAPIView):
         )
 
 class DepartmentListCreateView(generics.ListCreateAPIView):
-    queryset = Department.objects.all()
+    queryset = Department.objects.all().order_by("name")
     serializer_class = DepartmentSerializer
     
     def get_permissions(self):
@@ -101,7 +114,7 @@ class DepartmentListCreateView(generics.ListCreateAPIView):
         return [permissions.IsAdminUser()]
 
 class DepartmentDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Department.objects.all()
+    queryset = Department.objects.all().order_by('name')
     serializer_class = DepartmentSerializer
     permission_classes = [permissions.IsAdminUser]
 
@@ -185,8 +198,6 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
             )
         return super().delete(request, *args, **kwargs)
 
-# UserDeleteView is now integrated into UserDetailView
-
 class DocumentDeleteView(generics.DestroyAPIView):
     queryset = Document.objects.all()
     permission_classes = [permissions.IsAuthenticated]
@@ -208,7 +219,34 @@ class DocumentDeleteView(generics.DestroyAPIView):
             
         raise permissions.PermissionDenied("You do not have permission to delete this document.")
 
-class DocumentDetailView(generics.RetrieveAPIView):
+class DocumentDetailView(generics.RetrieveUpdateAPIView):
+    """
+    Retrieve or update a document.
+    Creation is handled in DocumentListCreateView; updates are typically used
+    by privileged users via admin tooling.
+    """
+
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+
+class AdminUserCreateView(generics.CreateAPIView):
+    """
+    Admin-only endpoint to create a new user (with any role, including Admin).
+    This is primarily used by the admin panel to manage users.
+    """
+
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_permissions(self):
+        """
+        Only allow calls from users with full admin privileges.
+        """
+        user = self.request.user
+        is_admin_role = hasattr(user, 'profile') and user.profile.role == 'Admin'
+        if user.is_superuser or is_admin_role:
+            return [permissions.IsAuthenticated()]
+        return [permissions.IsAdminUser()]

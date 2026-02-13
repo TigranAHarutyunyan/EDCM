@@ -1,6 +1,31 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+// Helper: always send the user to the real Django admin,
+// even when the React app is running on a different port (e.g. 3000).
+const getAdminUrl = () => {
+    const backendBase = import.meta.env.VITE_BACKEND_URL;
+
+    // Prefer explicit backend URL when provided (e.g. https://edcm.onrender.com)
+    if (backendBase) {
+        const base = backendBase.endsWith('/') ? backendBase.slice(0, -1) : backendBase;
+        return `${base}/admin/`;
+    }
+
+    // Fallback: infer backend from current location (use 8000 when frontend runs on 3000)
+    if (typeof window !== 'undefined') {
+        const { protocol, hostname, port } = window.location;
+        if (port === '3000') {
+            return `${protocol}//${hostname}:8000/admin/`;
+        }
+        const portPart = port ? `:${port}` : '';
+        return `${protocol}//${hostname}${portPart}/admin/`;
+    }
+
+    // Safe default
+    return '/admin/';
+};
+
 const Navbar = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
@@ -28,14 +53,24 @@ const Navbar = () => {
                                 Documents
                             </Link>
                             {user?.role?.toLowerCase() === 'admin' && (
-                                <Link to="/admin" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                <a
+                                    href={getAdminUrl()}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                                >
                                     Admin Panel
-                                </Link>
+                                </a>
                             )}
                             {user?.role?.toLowerCase() === 'manager' && (
-                                <Link to="/admin" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                <a
+                                    href={getAdminUrl()}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                                >
                                     Department Panel
-                                </Link>
+                                </a>
                             )}
                         </div>
                     </div>
