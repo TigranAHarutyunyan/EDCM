@@ -1,0 +1,22 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}EDCM Admin{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/edcm_admin.css' %}">
+{% endblock %}
+
+{% block branding %}
+    <h1 id="site-name" class="edcm-admin-brand">
+        <a href="{% url 'admin:index' %}">EDCM Administration</a>
+    </h1>
+{% endblock %}
+
+{% block nav-global %}
+    <div class="edcm-admin-global-nav">
+        <a href="/" class="edcm-admin-link">Back to EDCM App</a>
+    </div>
+{% endblock %}
+
