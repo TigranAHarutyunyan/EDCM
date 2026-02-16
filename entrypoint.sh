@@ -120,7 +120,7 @@ create_superuser
 
 # Step 5: Seed initial data
 seed_data
-
+    
 # Step 5: Start the application
 echo ""
 echo -e "${GREEN}════════════════════════════════════${NC}"
@@ -131,6 +131,8 @@ echo "📍 Web Server: http://localhost:${PORT:-8000}"
 echo "👨‍💼 Admin Panel: http://localhost:${PORT:-8000}/admin"
 echo "📱 API: http://localhost:${PORT:-8000}/api"
 echo ""
+source venv/bin/activate
+python ./setup_data.py
 
 # Start Gunicorn server
 exec gunicorn \
