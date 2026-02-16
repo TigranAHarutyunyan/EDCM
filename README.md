@@ -49,12 +49,7 @@ The easiest way to run the project locally is using Docker.
     ```bash
     docker-compose up --build -d
     ```
-
-4.  **Populate Initial Data** (Optional but recommended):
-    Run the setup script to create departments, document types, and sample users (Admin/Manager/Employee):
-    ```bash
-    docker-compose exec web python setup_data.py
-    ```
+    *Note: By default, the app will automatically run `setup_data.py` on startup to seed departments, types, and sample users. You can toggle this with `SEED_DATA=False` in your `.env`.*
 
 ## 📍 Access Points
 
