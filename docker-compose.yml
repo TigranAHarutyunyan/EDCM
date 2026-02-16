@@ -52,7 +52,7 @@ services:
             # Django settings
             DEBUG: ${DEBUG:-False}
             SECRET_KEY: ${SECRET_KEY:-django-insecure-change-in-production}
-            ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,web}
+            ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,web,.runpod.net,.runpod.io}
 
             # Database settings (individual vars as fallback)
             DB_ENGINE: django.db.backends.postgresql
@@ -61,6 +61,7 @@ services:
             DB_NAME: ${DB_NAME:-edcm_db}
             DB_USER: ${DB_USER:-postgres}
             DB_PASSWORD: ${DB_PASSWORD:-postgres1}
+            SEED_DATA: ${SEED_DATA:-True}
 
         # Volume mounts
         volumes:

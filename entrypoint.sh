@@ -84,6 +84,19 @@ END
     fi
 }
 
+# Function to seed initial data
+seed_data() {
+    # Run seeding if explicitly requested or if in DEBUG mode
+    if [ "$SEED_DATA" = "True" ] || [ "$SEED_DATA" = "true" ] || [ "$DEBUG" = "True" ] || [ "$DEBUG" = "true" ]; then
+        echo -e "${YELLOW}🌱 Seeding initial data...${NC}"
+        if python setup_data.py; then
+            echo -e "${GREEN}✅ Data seeding completed successfully!${NC}"
+        else
+            echo -e "${RED}⚠️  Warning: Data seeding failed (continuing anyway)${NC}"
+        fi
+    fi
+}
+
 # Main execution
 echo -e "${YELLOW}📋 Environment Variables:${NC}"
 echo "  DB_HOST: $DB_HOST"
@@ -104,6 +117,9 @@ collect_static
 
 # Step 4: Create superuser (in development)
 create_superuser
+
+# Step 5: Seed initial data
+seed_data
 
 # Step 5: Start the application
 echo ""
