@@ -120,7 +120,6 @@ create_superuser
 
 # Step 5: Seed initial data
 seed_data
-    
 # Step 5: Start the application
 echo ""
 echo -e "${GREEN}════════════════════════════════════${NC}"
