@@ -18,5 +18,24 @@
     <div class="edcm-admin-global-nav">
         <a href="/" class="edcm-admin-link">Back to EDCM App</a>
     </div>
+    <script>
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/3cc1c88b-7bfd-4075-bfb1-f381609b8839', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                runId: 'pre-fix-1',
+                hypothesisId: 'H2',
+                location: 'documents/templates/admin/base_site.html:nav-global',
+                message: 'Django admin base_site rendered',
+                data: {
+                    pathname: window.location.pathname,
+                    title: document.title
+                },
+                timestamp: Date.now()
+            })
+        }).catch(function () {});
+        // #endregion
+    </script>
 {% endblock %}
 

@@ -5,7 +5,15 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
 from django.contrib.auth.models import User
-from documents.models import Department, DocumentType, DocumentStatus, UserProfile, ConfidentialityLevel, NotificationType
+from documents.models import (
+    Department,
+    DocumentType,
+    DocumentStatus,
+    UserProfile,
+    ConfidentialityLevel,
+    NotificationType,
+    Document,
+)
 
 def create_data():
     print("Creating initial data...")
@@ -45,31 +53,78 @@ def create_data():
     if not User.objects.filter(username='admin').exists():
         admin = User.objects.create_superuser('admin', 'admin@example.com', 'adminpass')
         if not hasattr(admin, 'profile'):
-             UserProfile.objects.create(user=admin)
+            UserProfile.objects.create(user=admin)
+        admin.profile.full_name = "System Administrator"
+        admin.profile.position = "Head of IT"
         admin.profile.role = 'Admin'
         admin.profile.department = it
         admin.profile.save()
         print("Admin user created.")
-
+    
     # Manager
     if not User.objects.filter(username='manager').exists():
         manager = User.objects.create_user('manager', 'manager@example.com', 'managerpass')
         if not hasattr(manager, 'profile'):
-             UserProfile.objects.create(user=manager)
+            UserProfile.objects.create(user=manager)
+        manager.profile.full_name = "HR Manager"
+        manager.profile.position = "HR Manager"
         manager.profile.role = 'Manager'
         manager.profile.department = hr
         manager.profile.save()
         print("Manager user created.")
-
+    
     # Employee
     if not User.objects.filter(username='employee').exists():
         employee = User.objects.create_user('employee', 'employee@example.com', 'employeepass')
         if not hasattr(employee, 'profile'):
-             UserProfile.objects.create(user=employee)
+            UserProfile.objects.create(user=employee)
+        employee.profile.full_name = "John Employee"
+        employee.profile.position = "HR Specialist"
         employee.profile.role = 'Employee'
         employee.profile.department = hr
         employee.profile.save()
         print("Employee user created.")
+
+    # Sample documents
+    print("Creating sample documents...")
+    order_type = DocumentType.objects.filter(code="ORDER").first()
+    report_type = DocumentType.objects.filter(code="REPORT").first()
+    draft_status = DocumentStatus.objects.filter(code="DRAFT").first()
+    pending_status = DocumentStatus.objects.filter(code="PENDING").first()
+    public_level = ConfidentialityLevel.objects.filter(code="PUBLIC").first()
+    internal_level = ConfidentialityLevel.objects.filter(code="INTERNAL").first()
+
+    employee = User.objects.filter(username="employee").first()
+    manager = User.objects.filter(username="manager").first()
+
+    if employee and order_type and draft_status and public_level:
+        Document.objects.get_or_create(
+            title="Sample Order Draft",
+            creator=employee,
+            defaults={
+                "description": "Initial draft of an order document.",
+                "document_type": order_type,
+                "status": draft_status,
+                "confidentiality_level": public_level,
+                "current_owner": employee,
+                "department": employee.profile.department,
+            },
+        )
+
+    if manager and report_type and pending_status and internal_level:
+        Document.objects.get_or_create(
+            title="Quarterly Report Pending Approval",
+            creator=manager,
+            defaults={
+                "description": "Quarterly performance report awaiting approval.",
+                "document_type": report_type,
+                "status": pending_status,
+                "confidentiality_level": internal_level,
+                "current_owner": manager,
+                "department": manager.profile.department,
+            },
+        )
+    print("Sample documents created.")
 
 if __name__ == '__main__':
     create_data()

@@ -1,8 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-// Helper: always send the user to the real Django admin,
-// even when the React app is running on a different port (e.g. 3000).
+// Helper: compute the real Django admin URL.
+// In Docker dev, frontend runs on :3000 and Django on :8000.
 const getAdminUrl = () => {
     const backendBase = import.meta.env.VITE_BACKEND_URL;
 
@@ -12,12 +12,15 @@ const getAdminUrl = () => {
         return `${base}/admin/`;
     }
 
-    // Fallback: infer backend from current location (use 8000 when frontend runs on 3000)
     if (typeof window !== 'undefined') {
         const { protocol, hostname, port } = window.location;
+
+        // Local dev: React on 3000, Django on 8000
         if (port === '3000') {
             return `${protocol}//${hostname}:8000/admin/`;
         }
+
+        // Same host/port for both in production
         const portPart = port ? `:${port}` : '';
         return `${protocol}//${hostname}${portPart}/admin/`;
     }
@@ -52,11 +55,32 @@ const Navbar = () => {
                             <Link to="/documents" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                                 Documents
                             </Link>
+                            <Link to="/profile" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                Profile
+                            </Link>
                             {user?.role?.toLowerCase() === 'admin' && (
                                 <a
                                     href={getAdminUrl()}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                    onClick={() => {
+                                        // #region agent log
+                                        fetch('http://127.0.0.1:7242/ingest/3cc1c88b-7bfd-4075-bfb1-f381609b8839', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                runId: 'pre-fix-1',
+                                                hypothesisId: 'H1',
+                                                location: 'frontend/src/components/Navbar.jsx:admin-link',
+                                                message: 'Admin Panel link clicked',
+                                                data: {
+                                                    role: user?.role ?? null,
+                                                    pathname: typeof window !== 'undefined' ? window.location.pathname : null,
+                                                    target: getAdminUrl(),
+                                                },
+                                                timestamp: Date.now(),
+                                            }),
+                                        }).catch(() => {});
+                                        // #endregion
+                                    }}
                                     className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
                                 >
                                     Admin Panel
@@ -65,8 +89,26 @@ const Navbar = () => {
                             {user?.role?.toLowerCase() === 'manager' && (
                                 <a
                                     href={getAdminUrl()}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                    onClick={() => {
+                                        // #region agent log
+                                        fetch('http://127.0.0.1:7242/ingest/3cc1c88b-7bfd-4075-bfb1-f381609b8839', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                runId: 'pre-fix-1',
+                                                hypothesisId: 'H1',
+                                                location: 'frontend/src/components/Navbar.jsx:department-link',
+                                                message: 'Department Panel link clicked',
+                                                data: {
+                                                    role: user?.role ?? null,
+                                                    pathname: typeof window !== 'undefined' ? window.location.pathname : null,
+                                                    target: getAdminUrl(),
+                                                },
+                                                timestamp: Date.now(),
+                                            }),
+                                        }).catch(() => {});
+                                        // #endregion
+                                    }}
                                     className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
                                 >
                                     Department Panel
@@ -75,14 +117,7 @@ const Navbar = () => {
                         </div>
                     </div>
                     <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                            <Link
-                                to="/documents/new"
-                                className="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all"
-                            >
-                                <span>+ New Document</span>
-                            </Link>
-                        </div>
+
                         <div className="hidden md:ml-4 md:flex md:items-center">
                             <span className="text-gray-700 mr-4 text-sm">Hello, <span className="font-semibold text-purple-600">{user?.username}</span></span>
                             <button

@@ -1,39 +1,118 @@
-version: '3.8'
+version: "3.10"
 
 services:
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: ${DB_NAME:-edcm}
-      POSTGRES_USER: ${DB_USER:-edcm_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+    # PostgreSQL Database Service
+    db:
+        image: postgres:15
+        container_name: edcm_db
+        environment:
+            # Database setup
+            POSTGRES_DB: ${DB_NAME:-edcm_db}
+            POSTGRES_USER: ${DB_USER:-postgres}
+            POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres1}
+            POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
 
-  web:
-    build: .
-    command: >
-      sh -c "python manage.py migrate &&
-             gunicorn --bind 0.0.0.0:8000 config.wsgi:application"
-    volumes:
-      - .:/app
-      - static_volume:/app/staticfiles
-    ports:
-      - "8000:8000"
-    depends_on:
-      db:
-        condition: service_healthy
-    env_file:
-      - .env
-    environment:
-      - DATABASE_URL=postgresql://${DB_USER:-edcm_user}:${DB_PASSWORD:-secure_password}@db:5432/${DB_NAME:-edcm}
-      - DEBUG=True
+        # Data persistence
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+            - ./init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
 
+        # Health check - ensures DB is ready before migrations
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 10s
+
+        # Network and ports
+        ports:
+            - "5432:5432"
+        networks:
+            - edcm_network
+        restart: unless-stopped
+
+    # Django Web Service
+    web:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: edcm_web
+
+        # Run migrations and start server
+        entrypoint: /app/entrypoint.sh
+
+        # Environment configuration
+        env_file:
+            - .env
+        environment:
+            # DATABASE_URL for database connection
+            DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres1}@db:5432/${DB_NAME:-edcm_db}
+
+            # Django settings
+            DEBUG: ${DEBUG:-False}
+            SECRET_KEY: ${SECRET_KEY:-django-insecure-change-in-production}
+            ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,web}
+
+            # Database settings (individual vars as fallback)
+            DB_ENGINE: django.db.backends.postgresql
+            DB_HOST: db
+            DB_PORT: 5432
+            DB_NAME: ${DB_NAME:-edcm_db}
+            DB_USER: ${DB_USER:-postgres}
+            DB_PASSWORD: ${DB_PASSWORD:-postgres1}
+
+        # Volume mounts
+        volumes:
+            - .:/app
+            - static_volume:/app/staticfiles
+            - media_volume:/app/media
+            - ./entrypoint.sh:/app/entrypoint.sh:ro
+
+        # Port mapping
+        ports:
+            - "8000:8000"
+            - "3000:3000"
+
+        # Wait for database health check
+        depends_on:
+            db:
+                condition: service_healthy
+
+        # Networking
+        networks:
+            - edcm_network
+        restart: unless-stopped
+
+    # Optional: Frontend development server (Uncomment to use)
+    # frontend:
+    #   build:
+    #     context: ./frontend
+    #     dockerfile: Dockerfile
+    #   container_name: edcm_frontend
+    #   ports:
+    #     - "5173:5173"
+    #   volumes:
+    #     - ./frontend:/app
+    #     - /app/node_modules
+    #   environment:
+    #     - VITE_API_URL=http://localhost:8000/api/
+    #   depends_on:
+    #     - web
+    #   networks:
+    #     - edcm_network
+    #   restart: unless-stopped
+
+# Docker volumes for data persistence
 volumes:
-  postgres_data:
-  static_volume:
+    postgres_data:
+        driver: local
+    static_volume:
+        driver: local
+    media_volume:
+        driver: local
+
+# Docker network for service communication
+networks:
+    edcm_network:
+        driver: bridge
