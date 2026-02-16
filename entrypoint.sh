@@ -5,8 +5,14 @@ echo "======================================"
 echo "🚀 EDCM Docker Entrypoint"
 echo "======================================"
 
+# Load environment variables from .env file if it exists
+if [ -f .env ]; then
+    echo "📂 Loading environment variables from .env..."
+    export $(grep -v '^#' .env | xargs)
+fi
+
 # Configuration
-DB_HOST=${DB_HOST:-dpg-d69mn656ubrc73amofjg-a}
+DB_HOST=${DB_HOST:-db}
 DB_PORT=${DB_PORT:-5432}
 DB_USER=${DB_USER:-postgres}
 DB_NAME=${DB_NAME:-edcm_db}
