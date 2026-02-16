@@ -36,7 +36,7 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,edcm.onrender.co
 # CSRF settings for production
 CSRF_TRUSTED_ORIGINS = os.getenv(
     'CSRF_TRUSTED_ORIGINS',
-    'https://*.onrender.com,http://localhost:3000,http://127.0.0.1:3000'
+    'https://*.onrender.com,http://localhost:3000,http://127.0.0.1:3000,https://*.runpod.net,https://*.runpod.io'
 ).split(',')
 
 # Security settings
@@ -184,6 +184,12 @@ CORS_ALLOWED_ORIGINS = os.getenv(
     'CORS_ALLOWED_ORIGINS',
     'http://localhost:3000,http://127.0.0.1:3000,https://edcm.onrender.com'
 ).split(',')
+
+# Support dynamic RunPod subdomains via regex
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.proxy\.runpod\.net$",
+    r"^https://.*\.runpod\.io$",
+]
 
 # In development, allow all origins if explicitly set
 if DEBUG:

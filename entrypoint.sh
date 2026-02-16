@@ -127,14 +127,14 @@ echo -e "${GREEN}═════════════════════
 echo -e "${GREEN}🎉 EDCM Application Starting${NC}"
 echo -e "${GREEN}════════════════════════════════════${NC}"
 echo ""
-echo "📍 Web Server: http://localhost:8000"
-echo "👨‍💼 Admin Panel: http://localhost:8000/admin"
-echo "📱 API: http://localhost:8000/api"
+echo "📍 Web Server: http://localhost:${PORT:-8000}"
+echo "👨‍💼 Admin Panel: http://localhost:${PORT:-8000}/admin"
+echo "📱 API: http://localhost:${PORT:-8000}/api"
 echo ""
 
 # Start Gunicorn server
 exec gunicorn \
-    --bind 0.0.0.0:8000 \
+    --bind 0.0.0.0:${PORT:-8000} \
     --workers 3 \
     --worker-class sync \
     --worker-tmp-dir /dev/shm \
