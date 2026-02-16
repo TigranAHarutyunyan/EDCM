@@ -3,6 +3,8 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Documents from './pages/Documents';
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -18,11 +20,11 @@ function App() {
             {/* Add more protected routes here later */}
             <Route
               path="/documents"
-              element={
-                <div className="text-center py-10">
-                  Documents page coming soon...
-                </div>
-              }
+              element={<Documents />}
+            />
+            <Route
+              path="/profile"
+              element={<Profile />}
             />
             <Route
               path="/documents/new"

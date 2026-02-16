@@ -7,7 +7,6 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from .models import Document, Department, DocumentType, DocumentStatus, ConfidentialityLevel
 from .serializers import (
     UserSerializer,
     RegisterSerializer,
@@ -16,7 +15,9 @@ from .serializers import (
     DocumentTypeSerializer,
     DocumentStatusSerializer,
     ConfidentialityLevelSerializer,
+    DocumentCommentSerializer,
 )
+from .models import Document, Department, DocumentType, DocumentStatus, ConfidentialityLevel, DocumentComment, AuditLog
 
 class HealthCheckView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -55,7 +56,7 @@ class DashboardStatsView(APIView):
         user = request.user
         data = {
             'pending_count': 0,
-            'my_docs_count': Document.objects.filter(creator=user).count(),
+            'my_docs_count': Document.objects.filter(Q(creator=user) | Q(assigned_to=user)).distinct().count(),
             'recent_docs': []
         }
         
@@ -69,7 +70,7 @@ class DashboardStatsView(APIView):
                 ).count()
         
         # Recent documents
-        recent = Document.objects.filter(creator=user).order_by('-updated_at')[:5]
+        recent = Document.objects.filter(creator=user).order_by('-created_at')[:5]
         data['recent_docs'] = DocumentSerializer(recent, many=True).data
         
         return Response(data)
@@ -80,22 +81,35 @@ class DocumentListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        # Admins see everything
+        queryset = Document.objects.none()
+
+        # Base Queryset based on permissions
         if user.is_staff:
-            return Document.objects.all().order_by('-updated_at')
-            
-        if hasattr(user, 'profile') and user.profile.department:
-            return Document.objects.filter(
+            queryset = Document.objects.all()
+        elif hasattr(user, 'profile') and user.profile.department:
+            queryset = Document.objects.filter(
                 Q(department=user.profile.department) | Q(creator=user)
-            ).distinct().order_by('-updated_at')
-        return Document.objects.filter(creator=user).order_by('-updated_at')
+            ).distinct()
+        else:
+            queryset = Document.objects.filter(creator=user)
+
+        # Filtering by ownership
+        owner = self.request.query_params.get('owner')
+        if owner == 'me':
+            queryset = Document.objects.filter(Q(creator=user) | Q(assigned_to=user)).distinct()
+        
+        return queryset.order_by('-created_at')
 
     def perform_create(self, serializer):
         # Set default values for creator, profile, etc.
         user = self.request.user
         department = user.profile.department if hasattr(user, 'profile') else None
         
-        status_draft = DocumentStatus.objects.filter(code='DRAFT').first()
+        # Ensure we always have a Draft status; create it on the fly if missing.
+        status_draft, _ = DocumentStatus.objects.get_or_create(
+            code='DRAFT',
+            defaults={'name': 'Draft'},
+        )
         
         serializer.save(
             creator=user,
@@ -220,16 +234,103 @@ class DocumentDeleteView(generics.DestroyAPIView):
         raise permissions.PermissionDenied("You do not have permission to delete this document.")
 
 class DocumentDetailView(generics.RetrieveUpdateAPIView):
-    """
-    Retrieve or update a document.
-    Creation is handled in DocumentListCreateView; updates are typically used
-    by privileged users via admin tooling.
-    """
-
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        # Log the action
+        AuditLog.objects.create(
+            user=self.request.user,
+            document=instance,
+            action="Updated fields",
+            details=f"Updated by {self.request.user.username}"
+        )
+
+class DocumentTakeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            document = Document.objects.get(pk=pk)
+            user = request.user
+            
+            # Check if already taken
+            if document.assigned_to and document.assigned_to != user:
+                return Response({"error": f"Document already taken by {document.assigned_to.username}"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            document.assigned_to = user
+            document.save()
+            
+            AuditLog.objects.create(
+                user=user,
+                document=document,
+                action="Taken",
+                details=f"Document taken by {user.username}"
+            )
+            
+            return Response(DocumentSerializer(document).data)
+        except Document.DoesNotExist:
+            return Response({"error": "Document not found"}, status=status.HTTP_404_NOT_FOUND)
+
+class DocumentCommentCreateView(generics.CreateAPIView):
+    serializer_class = DocumentCommentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        document_id = self.kwargs.get('pk')
+        document = Document.objects.get(pk=document_id)
+        serializer.save(user=self.request.user, document=document)
+        
+        AuditLog.objects.create(
+            user=self.request.user,
+            document=document,
+            action="Commented",
+            details=f"New comment added"
+        )
+
+
+class UserProfileView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        profile_serializer = UserSerializer(user)
+        
+        # Documents created by user
+        created_docs = Document.objects.filter(creator=user).order_by('-created_at')
+        # Documents assigned/taken by user
+        assigned_docs = Document.objects.filter(assigned_to=user).order_by('-created_at')
+        
+        return Response({
+            'user': profile_serializer.data,
+            'created_documents': DocumentSerializer(created_docs, many=True).data,
+            'assigned_documents': DocumentSerializer(assigned_docs, many=True).data,
+        })
+
+    def patch(self, request):
+        user = request.user
+        profile = user.profile
+        
+        # We can update profile fields and User fields
+        full_name = request.data.get('full_name')
+        if full_name is not None:
+            profile.full_name = full_name
+            
+        position = request.data.get('position')
+        if position is not None:
+            profile.position = position
+            
+        bio = request.data.get('bio')
+        if bio is not None:
+            profile.bio = bio
+            
+        if 'profile_picture' in request.FILES:
+            profile.profile_picture = request.FILES['profile_picture']
+            
+        profile.save()
+        return Response(UserSerializer(user).data)
 
 class AdminUserCreateView(generics.CreateAPIView):
     """

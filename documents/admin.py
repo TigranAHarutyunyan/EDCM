@@ -54,6 +54,7 @@ class UserAdmin(BaseUserAdmin):
         'is_staff',
         'is_superuser',
         'get_role',
+        'get_position',
         'get_department',
     )
     list_filter = (
@@ -74,6 +75,12 @@ class UserAdmin(BaseUserAdmin):
 
     get_department.short_description = 'Department'
     get_department.admin_order_field = 'profile__department'
+
+    def get_position(self, obj):
+        return getattr(obj.profile, 'position', None)
+
+    get_position.short_description = 'Position'
+    get_position.admin_order_field = 'profile__position'
 
     def save_model(self, request, obj, form, change):
         """

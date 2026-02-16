@@ -6,6 +6,8 @@ from .api_views import (
     DocumentListCreateView,
     DocumentDeleteView,
     DocumentDetailView,
+    DocumentTakeView,
+    DocumentCommentCreateView,
     DepartmentListCreateView,
     DepartmentDetailView,
     DocumentTypeListView,
@@ -13,6 +15,7 @@ from .api_views import (
     UserListCreateView,
     UserDetailView,
     AdminUserCreateView,
+    UserProfileView,
 )
 
 urlpatterns = [
@@ -20,9 +23,12 @@ urlpatterns = [
     path('health/', HealthCheckView.as_view(), name='api_health'),
     #path('auth/register/', RegisterView.as_view(), name='api_register'),  # Removed
     path('auth/login/', CustomAuthToken.as_view(), name='api_login'),
+    path('profile/', UserProfileView.as_view(), name='api_profile'),
     path('dashboard/', DashboardStatsView.as_view(), name='api_dashboard'),
     path('documents/', DocumentListCreateView.as_view(), name='api_document_list'),
     path('documents/<int:pk>/', DocumentDetailView.as_view(), name='api_document_detail'),
+    path('documents/<int:pk>/take/', DocumentTakeView.as_view(), name='api_document_take'),
+    path('documents/<int:pk>/comment/', DocumentCommentCreateView.as_view(), name='api_document_comment'),
     path('documents/<int:pk>/delete/', DocumentDeleteView.as_view(), name='api_document_delete'),
     path('departments/', DepartmentListCreateView.as_view(), name='api_department_list'),
     path('departments/<int:pk>/', DepartmentDetailView.as_view(), name='api_department_detail'),

@@ -24,14 +24,13 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("documents.api_urls")),
     path("accounts/", include("django.contrib.auth.urls")),
+    path('', include('documents.urls'))
 ]
 
-# Serve static files in development
+# Serve static files in development using Django's staticfiles settings
 if settings.DEBUG:
-    from django.views.static import serve
-    urlpatterns += [
-        path('static/<path:path>', serve, {'document_root': settings.BASE_DIR / 'frontend' / 'dist'}),
-    ]
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Catch-all should be last
 urlpatterns += [
