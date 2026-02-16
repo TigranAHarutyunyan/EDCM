@@ -92,10 +92,9 @@ END
 
 # Function to seed initial data
 seed_data() {
-    # Run seeding if explicitly requested or if in DEBUG mode
     if [ "$SEED_DATA" = "True" ] || [ "$SEED_DATA" = "true" ] || [ "$DEBUG" = "True" ] || [ "$DEBUG" = "true" ]; then
         echo -e "${YELLOW}🌱 Seeding initial data...${NC}"
-        if python setup_data.py; then
+        if python manage.py seed_data; then
             echo -e "${GREEN}✅ Data seeding completed successfully!${NC}"
         else
             echo -e "${RED}⚠️  Warning: Data seeding failed (continuing anyway)${NC}"

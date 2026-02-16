@@ -7,7 +7,7 @@ services:
           pip install -r requirements.txt
           cd frontend && npm install && npm run build && cd ..
           python manage.py collectstatic --noinput
-      startCommand: python manage.py migrate && python setup_data.py && gunicorn --bind 0.0.0.0:${PORT:-8000} --workers 3 config.wsgi:application
+      startCommand: python manage.py migrate && python manage.py seed_data && gunicorn --bind 0.0.0.0:${PORT:-8000} --workers 3 config.wsgi:application
       # Environment variables
       envVars:
           - key: PYTHON_VERSION
@@ -31,6 +31,8 @@ services:
           - key: CSRF_COOKIE_SECURE
             value: "True"
           - key: SEED_DATA
+            value: "True"
+          - key: DB_SSL_REQUIRE
             value: "True"
 
       # Disk configuration
