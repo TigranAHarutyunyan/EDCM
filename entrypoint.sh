@@ -6,7 +6,7 @@ echo "🚀 EDCM Docker Entrypoint"
 echo "======================================"
 
 # Configuration
-DB_HOST=${DB_HOST:-db}
+DB_HOST=${DB_HOST:-dpg-d69mn656ubrc73amofjg-a}
 DB_PORT=${DB_PORT:-5432}
 DB_USER=${DB_USER:-postgres}
 DB_NAME=${DB_NAME:-edcm_db}
