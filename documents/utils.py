@@ -11,8 +11,6 @@ def create_user_with_profile(username, password, email='', role='Employee', full
     if role == 'Admin':
         is_staff = True
         is_superuser = True
-    elif role == 'Manager':
-        is_staff = True
 
     user = User.objects.create_user(
         username=username,

@@ -105,11 +105,8 @@ class UserAdmin(BaseUserAdmin):
         if profile.role == 'Admin':
             obj.is_staff = True
             obj.is_superuser = True
-        elif profile.role == 'Manager':
-            obj.is_staff = True
-            obj.is_superuser = False
         else:
-            # Employee (no staff access unless manually promoted)
+            # Employee and Manager (no staff access unless manually promoted)
             obj.is_staff = False
             obj.is_superuser = False
 
