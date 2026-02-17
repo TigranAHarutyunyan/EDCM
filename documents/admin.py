@@ -14,13 +14,26 @@ from .models import (
     NotificationType,
 )
 
-# Brand the Django admin to match EDCM
-admin.site.site_header = "EDCM Administration"
-admin.site.site_title = "EDCM Admin"
-admin.site.index_title = "EDCM Control Panel"
+from django.core.exceptions import PermissionDenied
 
+class EDCMAdminSite(admin.AdminSite):
+    site_header = "EDCM Administration"
+    site_title = "EDCM Admin"
+    index_title = "EDCM Control Panel"
 
-@admin.register(Department)
+    def has_permission(self, request):
+        """
+        Check if the user has permission to access the admin site.
+        If the user is authenticated but not a staff member, raise 403.
+        """
+        if request.user.is_authenticated and not request.user.is_staff:
+            raise PermissionDenied
+        return super().has_permission(request)
+
+# Use the custom admin site instance
+admin_site = EDCMAdminSite(name='edcm_admin')
+
+@admin.register(Department, site=admin_site)
 class DepartmentAdmin(admin.ModelAdmin):
     list_display = ('name',)
 
