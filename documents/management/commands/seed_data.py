@@ -84,6 +84,18 @@ class Command(BaseCommand):
                 employee.profile.save()
                 self.stdout.write(self.style.SUCCESS("✅ Employee user created."))
 
+            # Department Chef
+            if not User.objects.filter(username='chef').exists():
+                chef = User.objects.create_user('chef', 'chef@example.com', 'chefpass')
+                if not hasattr(chef, 'profile'):
+                    UserProfile.objects.create(user=chef)
+                chef.profile.full_name = "Department Chef"
+                chef.profile.position = "Dept Head"
+                chef.profile.role = 'Department Chef'
+                chef.profile.department = sales
+                chef.profile.save()
+                self.stdout.write(self.style.SUCCESS("✅ Department Chef user created."))
+
             # Sample documents
             order_type = DocumentType.objects.filter(code="ORDER").first()
             report_type = DocumentType.objects.filter(code="REPORT").first()

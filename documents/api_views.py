@@ -17,7 +17,17 @@ from .serializers import (
     ConfidentialityLevelSerializer,
     DocumentCommentSerializer,
 )
-from .models import Document, Department, DocumentType, DocumentStatus, ConfidentialityLevel, DocumentComment, AuditLog
+from .models import Document, Department, DocumentType, DocumentStatus, ConfidentialityLevel, DocumentComment, AuditLog, UserProfile
+
+class IsAdminOrDepartmentChef(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        
+        is_admin = request.user.is_staff or (hasattr(request.user, 'profile') and request.user.profile.role == 'Admin')
+        is_chef = hasattr(request.user, 'profile') and request.user.profile.role == 'Department Chef'
+        
+        return is_admin or is_chef
 
 class HealthCheckView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -125,12 +135,12 @@ class DepartmentListCreateView(generics.ListCreateAPIView):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [permissions.AllowAny()]
-        return [permissions.IsAdminUser()]
+        return [IsAdminOrDepartmentChef()]
 
 class DepartmentDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Department.objects.all().order_by('name')
     serializer_class = DepartmentSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdminOrDepartmentChef]
 
 class DocumentTypeListView(generics.ListAPIView):
     queryset = DocumentType.objects.all()
