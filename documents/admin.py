@@ -52,7 +52,7 @@ except admin.sites.NotRegistered:
     pass
 
 
-@admin.register(User)
+@admin.register(User, site=admin_site)
 class UserAdmin(BaseUserAdmin):
     """
     Custom user admin that surfaces profile fields and keeps Django permissions
@@ -125,34 +125,34 @@ class UserAdmin(BaseUserAdmin):
 
         obj.save()
 
-@admin.register(DocumentType)
+@admin.register(DocumentType, site=admin_site)
 class DocumentTypeAdmin(admin.ModelAdmin):
     list_display = ('name', 'code')
 
-@admin.register(DocumentStatus)
+@admin.register(DocumentStatus, site=admin_site)
 class DocumentStatusAdmin(admin.ModelAdmin):
     list_display = ('name', 'code')
 
-@admin.register(ConfidentialityLevel)
+@admin.register(ConfidentialityLevel, site=admin_site)
 class ConfidentialityLevelAdmin(admin.ModelAdmin):
     list_display = ('name', 'code')
 
-@admin.register(Document)
+@admin.register(Document, site=admin_site)
 class DocumentAdmin(admin.ModelAdmin):
     list_display = ('title', 'status', 'creator', 'current_owner', 'department', 'updated_at')
     list_filter = ('status', 'department', 'document_type', 'confidentiality_level')
     search_fields = ('title', 'description', 'external_reference')
 
-@admin.register(AuditLog)
+@admin.register(AuditLog, site=admin_site)
 class AuditLogAdmin(admin.ModelAdmin):
     list_display = ('document', 'user', 'action', 'timestamp')
     readonly_fields = ('timestamp',)
 
-@admin.register(NotificationType)
+@admin.register(NotificationType, site=admin_site)
 class NotificationTypeAdmin(admin.ModelAdmin):
     list_display = ('name', 'code')
 
-@admin.register(Notification)
+@admin.register(Notification, site=admin_site)
 class NotificationAdmin(admin.ModelAdmin):
     list_display = ('user', 'notification_type', 'is_read', 'created_at')
     list_filter = ('is_read', 'notification_type')
