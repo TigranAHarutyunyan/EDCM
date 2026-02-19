@@ -23,12 +23,27 @@ class EDCMAdminSite(admin.AdminSite):
 
     def has_permission(self, request):
         """
-        Check if the user has permission to access the admin site.
-        If the user is authenticated but not a staff member, raise 403.
+        Limit admin access strictly to Admin + Department Chef (or superusers).
         """
-        if request.user.is_authenticated and not request.user.is_staff:
-            raise PermissionDenied
-        return super().has_permission(request)
+        if not request.user.is_authenticated:
+            return False
+
+        # Default Django checks (is_active + is_staff)
+        has_default_permission = super().has_permission(request)
+        if not has_default_permission:
+            if request.user.is_authenticated:
+                raise PermissionDenied("You do not have permission to access the admin panel.")
+            return False
+
+        # Allow superusers automatically
+        if request.user.is_superuser:
+            return True
+
+        profile = getattr(request.user, 'profile', None)
+        if profile and profile.role in ('Admin', 'Department Chef'):
+            return True
+
+        raise PermissionDenied("You do not have permission to access the admin panel.")
 
 # Use the custom admin site instance
 admin_site = EDCMAdminSite(name='edcm_admin')
@@ -99,9 +114,9 @@ class UserAdmin(BaseUserAdmin):
         """
         Whenever a user is saved via the admin, align `is_staff`/`is_superuser`
         with the selected profile role:
-        - Admin  -> full admin rights (staff + superuser)
-        - Manager -> staff only (can access admin but not superuser)
-        - Employee -> no staff flag (unless already a superuser)
+        - Admin -> full admin rights (staff + superuser)
+        - Department Chef -> staff only (admin access, no superuser)
+        - Others -> no admin access
         """
         super().save_model(request, obj, form, change)
 
@@ -118,8 +133,11 @@ class UserAdmin(BaseUserAdmin):
         if profile.role == 'Admin':
             obj.is_staff = True
             obj.is_superuser = True
+        elif profile.role == 'Department Chef':
+            obj.is_staff = True
+            obj.is_superuser = False
         else:
-            # Employee and Manager (no staff access unless manually promoted)
+            # No admin access
             obj.is_staff = False
             obj.is_superuser = False
 
