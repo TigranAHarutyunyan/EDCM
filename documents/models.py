@@ -133,10 +133,11 @@ def sync_user_admin_flags(sender, instance, **kwargs):
     """
     Ensure User.is_staff and User.is_superuser strictly match the UserProfile.role.
     - Admin: Staff + Superuser
-    - Others: No Admin Panel access
+    - Department Chef: Staff only (admin access, no superuser)
+    - Others: No admin access
     """
     user = instance.user
-    should_be_staff = (instance.role == 'Admin')
+    should_be_staff = instance.role in ('Admin', 'Department Chef')
     should_be_superuser = (instance.role == 'Admin')
 
     # We only update if there's a mismatch to avoid unnecessary saves/recursion
