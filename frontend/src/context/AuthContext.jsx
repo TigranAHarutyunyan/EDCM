@@ -8,20 +8,18 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      // Ideally we would validate the token with an endpoint like /api/auth/me/
-      // For now, we'll assume it's valid or handle 401s in interceptors
-      const storedUser = JSON.parse(localStorage.getItem('user'));
-      if (storedUser) setUser(storedUser);
-    }
+    // Ensure we have a CSRF cookie so cookie-auth requests can include X-CSRFToken.
+    api.get('csrf/').catch(() => {});
+
+    // We can't read the HttpOnly auth cookie, so we keep user metadata in localStorage.
+    const storedUser = JSON.parse(localStorage.getItem('user'));
+    if (storedUser) setUser(storedUser);
     setLoading(false);
   }, []);
 
   const login = async (username, password) => {
     const response = await api.post('auth/login/', { username, password });
     const { token, ...userData } = response.data;
-    localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
     return userData;
@@ -40,7 +38,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    api.post('auth/logout/').catch(() => {});
     localStorage.removeItem('user');
     setUser(null);
   };

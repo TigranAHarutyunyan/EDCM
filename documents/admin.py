@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
+from django.contrib.admin.forms import AdminAuthenticationForm
+from django.core.exceptions import ValidationError
 
 from .models import (
     Department,
@@ -16,37 +18,40 @@ from .models import (
 
 from django.core.exceptions import PermissionDenied
 
+class RoleAdminAuthenticationForm(AdminAuthenticationForm):
+    def confirm_login_allowed(self, user):
+        super().confirm_login_allowed(user)
+
+        # Superusers only.
+        if not user.is_superuser:
+            raise ValidationError(
+                "You do not have permission to access the admin panel.",
+                code="no_admin_access",
+            )
+
 class EDCMAdminSite(admin.AdminSite):
     site_header = "EDCM Administration"
     site_title = "EDCM Admin"
     index_title = "EDCM Control Panel"
+    login_form = RoleAdminAuthenticationForm
 
     def has_permission(self, request):
         """
-        Limit admin access strictly to Admin + Department Chef (or superusers).
+        Limit admin access to superusers only.
         """
         if not request.user.is_authenticated:
             return False
 
-        # Default Django checks (is_active + is_staff)
-        has_default_permission = super().has_permission(request)
-        if not has_default_permission:
-            if request.user.is_authenticated:
-                raise PermissionDenied("You do not have permission to access the admin panel.")
-            return False
+        if not request.user.is_active:
+            raise PermissionDenied("You do not have permission to access the admin panel.")
 
-        # Allow superusers automatically
         if request.user.is_superuser:
-            return True
-
-        profile = getattr(request.user, 'profile', None)
-        if profile and profile.role in ('Admin', 'Department Chef'):
             return True
 
         raise PermissionDenied("You do not have permission to access the admin panel.")
 
 # Use the custom admin site instance
-admin_site = EDCMAdminSite(name='edcm_admin')
+admin_site = EDCMAdminSite(name='admin')
 
 @admin.register(Department, site=admin_site)
 class DepartmentAdmin(admin.ModelAdmin):

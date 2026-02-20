@@ -2,6 +2,8 @@ from django.urls import path
 from .api_views import (
     HealthCheckView,
     CustomAuthToken,
+    LogoutView,
+    CsrfView,
     DashboardStatsView,
     DocumentListCreateView,
     DocumentDeleteView,
@@ -22,7 +24,9 @@ urlpatterns = [
     # Health check
     path('health/', HealthCheckView.as_view(), name='api_health'),
     #path('auth/register/', RegisterView.as_view(), name='api_register'),  # Removed
+    path('csrf/', CsrfView.as_view(), name='api_csrf'),
     path('auth/login/', CustomAuthToken.as_view(), name='api_login'),
+    path('auth/logout/', LogoutView.as_view(), name='api_logout'),
     path('profile/', UserProfileView.as_view(), name='api_profile'),
     path('dashboard/', DashboardStatsView.as_view(), name='api_dashboard'),
     path('documents/', DocumentListCreateView.as_view(), name='api_document_list'),
