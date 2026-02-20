@@ -143,6 +143,23 @@ class DocumentSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['status', 'creator', 'current_owner', 'department']
 
+    def update(self, instance, validated_data):
+        """
+        Prevent arbitrary users from re-assigning documents.
+        - Document creation can include `assigned_to_id`
+        - Document updates can change assignment only for Admin/Department Chef/superuser
+        """
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+
+        if "assigned_to" in validated_data:
+            role = getattr(getattr(user, "profile", None), "role", None) if user else None
+            can_reassign = bool(user and (user.is_superuser or role == "Admin"))
+            if not can_reassign:
+                validated_data.pop("assigned_to", None)
+
+        return super().update(instance, validated_data)
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     full_name = serializers.CharField(write_only=True, required=False)

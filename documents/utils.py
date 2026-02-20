@@ -6,14 +6,11 @@ def create_user_with_profile(username, password, email='', role='Employee', full
     ensuring admin flags match the business role.
     """
     is_staff = False
+    # Never create Django superusers via business roles.
     is_superuser = False
     
     if role == 'Admin':
         is_staff = True
-        is_superuser = True
-    elif role == 'Department Chef':
-        is_staff = True
-        is_superuser = False
 
     user = User.objects.create_user(
         username=username,

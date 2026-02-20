@@ -11,10 +11,21 @@ export const AuthProvider = ({ children }) => {
     // Ensure we have a CSRF cookie so cookie-auth requests can include X-CSRFToken.
     api.get('csrf/').catch(() => {});
 
-    // We can't read the HttpOnly auth cookie, so we keep user metadata in localStorage.
-    const storedUser = JSON.parse(localStorage.getItem('user'));
-    if (storedUser) setUser(storedUser);
-    setLoading(false);
+    const loadMe = async () => {
+      // If cookie-auth is active, prefer the server as the source of truth.
+      try {
+        const meRes = await api.get('auth/me/');
+        localStorage.setItem('user', JSON.stringify(meRes.data));
+        setUser(meRes.data);
+      } catch {
+        const storedUser = JSON.parse(localStorage.getItem('user'));
+        if (storedUser) setUser(storedUser);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadMe();
   }, []);
 
   const login = async (username, password) => {
@@ -37,8 +48,18 @@ export const AuthProvider = ({ children }) => {
     return login(username, password);
   };
 
-  const logout = () => {
-    api.post('auth/logout/').catch(() => {});
+  const logout = async () => {
+    // Server clears the HttpOnly cookie; client clears any non-HttpOnly cookies it can see.
+    try {
+      await api.post('auth/logout/');
+    } catch {
+      // Still clear local state even if network fails.
+    }
+
+    // Clear CSRF cookie (not HttpOnly by default).
+    if (typeof document !== 'undefined') {
+      document.cookie = 'csrftoken=; Max-Age=0; path=/';
+    }
     localStorage.removeItem('user');
     setUser(null);
   };
