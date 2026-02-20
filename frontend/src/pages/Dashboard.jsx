@@ -3,8 +3,10 @@ import api from "../services/api";
 import { Link } from "react-router-dom";
 import DocumentModal from "../components/DocumentModal";
 import DocumentDetailModal from "../components/DocumentDetailModal";
+import { useAuth } from "../context/AuthContext";
 
 const Dashboard = () => {
+    const { user } = useAuth();
     const [stats, setStats] = useState({
         pending_count: 0,
         my_docs_count: 0,
@@ -105,6 +107,13 @@ const Dashboard = () => {
             </div>
         );
 
+    const panelButton =
+        user?.role === "Admin"
+            ? { kind: "admin", label: "Admin Panel" }
+            : user?.role === "Manager"
+              ? { kind: "department", label: "Department Panel" }
+              : null;
+
     return (
         <div className="space-y-6">
             <header className="flex justify-between items-end gap-4">
@@ -119,6 +128,22 @@ const Dashboard = () => {
 
                 {/* Search Bar & Add Button */}
                 <div className="flex gap-2 items-end">
+                    {panelButton?.kind === "admin" && (
+                        <a
+                            href="/admin/"
+                            className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-md hover:from-purple-700 hover:to-pink-700 transition whitespace-nowrap font-medium"
+                        >
+                            {panelButton.label}
+                        </a>
+                    )}
+                    {panelButton?.kind === "department" && (
+                        <Link
+                            to="/department/"
+                            className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-md hover:from-purple-700 hover:to-pink-700 transition whitespace-nowrap font-medium"
+                        >
+                            {panelButton.label}
+                        </Link>
+                    )}
                     <form onSubmit={handleSearch} className="flex space-x-2">
                         <input
                             type="text"

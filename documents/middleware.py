@@ -1,38 +1,80 @@
 from django.http import HttpResponseNotFound
 
 
-class AdminIndexGuardMiddleware:
+def _app_user_from_auth_cookie(request):
     """
-    Prevents the Django admin index (`/admin/`) from being publicly reachable.
+    Resolve the currently logged-in SPA user from the DRF token stored in `edcm_auth`.
+    This does NOT create a Django session; it's used only for route gating.
+    """
+    token_key = request.COOKIES.get("edcm_auth")
+    if not token_key:
+        return None
 
-    Django's admin login page is normally reachable to anyone at `/admin/` via a redirect to
-    `/admin/login/`. This middleware blocks direct access to `/admin/` unless the user is
-    already authenticated and has an allowed role.
+    try:
+        from rest_framework.authtoken.models import Token
+
+        token = Token.objects.select_related("user", "user__profile").get(key=token_key)
+        return token.user
+    except Exception:
+        return None
+
+
+class AdminGateMiddleware:
+    """
+    Hide `/admin/*` (including `/admin/login/`) from users who are not allowed.
+
+    Allowed:
+    - Django superusers
+    - Users whose business role is `Admin` (UserProfile.role), when active.
+
+    Note: This middleware only decides whether `/admin/*` exists (404 vs. allow).
+    Django admin still uses its own authentication (session login).
     """
 
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        # Guard the admin index endpoint so it doesn't redirect anonymous users to the login page.
-        # `/admin/login/` must remain reachable so real admins can actually sign in.
-        if request.path in ("/admin", "/admin/"):
-            user = getattr(request, "user", None)
-            if not user or not user.is_authenticated:
+        if request.path.startswith("/admin"):
+            session_user = getattr(request, "user", None)
+            user = session_user if (session_user and session_user.is_authenticated) else _app_user_from_auth_cookie(request)
+
+            role = getattr(getattr(user, "profile", None), "role", None) if user else None
+            allowed = bool(
+                user
+                and user.is_active
+                and (
+                    user.is_superuser
+                    or (role == "Admin" and user.is_staff)
+                )
+            )
+
+            if not allowed:
                 return HttpResponseNotFound()
 
-            if user.is_superuser and user.is_active:
-                return self.get_response(request)
+        return self.get_response(request)
 
-            return HttpResponseNotFound()
 
-        # If a logged-in (session) user tries to hit the login page but isn't allowed, hide it.
-        if request.path in ("/admin/login", "/admin/login/"):
-            user = getattr(request, "user", None)
-            if user and user.is_authenticated:
-                if user.is_superuser and user.is_active:
-                    return self.get_response(request)
+class DepartmentGateMiddleware:
+    """
+    Hide `/department/` from users who are not Heads of Department (Managers).
 
+    The SPA renders the UI, but this blocks the entry URL server-side in production.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.path in ("/department", "/department/"):
+            session_user = getattr(request, "user", None)
+            user = session_user if (session_user and session_user.is_authenticated) else _app_user_from_auth_cookie(request)
+
+            role = getattr(getattr(user, "profile", None), "role", None) if user else None
+            dept_id = getattr(getattr(user, "profile", None), "department_id", None) if user else None
+
+            allowed = bool(user and user.is_active and role == "Manager" and dept_id)
+            if not allowed:
                 return HttpResponseNotFound()
 
         return self.get_response(request)
