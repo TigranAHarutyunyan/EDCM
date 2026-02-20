@@ -7,6 +7,8 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.conf import settings
+from django.views.decorators.csrf import ensure_csrf_cookie
 from .serializers import (
     UserSerializer,
     RegisterSerializer,
@@ -51,13 +53,43 @@ class CustomAuthToken(ObtainAuthToken):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
-        return Response({
+        resp = Response({
             'token': token.key,
             'user_id': user.pk,
             'username': user.username,
             'email': user.email,
             'role': user.profile.role if hasattr(user, 'profile') else 'Employee'
         })
+
+        # Store token in an HttpOnly cookie (avoid localStorage).
+        resp.set_cookie(
+            "edcm_auth",
+            token.key,
+            httponly=True,
+            secure=not settings.DEBUG,
+            samesite="Lax",
+            max_age=60 * 60 * 24 * 7,  # 7 days
+            path="/",
+        )
+        return resp
+
+
+class LogoutView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        resp = Response({"ok": True})
+        resp.delete_cookie("edcm_auth", path="/")
+        return resp
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CsrfView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        # Sets the csrftoken cookie via the decorator.
+        return Response({"ok": True})
 
 class DashboardStatsView(APIView):
     permission_classes = [permissions.IsAuthenticated]

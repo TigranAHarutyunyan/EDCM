@@ -2,13 +2,10 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: '/api/',
-});
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Token ${token}`;
-  }
-  return config;
+  withCredentials: true,
+  // Axios will read the CSRF cookie and set the header automatically for unsafe methods.
+  xsrfCookieName: 'csrftoken',
+  xsrfHeaderName: 'X-CSRFToken',
 });
 
 export default api;

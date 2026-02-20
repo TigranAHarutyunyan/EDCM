@@ -121,7 +121,9 @@ class DocumentComment(models.Model):
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
-        UserProfile.objects.create(user=instance)
+        # If created as a superuser (e.g. via CLI), default to Admin role.
+        role = 'Admin' if instance.is_superuser else 'Employee'
+        UserProfile.objects.get_or_create(user=instance, defaults={'role': role})
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
@@ -135,14 +137,31 @@ def sync_user_admin_flags(sender, instance, **kwargs):
     - Admin: Staff + Superuser
     - Department Chef: Staff only (admin access, no superuser)
     - Others: No admin access
+    
+    Safety: We protect superusers. If a user is a superuser but doesn't have the 
+    'Admin' role, we upgrade their role to 'Admin' rather than stripping superuser.
     """
     user = instance.user
-    should_be_staff = instance.role in ('Admin', 'Department Chef')
-    should_be_superuser = (instance.role == 'Admin')
+    
+    # If user is superuser but role is not Admin, sync role to Admin
+    if user.is_superuser and instance.role != 'Admin':
+        UserProfile.objects.filter(pk=instance.pk).update(role='Admin')
+        return
 
-    # We only update if there's a mismatch to avoid unnecessary saves/recursion
+    # Map roles to permissions
+    role_permissions = {
+        'Admin': {'is_staff': True, 'is_superuser': True},
+        'Department Chef': {'is_staff': True, 'is_superuser': False},
+        'Manager': {'is_staff': False, 'is_superuser': False},
+        'Employee': {'is_staff': False, 'is_superuser': False},
+    }
+    
+    perms = role_permissions.get(instance.role, {'is_staff': False, 'is_superuser': False})
+    
+    should_be_staff = perms['is_staff']
+    should_be_superuser = perms['is_superuser']
+
     if user.is_staff != should_be_staff or user.is_superuser != should_be_superuser:
-        # Use update() to avoid triggering User's post_save again and recursion
         User.objects.filter(pk=user.pk).update(
             is_staff=should_be_staff,
             is_superuser=should_be_superuser
