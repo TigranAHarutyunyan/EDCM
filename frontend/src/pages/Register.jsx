@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth';
 import { useNavigate, Link } from 'react-router-dom';
 
 const Register = () => {
@@ -23,7 +23,7 @@ const Register = () => {
         try {
             await register(formData.username, formData.email, formData.password, formData.fullName, formData.role);
             navigate('/dashboard');
-        } catch (err) {
+        } catch {
             setError('Registration failed. Username might be taken.');
         }
     };

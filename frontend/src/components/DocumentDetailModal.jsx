@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import api from "../services/api";
 
 const DocumentDetailModal = ({ isOpen, onClose, document: initialDocument, onUpdate }) => {
@@ -10,11 +10,23 @@ const DocumentDetailModal = ({ isOpen, onClose, document: initialDocument, onUpd
     const [isEditing, setIsEditing] = useState(false);
     const [editData, setEditData] = useState({});
 
+    const documentId = initialDocument?.id;
+
+    const fetchDocumentDetails = useCallback(async () => {
+        if (!documentId) return;
+        try {
+            const response = await api.get(`documents/${documentId}/`);
+            setDocument(response.data);
+        } catch (err) {
+            console.error("Error fetching document details", err);
+        }
+    }, [documentId]);
+
     useEffect(() => {
-        if (initialDocument && isOpen) {
+        if (documentId && isOpen) {
             fetchDocumentDetails();
         }
-    }, [initialDocument, isOpen]);
+    }, [documentId, isOpen, fetchDocumentDetails]);
 
     useEffect(() => {
         if (document) {
@@ -26,15 +38,6 @@ const DocumentDetailModal = ({ isOpen, onClose, document: initialDocument, onUpd
         }
     }, [document]);
 
-    const fetchDocumentDetails = async () => {
-        try {
-            const response = await api.get(`documents/${initialDocument.id}/`);
-            setDocument(response.data);
-        } catch (err) {
-            console.error("Error fetching document details", err);
-        }
-    };
-
     const handleTake = async () => {
         setLoading(true);
         setError("");
@@ -43,7 +46,7 @@ const DocumentDetailModal = ({ isOpen, onClose, document: initialDocument, onUpd
             setDocument(response.data);
             onUpdate();
         } catch (err) {
-            setError(err.response?.data?.error || "Error taking document");
+            setError(err?.response?.data?.error || "Error taking document");
         } finally {
             setLoading(false);
         }
@@ -58,7 +61,7 @@ const DocumentDetailModal = ({ isOpen, onClose, document: initialDocument, onUpd
             setDocument(response.data);
             setIsEditing(false);
             onUpdate();
-        } catch (err) {
+        } catch {
             setError("Error updating document");
         } finally {
             setLoading(false);
@@ -74,7 +77,7 @@ const DocumentDetailModal = ({ isOpen, onClose, document: initialDocument, onUpd
             await api.post(`documents/${document.id}/comment/`, { text: commentText });
             setCommentText("");
             fetchDocumentDetails();
-        } catch (err) {
+        } catch {
             setError("Error adding comment");
         } finally {
             setLoading(false);
