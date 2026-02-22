@@ -26,7 +26,7 @@ const Profile = () => {
                 position: response.data.user.profile?.position || "",
                 bio: response.data.user.profile?.bio || "",
             });
-        } catch (err) {
+        } catch {
             setError("Error fetching profile");
         } finally {
             setLoading(false);
@@ -52,7 +52,7 @@ const Profile = () => {
             });
             setEditing(false);
             fetchProfile();
-        } catch (err) {
+        } catch {
             setError("Error updating profile");
         } finally {
             setLoading(false);
@@ -66,6 +66,11 @@ const Profile = () => {
 
     return (
         <div className="max-w-4xl mx-auto py-10 px-4">
+            {error && (
+                <div className="mb-6 bg-red-50 border-l-4 border-red-400 p-4">
+                    <p className="text-sm text-red-700">{error}</p>
+                </div>
+            )}
             <div className="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
                 <div className="h-32 bg-gradient-to-r from-purple-600 to-pink-600"></div>
                 <div className="px-8 pb-8">

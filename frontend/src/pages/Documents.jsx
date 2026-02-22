@@ -11,33 +11,6 @@ const Documents = () => {
     const [departments, setDepartments] = useState([]);
     const [documentTypes, setDocumentTypes] = useState([]);
 
-    const fetchDocuments = async () => {
-        setLoading(true);
-        try {
-            const params = {};
-            if (startDate) params.start_date = startDate;
-            if (endDate) params.end_date = endDate;
-            
-            const response = await api.get("documents/", { params });
-            // API returns paginated results { count, next, previous, results } by default in DRF if pagination is on
-            // But based on Dashboard.jsx usage, it might be returning flat list or we need to handle pagination.
-            // Dashboard.jsx: `setStats(statsRes.data)` where statsRes.data has `recent_docs`.
-            // Let's check `api.get` response in Dashboard again.
-            // Wait, DocumentListCreateView inherits from ListCreateAPIView.
-            // Is pagination enabled? settings.py says:
-            // 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-            // 'PAGE_SIZE': 20,
-            // So response.data will have .results.
-            
-            setDocuments(response.data.results || response.data);
-            
-        } catch (error) {
-            console.error("Error fetching documents", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
         // Fetch dependencies for modal
         const fetchDeps = async () => {
@@ -53,12 +26,35 @@ const Documents = () => {
             }
         };
         fetchDeps();
-        fetchDocuments();
     }, []);
 
     // Refetch when filters change
     useEffect(() => {
+        let cancelled = false;
+
+        const fetchDocuments = async () => {
+            setLoading(true);
+            try {
+                const params = {};
+                if (startDate) params.start_date = startDate;
+                if (endDate) params.end_date = endDate;
+
+                const response = await api.get("documents/", { params });
+                if (!cancelled) {
+                    setDocuments(response.data.results || response.data);
+                }
+            } catch (error) {
+                if (!cancelled) console.error("Error fetching documents", error);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        };
+
         fetchDocuments();
+
+        return () => {
+            cancelled = true;
+        };
     }, [startDate, endDate]);
 
     const handleDocumentSuccess = (newDocument) => {

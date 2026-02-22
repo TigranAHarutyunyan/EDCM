@@ -3,7 +3,7 @@ import api from "../services/api";
 import { Link } from "react-router-dom";
 import DocumentModal from "../components/DocumentModal";
 import DocumentDetailModal from "../components/DocumentDetailModal";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth";
 
 const Dashboard = () => {
     const { user } = useAuth();

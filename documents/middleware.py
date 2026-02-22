@@ -19,42 +19,6 @@ def _app_user_from_auth_cookie(request):
         return None
 
 
-class AdminGateMiddleware:
-    """
-    Hide `/admin/*` (including `/admin/login/`) from users who are not allowed.
-
-    Allowed:
-    - Django superusers
-    - Users whose business role is `Admin` (UserProfile.role), when active.
-
-    Note: This middleware only decides whether `/admin/*` exists (404 vs. allow).
-    Django admin still uses its own authentication (session login).
-    """
-
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-        if request.path.startswith("/admin"):
-            session_user = getattr(request, "user", None)
-            user = session_user if (session_user and session_user.is_authenticated) else _app_user_from_auth_cookie(request)
-
-            role = getattr(getattr(user, "profile", None), "role", None) if user else None
-            allowed = bool(
-                user
-                and user.is_active
-                and (
-                    user.is_superuser
-                    or (role == "Admin" and user.is_staff)
-                )
-            )
-
-            if not allowed:
-                return HttpResponseNotFound()
-
-        return self.get_response(request)
-
-
 class DepartmentGateMiddleware:
     """
     Hide `/department/` from users who are not Heads of Department (Managers).

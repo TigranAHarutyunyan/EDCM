@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../services/api";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth";
 
 const DepartmentPanel = () => {
   const { user } = useAuth();
@@ -29,7 +29,7 @@ const DepartmentPanel = () => {
       ]);
       setEmployees(empRes.data.results || empRes.data);
       setDocuments(docRes.data.results || docRes.data);
-    } catch (e) {
+    } catch {
       setError("Failed to load department panel data.");
     } finally {
       setLoading(false);
@@ -47,7 +47,7 @@ const DepartmentPanel = () => {
       await api.post("department/employees/", newEmployee);
       setNewEmployee({ username: "", email: "", password: "", full_name: "", position: "" });
       await fetchAll();
-    } catch (e2) {
+    } catch {
       setError("Failed to create employee.");
     }
   };
@@ -57,7 +57,7 @@ const DepartmentPanel = () => {
     try {
       await api.delete(`department/employees/${id}/`);
       await fetchAll();
-    } catch (e2) {
+    } catch {
       setError("Failed to delete employee.");
     }
   };
@@ -67,7 +67,7 @@ const DepartmentPanel = () => {
     try {
       await api.patch(`department/documents/${docId}/owner/`, { current_owner_id: ownerId || null });
       await fetchAll();
-    } catch (e2) {
+    } catch {
       setError("Failed to change document owner.");
     }
   };
