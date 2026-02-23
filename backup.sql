@@ -40,7 +40,7 @@ SET default_table_access_method = heap;
 -- Name: auth_group; Type: TABLE; Schema: public; Owner: tigran
 --
 
-CREATE TABLE public.auth_group (
+CREATE  TABLE public.auth_group (
     id integer NOT NULL,
     name character varying(150) NOT NULL
 );
