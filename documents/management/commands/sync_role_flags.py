@@ -6,7 +6,7 @@ from documents.models import UserProfile
 
 class Command(BaseCommand):
     help = "Sync User.is_staff/is_superuser from UserProfile.role for all users."
-
+    print(help)
     def handle(self, *args, **options):
         updated = 0
         checked = 0

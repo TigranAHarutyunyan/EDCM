@@ -12,7 +12,7 @@ from documents.models import (
 
 class Command(BaseCommand):
     help = 'Seeds the database with initial departments, types, and users'
-
+    print(help)
     def handle(self, *args, **options):
         self.stdout.write("🌱 Starting database seeding...")
         
