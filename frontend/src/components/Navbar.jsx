@@ -29,6 +29,34 @@ const getAdminUrl = () => {
     return '/admin/';
 };
 
+// Helper: compute the real Django admin URL.
+// In Docker dev, frontend runs on :3000 and Django on :8000.
+const getAdminUrl = () => {
+    const backendBase = import.meta.env.VITE_BACKEND_URL;
+
+    // Prefer explicit backend URL when provided (e.g. https://edcm.onrender.com)
+    if (backendBase) {
+        const base = backendBase.endsWith('/') ? backendBase.slice(0, -1) : backendBase;
+        return `${base}/admin/`;
+    }
+
+    if (typeof window !== 'undefined') {
+        const { protocol, hostname, port } = window.location;
+
+        // Local dev: React on 3000, Django on 8000
+        if (port === '3000') {
+            return `${protocol}//${hostname}:8000/admin/`;
+        }
+
+        // Same host/port for both in production
+        const portPart = port ? `:${port}` : '';
+        return `${protocol}//${hostname}${portPart}/admin/`;
+    }
+
+    // Safe default
+    return '/admin/';
+};
+
 const Navbar = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
