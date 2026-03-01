@@ -4,7 +4,10 @@ import { Link } from "react-router-dom";
 import DocumentModal from "../components/DocumentModal";
 import DocumentDetailModal from "../components/DocumentDetailModal";
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useAuth } from "../context/auth";
+=======
+>>>>>>> parent of 5b274b7 (fix admin panel issue and create /departamanent endpoint)
 =======
 >>>>>>> parent of 5b274b7 (fix admin panel issue and create /departamanent endpoint)
 

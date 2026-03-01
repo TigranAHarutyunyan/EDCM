@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 from django.shortcuts import render
 from django.http import HttpResponseNotFound
 
@@ -19,6 +20,8 @@ def _app_user_from_auth_cookie(request):
     except Exception:
         return None
 =======
+=======
+>>>>>>> parent of 5b274b7 (fix admin panel issue and create /departamanent endpoint)
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView, DetailView, CreateView
@@ -27,6 +30,9 @@ from django.urls import reverse_lazy
 from .models import Document, DocumentStatus, AuditLog
 from .forms import DocumentForm
 from django.http import HttpResponse
+<<<<<<< HEAD
+>>>>>>> parent of 5b274b7 (fix admin panel issue and create /departamanent endpoint)
+=======
 >>>>>>> parent of 5b274b7 (fix admin panel issue and create /departamanent endpoint)
 
 # React App View
@@ -34,6 +40,7 @@ def react_app(request):
     """Serve the React application"""
     return render(request, 'index.html')
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 
 def department_entry(request):
@@ -50,6 +57,8 @@ def department_entry(request):
 
     return HttpResponseNotFound()
 =======
+=======
+>>>>>>> parent of 5b274b7 (fix admin panel issue and create /departamanent endpoint)
 class DashboardView(LoginRequiredMixin, ListView):
     model = Document
     template_name = 'dashboard.html'
