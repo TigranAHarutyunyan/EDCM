@@ -22,12 +22,8 @@ class RoleAdminAuthenticationForm(AdminAuthenticationForm):
     def confirm_login_allowed(self, user):
         super().confirm_login_allowed(user)
 
-        # Allow Django superusers, and business-role Admin users.
-        if user.is_superuser:
-            return
-
-        role = getattr(getattr(user, "profile", None), "role", None)
-        if role != "Admin":
+        # Superusers only.
+        if not user.is_superuser:
             raise ValidationError(
                 "You do not have permission to access the admin panel.",
                 code="no_admin_access",
@@ -41,20 +37,18 @@ class EDCMAdminSite(admin.AdminSite):
 
     def has_permission(self, request):
         """
-        Limit admin access to superusers or business-role Admin.
-
-        Important: return True/False (do not raise) so Django can render the login
-        page and handle redirects correctly.
+        Limit admin access to superusers only.
         """
-        user = request.user
-        if not user.is_authenticated:
+        if not request.user.is_authenticated:
             return False
-        if not user.is_active:
-            return False
-        if user.is_superuser:
+
+        if not request.user.is_active:
+            raise PermissionDenied("You do not have permission to access the admin panel.")
+
+        if request.user.is_superuser:
             return True
-        role = getattr(getattr(user, "profile", None), "role", None)
-        return bool(user.is_staff and role == "Admin")
+
+        raise PermissionDenied("You do not have permission to access the admin panel.")
 
 # Use the custom admin site instance
 admin_site = EDCMAdminSite(name='admin')
@@ -125,8 +119,8 @@ class UserAdmin(BaseUserAdmin):
         """
         Whenever a user is saved via the admin, align `is_staff`/`is_superuser`
         with the selected profile role:
-        - Do not grant Django superuser via business roles
-        - Admin / Department Chef -> staff only
+        - Admin -> full admin rights (staff + superuser)
+        - Department Chef -> staff only (admin access, no superuser)
         - Others -> no admin access
         """
         super().save_model(request, obj, form, change)
@@ -142,6 +136,9 @@ class UserAdmin(BaseUserAdmin):
             return
 
         if profile.role == 'Admin':
+            obj.is_staff = True
+            obj.is_superuser = True
+        elif profile.role == 'Department Chef':
             obj.is_staff = True
             obj.is_superuser = False
         else:

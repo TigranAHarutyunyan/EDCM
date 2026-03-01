@@ -5,7 +5,6 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Documents from './pages/Documents';
 import Profile from './pages/Profile';
-import DepartmentPanel from './pages/DepartmentPanel';
 
 function App() {
   return (
@@ -23,18 +22,14 @@ function App() {
               path="/documents"
               element={<Documents />}
             />
-          <Route
-            path="/profile"
-            element={<Profile />}
-          />
             <Route
-              path="/department/*"
-              element={<DepartmentPanel />}
+              path="/profile"
+              element={<Profile />}
             />
-          <Route
-            path="/documents/new"
-            element={
-              <div className="text-center py-10">
+            <Route
+              path="/documents/new"
+              element={
+                <div className="text-center py-10">
                   New Document form coming soon...
                 </div>
               }

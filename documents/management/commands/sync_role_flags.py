@@ -15,18 +15,8 @@ class Command(BaseCommand):
             user = profile.user
             checked += 1
 
-            # Protect explicit superusers; don't derive superuser from business roles.
-            if user.is_superuser:
-                if profile.role != "Admin":
-                    UserProfile.objects.filter(pk=profile.pk).update(role="Admin")
-                    updated += 1
-                if not user.is_staff:
-                    User.objects.filter(pk=user.pk).update(is_staff=True)
-                    updated += 1
-                continue
-
-            should_be_staff = profile.role == "Admin"
-            should_be_superuser = False
+            should_be_staff = profile.role in ("Admin", "Department Chef")
+            should_be_superuser = profile.role == "Admin"
 
             if user.is_staff != should_be_staff or user.is_superuser != should_be_superuser:
                 User.objects.filter(pk=user.pk).update(
