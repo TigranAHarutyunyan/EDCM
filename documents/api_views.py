@@ -1,7 +1,6 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import ValidationError
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.auth.models import User
@@ -32,17 +31,6 @@ class IsAdminOrDepartmentChef(permissions.BasePermission):
         
         return is_admin or is_chef
 
-
-class IsDepartmentManager(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and hasattr(request.user, "profile")
-            and request.user.profile.role == "Manager"
-            and request.user.profile.department_id
-        )
-
 class HealthCheckView(APIView):
     permission_classes = [permissions.AllowAny]
     
@@ -59,7 +47,6 @@ class RegisterView(generics.CreateAPIView):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CustomAuthToken(ObtainAuthToken):
-    authentication_classes = []
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data,
                                            context={'request': request})
@@ -88,20 +75,11 @@ class CustomAuthToken(ObtainAuthToken):
 
 
 class LogoutView(APIView):
-    """
-    Clears all authentication and session cookies.
-    By using empty authentication_classes, we ensuring that a user can ALWAYS log out
-    even if their CSRF token or session has expired (preventing a 'lockout' loop).
-    """
     permission_classes = [permissions.AllowAny]
-    authentication_classes = []
 
     def post(self, request):
         resp = Response({"ok": True})
-        # Remove all possible auth and session cookies
         resp.delete_cookie("edcm_auth", path="/")
-        resp.delete_cookie("csrftoken", path="/")
-        resp.delete_cookie("sessionid", path="/")
         return resp
 
 
@@ -112,23 +90,6 @@ class CsrfView(APIView):
     def get(self, request):
         # Sets the csrftoken cookie via the decorator.
         return Response({"ok": True})
-
-
-class MeView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        user = request.user
-        return Response(
-            {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "role": user.profile.role if hasattr(user, "profile") else "Employee",
-                "is_staff": user.is_staff,
-                "is_superuser": user.is_superuser,
-            }
-        )
 
 class DashboardStatsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -319,23 +280,6 @@ class DocumentDetailView(generics.RetrieveUpdateAPIView):
     serializer_class = DocumentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        user = self.request.user
-
-        if user.is_superuser:
-            return Document.objects.all()
-
-        role = getattr(getattr(user, "profile", None), "role", None)
-        dept = getattr(getattr(user, "profile", None), "department", None)
-
-        if role == "Admin":
-            return Document.objects.all()
-
-        if dept:
-            return Document.objects.filter(Q(department=dept) | Q(creator=user)).distinct()
-
-        return Document.objects.filter(creator=user)
-
     def perform_update(self, serializer):
         instance = serializer.save()
         # Log the action
@@ -353,17 +297,6 @@ class DocumentTakeView(APIView):
         try:
             document = Document.objects.get(pk=pk)
             user = request.user
-
-            # Ensure the user can access this document (same rules as list/detail).
-            role = getattr(getattr(user, "profile", None), "role", None)
-            dept = getattr(getattr(user, "profile", None), "department", None)
-            if not (
-                user.is_superuser
-                or role == "Admin"
-                or (dept and document.department_id == dept.id)
-                or document.creator_id == user.id
-            ):
-                raise permissions.PermissionDenied("You do not have permission to access this document.")
             
             # Check if already taken
             if document.assigned_to and document.assigned_to != user:
@@ -460,114 +393,3 @@ class AdminUserCreateView(generics.CreateAPIView):
         if user.is_superuser or is_admin_role:
             return [permissions.IsAuthenticated()]
         return [permissions.IsAdminUser()]
-
-
-class DepartmentDocumentsView(generics.ListAPIView):
-    """
-    Head of Department (Manager) can see all documents in their own department.
-    """
-
-    serializer_class = DocumentSerializer
-    permission_classes = [IsDepartmentManager]
-
-    def get_queryset(self):
-        dept = self.request.user.profile.department
-        return Document.objects.filter(department=dept).order_by("-created_at")
-
-
-class DepartmentEmployeesView(generics.ListCreateAPIView):
-    """
-    Head of Department (Manager) can list all users in their own department and create Employees.
-    """
-
-    serializer_class = UserSerializer
-    permission_classes = [IsDepartmentManager]
-
-    def get_queryset(self):
-        dept = self.request.user.profile.department
-        return User.objects.filter(profile__department=dept).order_by("username")
-
-    def perform_create(self, serializer):
-        dept = self.request.user.profile.department
-        # Force role/department to avoid privilege escalation.
-        if not self.request.data.get("password"):
-            raise ValidationError({"password": "This field is required."})
-        serializer.save(role="Employee", department_id=dept)
-
-
-class DepartmentEmployeeDeleteView(generics.DestroyAPIView):
-    """
-    Head of Department (Manager) can delete an Employee in their department.
-    """
-
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = [IsDepartmentManager]
-
-    def get_object(self):
-        obj = super().get_object()
-        actor = self.request.user
-        dept = actor.profile.department
-
-        if obj.is_superuser or obj == actor:
-            raise permissions.PermissionDenied("You do not have permission to delete this user.")
-
-        obj_role = getattr(getattr(obj, "profile", None), "role", None)
-        if obj_role != "Employee":
-            raise permissions.PermissionDenied("You can only delete employees.")
-
-        if not hasattr(obj, "profile") or obj.profile.department_id != dept.id:
-            raise permissions.PermissionDenied("User is not in your department.")
-
-        return obj
-
-
-class DepartmentDocumentOwnerUpdateView(APIView):
-    """
-    Head of Department (Manager) can change document owner/assignee within their department.
-    """
-
-    permission_classes = [IsDepartmentManager]
-
-    def patch(self, request, pk):
-        actor = request.user
-        dept = actor.profile.department
-        document = Document.objects.get(pk=pk)
-
-        if document.department_id != dept.id:
-            raise permissions.PermissionDenied("Document is not in your department.")
-
-        current_owner_id = request.data.get("current_owner_id", None)
-        assigned_to_id = request.data.get("assigned_to_id", None)
-
-        changed_fields = []
-
-        if current_owner_id is not None:
-            new_owner = None
-            if current_owner_id != "" and current_owner_id is not None:
-                new_owner = User.objects.get(pk=current_owner_id)
-                if not hasattr(new_owner, "profile") or new_owner.profile.department_id != dept.id:
-                    return Response({"error": "Owner must be in your department."}, status=status.HTTP_400_BAD_REQUEST)
-            document.current_owner = new_owner
-            changed_fields.append("current_owner")
-
-        if "assigned_to_id" in request.data:
-            new_assignee = None
-            if assigned_to_id not in (None, "", "null"):
-                new_assignee = User.objects.get(pk=assigned_to_id)
-                if not hasattr(new_assignee, "profile") or new_assignee.profile.department_id != dept.id:
-                    return Response({"error": "Assignee must be in your department."}, status=status.HTTP_400_BAD_REQUEST)
-            document.assigned_to = new_assignee
-            changed_fields.append("assigned_to")
-
-        if not changed_fields:
-            return Response({"error": "No changes requested."}, status=status.HTTP_400_BAD_REQUEST)
-
-        document.save()
-        AuditLog.objects.create(
-            user=actor,
-            document=document,
-            action="Department update",
-            details=f"Updated {', '.join(changed_fields)}",
-        )
-        return Response(DocumentSerializer(document).data)

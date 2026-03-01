@@ -133,12 +133,10 @@ def save_user_profile(sender, instance, **kwargs):
 @receiver(post_save, sender=UserProfile)
 def sync_user_admin_flags(sender, instance, **kwargs):
     """
-    Ensure User.is_staff matches the UserProfile.role, but do NOT auto-promote
-    users to Django superuser based on business roles.
-
-    - Superusers stay superusers (created explicitly via `createsuperuser` or similar).
-    - Admin / Department Chef: staff only
-    - Others: no admin access
+    Ensure User.is_staff and User.is_superuser strictly match the UserProfile.role.
+    - Admin: Staff + Superuser
+    - Department Chef: Staff only (admin access, no superuser)
+    - Others: No admin access
     
     Safety: We protect superusers. If a user is a superuser but doesn't have the 
     'Admin' role, we upgrade their role to 'Admin' rather than stripping superuser.
@@ -150,17 +148,21 @@ def sync_user_admin_flags(sender, instance, **kwargs):
         UserProfile.objects.filter(pk=instance.pk).update(role='Admin')
         return
 
-    # Never demote explicit Django superusers here. Just ensure they remain staff.
-    if user.is_superuser:
-        if not user.is_staff:
-            User.objects.filter(pk=user.pk).update(is_staff=True)
-        return
+    # Map roles to permissions
+    role_permissions = {
+        'Admin': {'is_staff': True, 'is_superuser': True},
+        'Department Chef': {'is_staff': True, 'is_superuser': False},
+        'Manager': {'is_staff': False, 'is_superuser': False},
+        'Employee': {'is_staff': False, 'is_superuser': False},
+    }
+    
+    perms = role_permissions.get(instance.role, {'is_staff': False, 'is_superuser': False})
+    
+    should_be_staff = perms['is_staff']
+    should_be_superuser = perms['is_superuser']
 
-    # Never set is_superuser=True based on role.
-    should_be_staff = instance.role in ('Admin',)
-
-    if user.is_staff != should_be_staff or user.is_superuser:
+    if user.is_staff != should_be_staff or user.is_superuser != should_be_superuser:
         User.objects.filter(pk=user.pk).update(
             is_staff=should_be_staff,
-            is_superuser=False,
+            is_superuser=should_be_superuser
         )
