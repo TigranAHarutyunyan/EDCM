@@ -1,6 +1,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 from django.shortcuts import render
 from django.http import HttpResponseNotFound
 
@@ -25,6 +26,8 @@ def _app_user_from_auth_cookie(request):
 >>>>>>> parent of 5b274b7 (fix admin panel issue and create /departamanent endpoint)
 =======
 >>>>>>> parent of 5b274b7 (fix admin panel issue and create /departamanent endpoint)
+=======
+>>>>>>> parent of 5b274b7 (fix admin panel issue and create /departamanent endpoint)
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView, DetailView, CreateView
@@ -35,6 +38,9 @@ from .forms import DocumentForm
 from django.http import HttpResponse
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> parent of 5b274b7 (fix admin panel issue and create /departamanent endpoint)
+=======
 >>>>>>> parent of 5b274b7 (fix admin panel issue and create /departamanent endpoint)
 =======
 >>>>>>> parent of 5b274b7 (fix admin panel issue and create /departamanent endpoint)
@@ -46,6 +52,7 @@ def react_app(request):
     """Serve the React application"""
     return render(request, 'index.html')
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -64,6 +71,8 @@ def department_entry(request):
 
     return HttpResponseNotFound()
 =======
+=======
+>>>>>>> parent of 5b274b7 (fix admin panel issue and create /departamanent endpoint)
 =======
 >>>>>>> parent of 5b274b7 (fix admin panel issue and create /departamanent endpoint)
 =======
