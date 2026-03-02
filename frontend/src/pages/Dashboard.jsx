@@ -3,11 +3,7 @@ import api from "../services/api";
 import { Link } from "react-router-dom";
 import DocumentModal from "../components/DocumentModal";
 import DocumentDetailModal from "../components/DocumentDetailModal";
-<<<<<<< Updated upstream
 import { useAuth } from "../context/auth";
-=======
-import { useAuth } from "../context/AuthContext";
->>>>>>> Stashed changes
 
 const Dashboard = () => {
     const { user } = useAuth();
