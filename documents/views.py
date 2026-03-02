@@ -1,7 +1,10 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 from django.shortcuts import render
 from django.http import HttpResponseNotFound
 =======
+=======
+>>>>>>> Stashed changes
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView, DetailView, CreateView
@@ -10,6 +13,9 @@ from django.urls import reverse_lazy
 from .models import Document, DocumentStatus, AuditLog
 from .forms import DocumentForm
 from django.http import HttpResponse, HttpResponseNotFound
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 
@@ -49,7 +55,10 @@ def department_entry(request):
 
     return HttpResponseNotFound()
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 
 class DashboardView(LoginRequiredMixin, ListView):
     model = Document

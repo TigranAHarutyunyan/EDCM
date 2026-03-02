@@ -28,12 +28,13 @@ const Dashboard = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [statsRes, deptsRes, typesRes, usersRes] = await Promise.all([
-                    api.get("dashboard/"),
-                    api.get("departments/"),
-                    api.get("document-types/"),
-                    api.get("users/"),
-                ]);
+                const [statsRes, deptsRes, typesRes, usersRes] =
+                    await Promise.all([
+                        api.get("dashboard/"),
+                        api.get("departments/"),
+                        api.get("document-types/"),
+                        api.get("users/"),
+                    ]);
                 setStats(statsRes.data);
                 setDepartments(deptsRes.data.results || deptsRes.data);
                 setDocumentTypes(typesRes.data.results || typesRes.data);
@@ -49,11 +50,11 @@ const Dashboard = () => {
 
     const fetchDocuments = async (mode) => {
         try {
-            const url = mode === 'my' ? 'documents/?owner=me' : 'documents/';
+            const url = mode === "my" ? "documents/?owner=me" : "documents/";
             const response = await api.get(url);
-            setStats(prev => ({
+            setStats((prev) => ({
                 ...prev,
-                recent_docs: response.data.results || response.data
+                recent_docs: response.data.results || response.data,
             }));
         } catch (error) {
             console.error("Error fetching documents", error);
@@ -244,7 +245,7 @@ const Dashboard = () => {
                             Start a new document workflow
                         </div>
                         <div>
-                             <button
+                            <button
                                 onClick={() => setIsModalOpen(true)}
                                 className="w-full text-sm bg-white text-purple-600 px-4 py-2 rounded font-bold hover:bg-gray-100 transition shadow-sm"
                             >
@@ -263,13 +264,13 @@ const Dashboard = () => {
                     <div className="flex bg-gray-100 rounded-lg p-1">
                         <button
                             onClick={() => setViewMode("all")}
-                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition ${viewMode === 'all' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition ${viewMode === "all" ? "bg-white text-purple-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
                         >
                             All Documents
                         </button>
                         <button
                             onClick={() => setViewMode("my")}
-                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition ${viewMode === 'my' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition ${viewMode === "my" ? "bg-white text-purple-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
                         >
                             My Documents
                         </button>
@@ -365,10 +366,15 @@ const Dashboard = () => {
                                             {doc.assigned_to ? (
                                                 <span className="flex items-center text-purple-600 font-medium">
                                                     <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
-                                                    {doc.assigned_to.profile?.full_name || doc.assigned_to.username}
+                                                    {doc.assigned_to.profile
+                                                        ?.full_name ||
+                                                        doc.assigned_to
+                                                            .username}
                                                 </span>
                                             ) : (
-                                                <span className="text-gray-400 italic">Unassigned</span>
+                                                <span className="text-gray-400 italic">
+                                                    Unassigned
+                                                </span>
                                             )}
                                         </td>
                                     </tr>
