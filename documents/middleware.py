@@ -19,6 +19,14 @@ def _app_user_from_auth_cookie(request):
         return None
 
 
+
+
+
+
+
+
+
+
 class DepartmentGateMiddleware:
     """
     Hide `/department/` from users who are not Heads of Department (Managers).
