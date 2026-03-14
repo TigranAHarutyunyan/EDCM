@@ -23,6 +23,12 @@ from .api_views import (
     DepartmentEmployeesView,
     DepartmentEmployeeDeleteView,
     DepartmentDocumentOwnerUpdateView,
+    DocumentAttachmentListCreateView,
+    DocumentAttachmentDeleteView,
+    PortalSubmitView,
+    DocumentRouteToDepartmentView,
+    PortalInboxListView,
+    PortalStatusSyncView,
 )
 
 urlpatterns = [
@@ -40,10 +46,22 @@ urlpatterns = [
     path('documents/<int:pk>/take/', DocumentTakeView.as_view(), name='api_document_take'),
     path('documents/<int:pk>/comment/', DocumentCommentCreateView.as_view(), name='api_document_comment'),
     path('documents/<int:pk>/delete/', DocumentDeleteView.as_view(), name='api_document_delete'),
+    path('documents/<int:pk>/attachments/', DocumentAttachmentListCreateView.as_view(), name='api_document_attachments'),
+    path(
+        'documents/<int:document_pk>/attachments/<int:pk>/',
+        DocumentAttachmentDeleteView.as_view(),
+        name='api_document_attachment_delete',
+    ),
+    path('documents/<int:pk>/route/', DocumentRouteToDepartmentView.as_view(), name='api_document_route'),
+    path('portal/submit/', PortalSubmitView.as_view(), name='api_portal_submit'),
     path('departments/', DepartmentListCreateView.as_view(), name='api_department_list'),
     path('departments/<int:pk>/', DepartmentDetailView.as_view(), name='api_department_detail'),
     path('document-types/', DocumentTypeListView.as_view(), name='api_document_types'),
     path('confidentiality-levels/', ConfidentialityLevelListView.as_view(), name='api_confidentiality_levels'),
+    
+    # Portal Gatekeeper & Sync
+    path('portal/inbox/', PortalInboxListView.as_view(), name='api_portal_inbox'),
+    path('portal/sync-status/', PortalStatusSyncView.as_view(), name='api_portal_status_sync'),
     
     # User Management
     path('users/', UserListCreateView.as_view(), name='api_users'),

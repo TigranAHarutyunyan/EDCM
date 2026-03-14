@@ -42,7 +42,7 @@ const Login = () => {
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+	                <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">
                             Username
@@ -75,16 +75,23 @@ const Login = () => {
                         />
                     </div>
 
-                    <button
-                        type="submit"
-                        className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-3 rounded-lg hover:opacity-90 transition transform hover:-translate-y-0.5 shadow-lg active:scale-95 duration-200"
-                    >
-                        Sign In
-                    </button>
-                </form>
-            </div>
-        </div>
-    );
-};
+	                    <button
+	                        type="submit"
+	                        className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-3 rounded-lg hover:opacity-90 transition transform hover:-translate-y-0.5 shadow-lg active:scale-95 duration-200"
+	                    >
+	                        Sign In
+	                    </button>
+	                </form>
+
+                    <div className="mt-6 text-center text-sm text-gray-600">
+                        Need to submit a document as a client?{" "}
+                        <Link to="/portal" className="font-semibold text-purple-700 hover:text-purple-900">
+                            Open Public Portal
+                        </Link>
+                    </div>
+	            </div>
+	        </div>
+	    );
+	};
 
 export default Login;

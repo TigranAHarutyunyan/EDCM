@@ -1,7 +1,8 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.auth.models import User
@@ -19,8 +20,79 @@ from .serializers import (
     DocumentStatusSerializer,
     ConfidentialityLevelSerializer,
     DocumentCommentSerializer,
+    DocumentAttachmentSerializer,
 )
-from .models import Document, Department, DocumentType, DocumentStatus, ConfidentialityLevel, DocumentComment, AuditLog, UserProfile
+from .models import (
+    Document,
+    Department,
+    DocumentType,
+    DocumentStatus,
+    ConfidentialityLevel,
+    DocumentComment,
+    AuditLog,
+    UserProfile,
+    DocumentAttachment,
+    PortalSubmission,
+)
+
+
+def _user_can_access_document(user, document):
+    """
+    Keep document access rules consistent across endpoints.
+    """
+    if not user or not user.is_authenticated:
+        return False
+
+    if user.is_superuser or user.is_staff:
+        return True
+
+    role = getattr(getattr(user, "profile", None), "role", None)
+    if role == "Admin":
+        return True
+
+    dept_id = getattr(getattr(user, "profile", None), "department_id", None)
+    if dept_id and document.department_id == dept_id:
+        return True
+
+    if document.creator_id == user.id:
+        return True
+
+    if document.assigned_to_id == user.id:
+        return True
+
+    return False
+
+
+def _require_document_access(user, document):
+    if not _user_can_access_document(user, document):
+        raise PermissionDenied("You do not have permission to access this document.")
+
+
+def _get_client_ip(request):
+    # Best-effort: honor common proxy headers but fall back to REMOTE_ADDR.
+    xff = request.META.get("HTTP_X_FORWARDED_FOR")
+    if xff:
+        return xff.split(",")[0].strip() or None
+    return request.META.get("REMOTE_ADDR") or None
+
+
+def _get_portal_inbox_user():
+    """
+    The "special user" who receives all public portal submissions.
+
+    Configure via env var:
+      PORTAL_INBOX_USERNAME=dispatcher
+
+    Fallback: 'admin' if present, else first superuser.
+    """
+    username = getattr(settings, "PORTAL_INBOX_USERNAME", None) or "admin"
+    user = User.objects.filter(username=username, is_active=True).first()
+    if user:
+        return user
+    user = User.objects.filter(is_superuser=True, is_active=True).order_by("id").first()
+    if user:
+        return user
+    raise ValidationError({"detail": "Portal inbox user is not configured."})
 
 class IsAdminOrDepartmentChef(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -71,7 +143,10 @@ class CustomAuthToken(ObtainAuthToken):
             'user_id': user.pk,
             'username': user.username,
             'email': user.email,
-            'role': user.profile.role if hasattr(user, 'profile') else 'Employee'
+            'role': user.profile.role if hasattr(user, 'profile') else 'Employee',
+            'is_staff': user.is_staff,
+            'is_superuser': user.is_superuser,
+            'portal_inbox_username': getattr(settings, "PORTAL_INBOX_USERNAME", "admin"),
         })
 
         # Store token in an HttpOnly cookie (avoid localStorage).
@@ -127,6 +202,7 @@ class MeView(APIView):
                 "role": user.profile.role if hasattr(user, "profile") else "Employee",
                 "is_staff": user.is_staff,
                 "is_superuser": user.is_superuser,
+                "portal_inbox_username": getattr(settings, "PORTAL_INBOX_USERNAME", "admin"),
             }
         )
 
@@ -169,10 +245,10 @@ class DocumentListCreateView(generics.ListCreateAPIView):
             queryset = Document.objects.all()
         elif hasattr(user, 'profile') and user.profile.department:
             queryset = Document.objects.filter(
-                Q(department=user.profile.department) | Q(creator=user)
+                Q(department=user.profile.department) | Q(creator=user) | Q(assigned_to=user)
             ).distinct()
         else:
-            queryset = Document.objects.filter(creator=user)
+            queryset = Document.objects.filter(Q(creator=user) | Q(assigned_to=user)).distinct()
 
         # Filtering by ownership
         owner = self.request.query_params.get('owner')
@@ -277,7 +353,7 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
         if obj == user:
             return obj
             
-        raise permissions.PermissionDenied("You do not have permission to access this user.")
+        raise PermissionDenied("You do not have permission to access this user.")
 
     def delete(self, request, *args, **kwargs):
         user_to_delete = self.get_object()
@@ -312,7 +388,7 @@ class DocumentDeleteView(generics.DestroyAPIView):
         if obj.creator == user:
             return obj
             
-        raise permissions.PermissionDenied("You do not have permission to delete this document.")
+        raise PermissionDenied("You do not have permission to delete this document.")
 
 class DocumentDetailView(generics.RetrieveUpdateAPIView):
     queryset = Document.objects.all()
@@ -332,9 +408,11 @@ class DocumentDetailView(generics.RetrieveUpdateAPIView):
             return Document.objects.all()
 
         if dept:
-            return Document.objects.filter(Q(department=dept) | Q(creator=user)).distinct()
+            return Document.objects.filter(
+                Q(department=dept) | Q(creator=user) | Q(assigned_to=user)
+            ).distinct()
 
-        return Document.objects.filter(creator=user)
+        return Document.objects.filter(Q(creator=user) | Q(assigned_to=user)).distinct()
 
     def perform_update(self, serializer):
         instance = serializer.save()
@@ -355,15 +433,7 @@ class DocumentTakeView(APIView):
             user = request.user
 
             # Ensure the user can access this document (same rules as list/detail).
-            role = getattr(getattr(user, "profile", None), "role", None)
-            dept = getattr(getattr(user, "profile", None), "department", None)
-            if not (
-                user.is_superuser
-                or role == "Admin"
-                or (dept and document.department_id == dept.id)
-                or document.creator_id == user.id
-            ):
-                raise permissions.PermissionDenied("You do not have permission to access this document.")
+            _require_document_access(user, document)
             
             # Check if already taken
             if document.assigned_to and document.assigned_to != user:
@@ -382,6 +452,234 @@ class DocumentTakeView(APIView):
             return Response(DocumentSerializer(document).data)
         except Document.DoesNotExist:
             return Response({"error": "Document not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class DocumentAttachmentListCreateView(generics.ListCreateAPIView):
+    serializer_class = DocumentAttachmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def _get_document(self):
+        document = generics.get_object_or_404(Document, pk=self.kwargs["pk"])
+        _require_document_access(self.request.user, document)
+        return document
+
+    def get_queryset(self):
+        document = self._get_document()
+        return document.attachments.select_related("uploaded_by").all()
+
+    def perform_create(self, serializer):
+        document = self._get_document()
+        upload = self.request.FILES.get("file")
+        if not upload:
+            raise ValidationError({"file": "This field is required."})
+
+        serializer.save(
+            document=document,
+            uploaded_by=self.request.user,
+            original_name=getattr(upload, "name", "") or "",
+            content_type=getattr(upload, "content_type", "") or "",
+            size=int(getattr(upload, "size", 0) or 0),
+        )
+
+
+class DocumentAttachmentDeleteView(generics.DestroyAPIView):
+    serializer_class = DocumentAttachmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        attachment = generics.get_object_or_404(
+            DocumentAttachment.objects.select_related("document", "uploaded_by"),
+            pk=self.kwargs["pk"],
+            document_id=self.kwargs["document_pk"],
+        )
+
+        document = attachment.document
+        actor = self.request.user
+        _require_document_access(actor, document)
+
+        role = getattr(getattr(actor, "profile", None), "role", None)
+        dept_id = getattr(getattr(actor, "profile", None), "department_id", None)
+
+        is_admin = bool(actor.is_superuser or actor.is_staff or role == "Admin")
+        is_creator = document.creator_id == actor.id
+        is_uploader = attachment.uploaded_by_id == actor.id
+        is_dept_manager = bool(role == "Manager" and dept_id and document.department_id == dept_id)
+
+        if not (is_admin or is_creator or is_uploader or is_dept_manager):
+            raise PermissionDenied("You do not have permission to delete this attachment.")
+
+        return attachment
+
+
+class PortalSubmitView(APIView):
+    """
+    Public endpoint: external clients can submit a document.
+    The created document is assigned to the configured portal inbox user.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        title = (request.data.get("title") or "").strip()
+        description = (request.data.get("description") or "").strip()
+
+        client_name = (request.data.get("client_name") or "").strip()
+        client_email = (request.data.get("client_email") or "").strip()
+        client_phone = (request.data.get("client_phone") or "").strip()
+        company = (request.data.get("company") or "").strip()
+
+        if not title:
+            raise ValidationError({"title": "This field is required."})
+
+        inbox_user = _get_portal_inbox_user()
+
+        # Use stable defaults.
+        doc_type, _ = DocumentType.objects.get_or_create(code="REQUEST", defaults={"name": "Request"})
+        pending_status, _ = DocumentStatus.objects.get_or_create(code="PENDING", defaults={"name": "Pending Approval"})
+        public_level, _ = ConfidentialityLevel.objects.get_or_create(code="PUBLIC", defaults={"name": "Public"})
+
+        document = Document.objects.create(
+            title=title,
+            description=description,
+            document_type=doc_type,
+            status=pending_status,
+            confidentiality_level=public_level,
+            creator=inbox_user,
+            current_owner=inbox_user,
+            assigned_to=inbox_user,
+            department=None,
+        )
+
+        PortalSubmission.objects.create(
+            document=document,
+            client_name=client_name,
+            client_email=client_email,
+            client_phone=client_phone,
+            company=company,
+            ip_address=_get_client_ip(request),
+            user_agent=(request.META.get("HTTP_USER_AGENT") or "")[:255],
+        )
+
+        # Files: accept either `files` (multiple) or a single `file`.
+        uploads = list(request.FILES.getlist("files"))
+        if not uploads and request.FILES.get("file"):
+            uploads = [request.FILES["file"]]
+
+        for upload in uploads:
+            # Enforce the same extension validation used by the authenticated attachments endpoint.
+            file_field = DocumentAttachment._meta.get_field("file")
+            for validator in getattr(file_field, "validators", []):
+                validator(upload)
+
+            DocumentAttachment.objects.create(
+                document=document,
+                file=upload,
+                original_name=getattr(upload, "name", "") or "",
+                content_type=getattr(upload, "content_type", "") or "",
+                size=int(getattr(upload, "size", 0) or 0),
+                uploaded_by=None,  # external/public submission
+            )
+
+        AuditLog.objects.create(
+            user=None,
+            document=document,
+            action="Portal submitted",
+            details=f"Client: {client_name or '-'} / {client_email or '-'}",
+        )
+
+        return Response(
+            {"id": document.id, "message": "Submitted successfully"},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class DocumentRouteToDepartmentView(APIView):
+    """
+    Internal action: route an incoming document to a department.
+
+    Intended for the portal inbox user, Admin business role, or Django superuser.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def patch(self, request, pk):
+        actor = request.user
+        role = getattr(getattr(actor, "profile", None), "role", None)
+        is_allowed = bool(
+            actor.is_superuser
+            or role == "Admin"
+            or actor.username == (getattr(settings, "PORTAL_INBOX_USERNAME", None) or "admin")
+        )
+        if not is_allowed:
+            raise PermissionDenied("You do not have permission to route documents.")
+
+        document = generics.get_object_or_404(Document, pk=pk)
+
+        department_id = request.data.get("department_id", None)
+        if not department_id:
+            raise ValidationError({"department_id": "This field is required."})
+
+        department = generics.get_object_or_404(Department, pk=department_id)
+
+        assigned_to_id = request.data.get("assigned_to_id", None)
+        assigned_to = None
+        if assigned_to_id not in (None, "", "null"):
+            assigned_to = generics.get_object_or_404(User, pk=assigned_to_id)
+
+        document.department = department
+        if assigned_to is not None:
+            document.assigned_to = assigned_to
+        document.save()
+
+        AuditLog.objects.create(
+            user=actor,
+            document=document,
+            action="Routed",
+            details=f"Routed to {department.name}",
+        )
+
+        return Response(DocumentSerializer(document).data)
+
+class PortalInboxListView(generics.ListAPIView):
+    """
+    Lists documents that were submitted via portal and haven't been routed yet.
+    """
+    serializer_class = DocumentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # We define "unrouted" as portal-origin documents with no department assigned
+        return Document.objects.filter(
+            portal_submission__isnull=False,
+            department__isnull=True
+        ).order_by('-created_at')
+
+class PortalStatusSyncView(APIView):
+    """
+    Dedicated endpoint for the external Client Portal to sync document status.
+    For this architectural demonstration, it allows looking up by client email.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        email = request.query_params.get("email")
+        if not email:
+            return Response({"error": "email is required"}, status=400)
+            
+        submissions = PortalSubmission.objects.filter(client_email=email).select_related('document__status')
+        results = []
+        for sub in submissions:
+            results.append({
+                "id": sub.document_id,
+                "title": sub.document.title,
+                "status_name": sub.document.status.name,
+                "status_code": sub.document.status.code,
+                "updated_at": sub.document.updated_at
+            })
+        return Response(results)
 
 class DocumentCommentCreateView(generics.CreateAPIView):
     serializer_class = DocumentCommentSerializer
@@ -510,14 +808,14 @@ class DepartmentEmployeeDeleteView(generics.DestroyAPIView):
         dept = actor.profile.department
 
         if obj.is_superuser or obj == actor:
-            raise permissions.PermissionDenied("You do not have permission to delete this user.")
+            raise PermissionDenied("You do not have permission to delete this user.")
 
         obj_role = getattr(getattr(obj, "profile", None), "role", None)
         if obj_role != "Employee":
-            raise permissions.PermissionDenied("You can only delete employees.")
+            raise PermissionDenied("You can only delete employees.")
 
         if not hasattr(obj, "profile") or obj.profile.department_id != dept.id:
-            raise permissions.PermissionDenied("User is not in your department.")
+            raise PermissionDenied("User is not in your department.")
 
         return obj
 
@@ -535,7 +833,7 @@ class DepartmentDocumentOwnerUpdateView(APIView):
         document = Document.objects.get(pk=pk)
 
         if document.department_id != dept.id:
-            raise permissions.PermissionDenied("Document is not in your department.")
+            raise PermissionDenied("Document is not in your department.")
 
         current_owner_id = request.data.get("current_owner_id", None)
         assigned_to_id = request.data.get("assigned_to_id", None)

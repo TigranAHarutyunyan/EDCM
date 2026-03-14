@@ -36,7 +36,7 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,edcm.onrender.co
 # CSRF settings for production
 CSRF_TRUSTED_ORIGINS = os.getenv(
     'CSRF_TRUSTED_ORIGINS',
-    'https://*.onrender.com,http://localhost:3000,http://127.0.0.1:3000,https://*.runpod.net,https://*.runpod.io'
+    'https://*.onrender.com,http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,https://*.runpod.net,https://*.runpod.io'
 ).split(',')
 
 # Security settings
@@ -210,6 +210,10 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
 }
+
+# Public portal intake configuration.
+# All portal-submitted documents are assigned to this username.
+PORTAL_INBOX_USERNAME = os.getenv("PORTAL_INBOX_USERNAME", "admin")
 
 # Email Configuration
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')

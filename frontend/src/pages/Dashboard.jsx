@@ -12,7 +12,7 @@ const Dashboard = () => {
         my_docs_count: 0,
         recent_docs: [],
     });
-    const [viewMode, setViewMode] = useState("all"); // 'all' or 'my'
+    const [viewMode, setViewMode] = useState("all"); // 'all', 'my', or 'portal'
     const [loading, setLoading] = useState(true);
     const [searchId, setSearchId] = useState("");
     const [searchResult, setSearchResult] = useState(null);
@@ -49,7 +49,10 @@ const Dashboard = () => {
 
     const fetchDocuments = async (mode) => {
         try {
-            const url = mode === 'my' ? 'documents/?owner=me' : 'documents/';
+            let url = 'documents/';
+            if (mode === 'my') url = 'documents/' + (user?.id ? `?assigned_to=${user.id}` : '?owner=me');
+            if (mode === 'portal') url = 'portal/inbox/';
+            
             const response = await api.get(url);
             setStats(prev => ({
                 ...prev,
@@ -61,7 +64,15 @@ const Dashboard = () => {
     };
 
     useEffect(() => {
-        fetchDocuments(viewMode);
+        if (viewMode === 'all') {
+            const fetchStats = async () => {
+                const res = await api.get("dashboard/");
+                setStats(res.data);
+            };
+            fetchStats();
+        } else {
+            fetchDocuments(viewMode);
+        }
     }, [viewMode]);
 
     const handleSearch = async (e) => {
@@ -273,6 +284,14 @@ const Dashboard = () => {
                         >
                             My Documents
                         </button>
+                        {(user?.role === 'Admin' || user?.is_superuser) && (
+                            <button
+                                onClick={() => setViewMode("portal")}
+                                className={`px-4 py-1.5 text-sm font-medium rounded-md transition ${viewMode === 'portal' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                Portal Inbox
+                            </button>
+                        )}
                     </div>
                 </div>
                 <div className="overflow-x-auto">

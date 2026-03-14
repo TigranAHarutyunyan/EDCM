@@ -1,6 +1,17 @@
 from rest_framework import generics,serializers
 from django.contrib.auth.models import User
-from .models import Document, Department, UserProfile, DocumentType, DocumentStatus, ConfidentialityLevel, DocumentComment, AuditLog
+from .models import (
+    Document,
+    Department,
+    UserProfile,
+    DocumentType,
+    DocumentStatus,
+    ConfidentialityLevel,
+    DocumentComment,
+    AuditLog,
+    DocumentAttachment,
+    PortalSubmission,
+)
 
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -104,6 +115,46 @@ class AuditLogSerializer(serializers.ModelSerializer):
         model = AuditLog
         fields = ['id', 'user', 'action', 'timestamp', 'details']
 
+
+class DocumentAttachmentSerializer(serializers.ModelSerializer):
+    uploaded_by = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = DocumentAttachment
+        fields = [
+            "id",
+            "file",
+            "original_name",
+            "content_type",
+            "size",
+            "uploaded_by",
+            "created_at",
+        ]
+        read_only_fields = [
+            "original_name",
+            "content_type",
+            "size",
+            "uploaded_by",
+            "created_at",
+        ]
+
+    def get_uploaded_by(self, obj):
+        if not obj.uploaded_by_id:
+            return None
+        return {"id": obj.uploaded_by_id, "username": obj.uploaded_by.username}
+
+
+class PortalSubmissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PortalSubmission
+        fields = [
+            "client_name",
+            "client_email",
+            "client_phone",
+            "company",
+            "created_at",
+        ]
+
 class DocumentSerializer(serializers.ModelSerializer):
     creator = UserSerializer(read_only=True)
     current_owner = UserSerializer(read_only=True)
@@ -114,6 +165,8 @@ class DocumentSerializer(serializers.ModelSerializer):
     confidentiality_level_details = ConfidentialityLevelSerializer(source='confidentiality_level', read_only=True)
     comments = DocumentCommentSerializer(many=True, read_only=True)
     history = AuditLogSerializer(source='audit_logs', many=True, read_only=True)
+    attachments = DocumentAttachmentSerializer(many=True, read_only=True)
+    portal_submission = PortalSubmissionSerializer(read_only=True)
 
     # Write-only field for creation (frontend sends `document_type` id)
     document_type = serializers.PrimaryKeyRelatedField(
@@ -139,7 +192,8 @@ class DocumentSerializer(serializers.ModelSerializer):
             'id', 'title', 'description', 'created_at', 'updated_at', 'due_date',
             'external_reference', 'creator', 'current_owner', 'department', 'assigned_to',
             'document_type_details', 'status_details', 'confidentiality_level_details',
-            'document_type', 'confidentiality_level', 'assigned_to_id', 'comments', 'history'
+            'document_type', 'confidentiality_level', 'assigned_to_id', 'comments', 'history', 'attachments',
+            'portal_submission',
         ]
         read_only_fields = ['status', 'creator', 'current_owner', 'department']
 

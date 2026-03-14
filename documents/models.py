@@ -1,8 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
+from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from django.utils import timezone
+from django.core.validators import FileExtensionValidator
 
 class Department(models.Model):
     name = models.CharField(max_length=150, unique=True)
@@ -117,6 +119,65 @@ class DocumentComment(models.Model):
     def __str__(self):
         return f"Comment by {self.user} on {self.document}"
 
+
+class PortalSubmission(models.Model):
+    """
+    Public portal intake metadata for externally-submitted documents.
+    """
+
+    document = models.OneToOneField(
+        Document, on_delete=models.CASCADE, related_name="portal_submission"
+    )
+    client_name = models.CharField(max_length=150, blank=True)
+    client_email = models.EmailField(blank=True)
+    client_phone = models.CharField(max_length=50, blank=True)
+    company = models.CharField(max_length=150, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Portal submission for Document #{self.document_id}"
+
+
+def document_attachment_upload_to(instance, filename):
+    # Store per-document to keep uploads organized.
+    return f"documents/{instance.document_id}/attachments/{filename}"
+
+
+class DocumentAttachment(models.Model):
+    document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name="attachments")
+    file = models.FileField(
+        upload_to=document_attachment_upload_to,
+        validators=[
+            FileExtensionValidator(
+                allowed_extensions=[
+                    "pdf",
+                    "doc",
+                    "docx",
+                    "xls",
+                    "xlsx",
+                    "ppt",
+                    "pptx",
+                ]
+            )
+        ],
+    )
+    original_name = models.CharField(max_length=255, blank=True)
+    content_type = models.CharField(max_length=100, blank=True)
+    size = models.PositiveIntegerField(default=0)
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.original_name or self.file.name
+
 # Signals
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
@@ -164,3 +225,14 @@ def sync_user_admin_flags(sender, instance, **kwargs):
             is_staff=should_be_staff,
             is_superuser=False,
         )
+
+
+@receiver(post_delete, sender=DocumentAttachment)
+def delete_attachment_file(sender, instance, **kwargs):
+    # Remove the underlying file when the DB row is deleted.
+    if instance.file:
+        try:
+            instance.file.delete(save=False)
+        except Exception:
+            # Best-effort cleanup; avoid breaking deletes.
+            pass

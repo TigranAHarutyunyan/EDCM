@@ -20,14 +20,20 @@ const Profile = () => {
     const fetchProfile = async () => {
         try {
             const response = await api.get("profile/");
+            console.log("Profile Data received:", response.data);
             setProfileData(response.data);
+            
+            const userObj = response.data?.user;
+            const profObj = userObj?.profile;
+
             setFormData({
-                full_name: response.data.user.profile?.full_name || "",
-                position: response.data.user.profile?.position || "",
-                bio: response.data.user.profile?.bio || "",
+                full_name: profObj?.full_name || "",
+                position: profObj?.position || "",
+                bio: profObj?.bio || "",
             });
-        } catch {
-            setError("Error fetching profile");
+        } catch (err) {
+            console.error("Profile fetch error:", err);
+            setError("Error fetching profile details.");
         } finally {
             setLoading(false);
         }
@@ -45,11 +51,8 @@ const Profile = () => {
                 data.append("profile_picture", profilePicture);
             }
 
-            await api.patch("profile/", data, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
-            });
+            // Let Axios set the multipart boundary automatically.
+            await api.patch("profile/", data);
             setEditing(false);
             fetchProfile();
         } catch {
@@ -61,8 +64,36 @@ const Profile = () => {
 
     if (loading) return <div className="flex justify-center p-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div></div>;
 
+    // If the API call fails (401/403/network/etc), avoid crashing the page (white screen).
+    if (!profileData || !profileData.user) {
+        return (
+            <div className="max-w-4xl mx-auto py-10 px-4">
+                <div className="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100 p-6">
+                    <h1 className="text-xl font-bold text-gray-900">Profile</h1>
+                    <p className="mt-2 text-sm text-gray-600">
+                        {error || "Unable to load your profile right now."}
+                    </p>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setLoading(true);
+                            setError("");
+                            fetchProfile();
+                        }}
+                        className="mt-4 bg-purple-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-purple-700 transition disabled:opacity-50"
+                        disabled={loading}
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     const user = profileData.user;
     const profile = user.profile;
+    const createdDocs = profileData.created_documents || [];
+    const assignedDocs = profileData.assigned_documents || [];
 
     return (
         <div className="max-w-4xl mx-auto py-10 px-4">
@@ -160,8 +191,8 @@ const Profile = () => {
                                         Created Documents
                                     </h3>
                                     <div className="space-y-2">
-                                        {profileData.created_documents.length > 0 ? (
-                                            profileData.created_documents.map(doc => (
+                                        {createdDocs.length > 0 ? (
+                                            createdDocs.map(doc => (
                                                 <div key={doc.id} className="p-3 bg-gray-50 rounded-lg border border-gray-100 flex justify-between items-center">
                                                     <span className="font-medium text-gray-700">{doc.title}</span>
                                                     <span className="text-xs bg-white px-2 py-1 rounded-full shadow-sm text-gray-500">{doc.status_details?.name}</span>
@@ -181,8 +212,8 @@ const Profile = () => {
                                         Taken Documents
                                     </h3>
                                     <div className="space-y-2">
-                                        {profileData.assigned_documents.length > 0 ? (
-                                            profileData.assigned_documents.map(doc => (
+                                        {assignedDocs.length > 0 ? (
+                                            assignedDocs.map(doc => (
                                                 <div key={doc.id} className="p-3 bg-gray-50 rounded-lg border border-gray-100 flex justify-between items-center">
                                                     <span className="font-medium text-gray-700">{doc.title}</span>
                                                     <span className="text-xs bg-white px-2 py-1 rounded-full shadow-sm text-gray-500">{doc.status_details?.name}</span>

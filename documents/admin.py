@@ -10,6 +10,8 @@ from .models import (
     DocumentType,
     DocumentStatus,
     Document,
+    DocumentAttachment,
+    PortalSubmission,
     AuditLog,
     ConfidentialityLevel,
     Notification,
@@ -168,6 +170,18 @@ class DocumentAdmin(admin.ModelAdmin):
     list_display = ('title', 'status', 'creator', 'current_owner', 'department', 'updated_at')
     list_filter = ('status', 'department', 'document_type', 'confidentiality_level')
     search_fields = ('title', 'description', 'external_reference')
+
+@admin.register(DocumentAttachment, site=admin_site)
+class DocumentAttachmentAdmin(admin.ModelAdmin):
+    list_display = ("id", "document", "original_name", "uploaded_by", "created_at")
+    list_filter = ("created_at",)
+    search_fields = ("original_name", "document__title", "uploaded_by__username")
+
+@admin.register(PortalSubmission, site=admin_site)
+class PortalSubmissionAdmin(admin.ModelAdmin):
+    list_display = ("id", "document", "client_name", "client_email", "company", "created_at")
+    list_filter = ("created_at", "company")
+    search_fields = ("client_name", "client_email", "company", "document__title")
 
 @admin.register(AuditLog, site=admin_site)
 class AuditLogAdmin(admin.ModelAdmin):

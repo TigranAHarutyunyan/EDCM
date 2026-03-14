@@ -6,9 +6,9 @@ echo "🚀 EDCM Docker Entrypoint"
 echo "======================================"
 
 # Load environment variables from .env file if it exists
-if [ -f .env ]; then
+if [ -f ".env" ]; then
     echo "📂 Loading environment variables from .env..."
-    export $(grep -v '^#' .env | xargs)
+    ls -la  
 fi
 
 # Configuration
@@ -135,15 +135,21 @@ echo "👨‍💼 Admin Panel: http://localhost:${PORT:-8000}/admin"
 echo "📱 API: http://localhost:${PORT:-8000}/api"
 echo ""
 
-# Start Gunicorn server
-exec gunicorn \
-    --bind 0.0.0.0:${PORT:-8000} \
-    --workers 3 \
-    --worker-class sync \
-    --worker-tmp-dir /dev/shm \
-    --max-requests 1000 \
-    --max-requests-jitter 50 \
-    --timeout 30 \
-    --access-logfile - \
-    --error-logfile - \
-    config.wsgi:application
+# Start server
+if [ "$DEBUG" = "True" ] || [ "$DEBUG" = "true" ]; then
+    echo -e "${YELLOW}🚀 Starting Django development server (with hot-reload)...${NC}"
+    exec python manage.py runserver 0.0.0.0:${PORT:-8000}
+else
+    echo -e "${YELLOW}🚀 Starting Gunicorn server...${NC}"
+    exec gunicorn \
+        --bind 0.0.0.0:${PORT:-8000} \
+        --workers 3 \
+        --worker-class sync \
+        --worker-tmp-dir /dev/shm \
+        --max-requests 1000 \
+        --max-requests-jitter 50 \
+        --timeout 30 \
+        --access-logfile - \
+        --error-logfile - \
+        config.wsgi:application
+fi

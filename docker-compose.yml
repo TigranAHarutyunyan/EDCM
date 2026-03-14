@@ -6,55 +6,39 @@ services:
         image: postgres:15
         container_name: edcm_db
         environment:
-            # Database setup
             POSTGRES_DB: ${DB_NAME:-edcm_db}
             POSTGRES_USER: ${DB_USER:-postgres}
             POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres1}
             POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
-
-        # Data persistence
         volumes:
             - postgres_data:/var/lib/postgresql/data
             - ./init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
-
-        # Health check - ensures DB is ready before migrations
         healthcheck:
             test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
             interval: 10s
             timeout: 5s
             retries: 5
             start_period: 10s
-
-        # Network and ports
         ports:
             - "5432:5432"
         networks:
             - edcm_network
         restart: unless-stopped
 
-    # Django Web Service
-    web:
+    # Django Backend Service
+    backend:
         build:
             context: .
             dockerfile: Dockerfile
-        container_name: edcm_web
-
-        # Run migrations and start server
+        container_name: edcm_backend
         entrypoint: /app/entrypoint.sh
-
-        # Environment configuration
         env_file:
             - .env
         environment:
-            # DATABASE_URL for database connection
             DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres1}@db:5432/${DB_NAME:-edcm_db}
-
-            # Django settings
-            DEBUG: ${DEBUG:-False}
+            DEBUG: ${DEBUG:-True}
             SECRET_KEY: ${SECRET_KEY:-django-insecure-change-in-production}
-            ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,web,.runpod.net,.runpod.io}
-
-            # Database settings (individual vars as fallback)
+            ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,.runpod.net,.runpod.io}
             DB_ENGINE: django.db.backends.postgresql
             DB_HOST: db
             DB_PORT: 5432
@@ -62,49 +46,70 @@ services:
             DB_USER: ${DB_USER:-postgres}
             DB_PASSWORD: ${DB_PASSWORD:-postgres1}
             SEED_DATA: ${SEED_DATA:-True}
-
-        # Volume mounts
         volumes:
             - .:/app
             - static_volume:/app/staticfiles
             - media_volume:/app/media
-            - ./entrypoint.sh:/app/entrypoint.sh:ro
-
-        # Port mapping
         ports:
             - "8000:8000"
-            - "3000:3000"
-
-        # Wait for database health check
         depends_on:
             db:
                 condition: service_healthy
-
-        # Networking
         networks:
             - edcm_network
         restart: unless-stopped
 
-    # Optional: Frontend development server (Uncomment to use)
-    # frontend:
-    #   build:
-    #     context: ./frontend
-    #     dockerfile: Dockerfile
-    #   container_name: edcm_frontend
-    #   ports:
-    #     - "5173:5173"
-    #   volumes:
-    #     - ./frontend:/app
-    #     - /app/node_modules
-    #   environment:
-    #     - VITE_API_URL=http://localhost:8000/api/
-    #   depends_on:
-    #     - web
-    #   networks:
-    #     - edcm_network
-    #   restart: unless-stopped
+    # Main Frontend Service
+    frontend:
+        build:
+            context: ./frontend
+            dockerfile: Dockerfile
+        container_name: edcm_frontend
+        environment:
+            - VITE_BACKEND_URL=http://backend:8000
+        volumes:
+            - ./frontend:/app
+            - /app/node_modules
+        ports:
+            - "5173:5173"
+        depends_on:
+            - backend
+        networks:
+            - edcm_network
+        restart: unless-stopped
 
-# Docker volumes for data persistence
+    # Client Portal Backend
+    client-portal:
+        build:
+            context: ./client_portal/backend
+        container_name: edcm_client_portal
+        environment:
+            - EDCM_BACKEND_URL=http://backend:8000/api
+        ports:
+            - "8001:8001"
+        depends_on:
+            - backend
+        networks:
+            - edcm_network
+        restart: unless-stopped
+
+    # Client Portal Frontend
+    client-portal-frontend:
+        build:
+            context: ./client_portal/frontend
+            dockerfile: Dockerfile
+        container_name: edcm_client_portal_frontend
+        volumes:
+            - ./client_portal/frontend:/app
+            - /app/node_modules
+        ports:
+            - "8002:8002"
+        depends_on:
+            - client-portal
+        networks:
+            - edcm_network
+        restart: unless-stopped
+
 volumes:
     postgres_data:
         driver: local
@@ -113,7 +118,6 @@ volumes:
     media_volume:
         driver: local
 
-# Docker network for service communication
 networks:
     edcm_network:
         driver: bridge

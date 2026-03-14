@@ -1,10 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import api from "../services/api";
+import { useAuth } from "../context/auth";
 
 const DocumentDetailModal = ({ isOpen, onClose, document: initialDocument, onUpdate }) => {
+    const { user } = useAuth();
     const [document, setDocument] = useState(initialDocument);
-    const [activeTab, setActiveTab] = useState("details"); // 'details', 'history', 'comments'
+    const [activeTab, setActiveTab] = useState("details"); // 'details', 'attachments', 'history', 'comments'
     const [commentText, setCommentText] = useState("");
+    const [attachmentFiles, setAttachmentFiles] = useState([]);
+    const [departments, setDepartments] = useState([]);
+    const [routeDepartmentId, setRouteDepartmentId] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [isEditing, setIsEditing] = useState(false);
@@ -35,8 +40,30 @@ const DocumentDetailModal = ({ isOpen, onClose, document: initialDocument, onUpd
                 description: document.description,
                 status: document.status_details?.id,
             });
+            setRouteDepartmentId(document.department?.id || "");
         }
     }, [document]);
+
+    const canRoute = Boolean(
+        user &&
+            (user.role === "Admin" ||
+                user.is_superuser ||
+                (user.portal_inbox_username && user.username === user.portal_inbox_username))
+    );
+
+    useEffect(() => {
+        const loadDepartments = async () => {
+            try {
+                const resp = await api.get("departments/");
+                const list = resp.data?.results || resp.data || [];
+                setDepartments(Array.isArray(list) ? list : []);
+            } catch {
+                // Non-fatal: routing UI will just have an empty list.
+            }
+        };
+
+        if (isOpen && canRoute) loadDepartments();
+    }, [isOpen, canRoute]);
 
     const handleTake = async () => {
         setLoading(true);
@@ -79,6 +106,59 @@ const DocumentDetailModal = ({ isOpen, onClose, document: initialDocument, onUpd
             fetchDocumentDetails();
         } catch {
             setError("Error adding comment");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleUploadAttachments = async (e) => {
+        e.preventDefault();
+        if (!attachmentFiles.length) return;
+
+        setLoading(true);
+        setError("");
+        try {
+            for (const file of attachmentFiles) {
+                const fd = new FormData();
+                fd.append("file", file);
+                await api.post(`documents/${document.id}/attachments/`, fd);
+            }
+            setAttachmentFiles([]);
+            fetchDocumentDetails();
+        } catch (err) {
+            setError(err?.response?.data?.detail || "Error uploading attachments");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteAttachment = async (attachmentId) => {
+        setLoading(true);
+        setError("");
+        try {
+            await api.delete(`documents/${document.id}/attachments/${attachmentId}/`);
+            fetchDocumentDetails();
+        } catch (err) {
+            setError(err?.response?.data?.detail || "Error deleting attachment");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleRouteToDepartment = async (e) => {
+        e.preventDefault();
+        if (!routeDepartmentId) return;
+
+        setLoading(true);
+        setError("");
+        try {
+            const resp = await api.patch(`documents/${document.id}/route/`, {
+                department_id: routeDepartmentId,
+            });
+            setDocument(resp.data);
+            onUpdate();
+        } catch (err) {
+            setError(err?.response?.data?.detail || "Error routing document");
         } finally {
             setLoading(false);
         }
@@ -141,7 +221,7 @@ const DocumentDetailModal = ({ isOpen, onClose, document: initialDocument, onUpd
                     </div>
 
                     <div className="px-8 py-4 bg-gray-50 border-b flex space-x-4">
-                        {['details', 'history', 'comments'].map(tab => (
+                        {["details", "attachments", "history", "comments"].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
@@ -191,6 +271,53 @@ const DocumentDetailModal = ({ isOpen, onClose, document: initialDocument, onUpd
                                         </div>
                                     </div>
                                 </div>
+
+                                {document.portal_submission && (
+                                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                                        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+                                            Portal Submission
+                                        </h3>
+                                        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
+                                            <div><span className="font-semibold">Name:</span> {document.portal_submission.client_name || "-"}</div>
+                                            <div><span className="font-semibold">Email:</span> {document.portal_submission.client_email || "-"}</div>
+                                            <div><span className="font-semibold">Phone:</span> {document.portal_submission.client_phone || "-"}</div>
+                                            <div><span className="font-semibold">Company:</span> {document.portal_submission.company || "-"}</div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {canRoute && (
+                                    <form onSubmit={handleRouteToDepartment} className="rounded-lg border border-purple-200 bg-purple-50 p-4">
+                                        <h3 className="text-sm font-semibold text-purple-800 uppercase tracking-wider">
+                                            Route To Department
+                                        </h3>
+                                        <div className="mt-3 flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+                                            <div className="w-full">
+                                                <label className="block text-xs font-semibold text-purple-900">Department</label>
+                                                <select
+                                                    value={routeDepartmentId}
+                                                    onChange={(e) => setRouteDepartmentId(e.target.value)}
+                                                    className="mt-1 block w-full rounded-lg border border-purple-200 bg-white p-2 text-sm focus:ring-purple-500 focus:border-purple-500"
+                                                    disabled={loading}
+                                                >
+                                                    <option value="">Select department</option>
+                                                    {departments.map((d) => (
+                                                        <option key={d.id} value={d.id}>
+                                                            {d.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <button
+                                                type="submit"
+                                                disabled={loading || !routeDepartmentId}
+                                                className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-purple-700 disabled:opacity-50"
+                                            >
+                                                Route
+                                            </button>
+                                        </div>
+                                    </form>
+                                )}
                             </div>
                         )}
 
@@ -212,6 +339,66 @@ const DocumentDetailModal = ({ isOpen, onClose, document: initialDocument, onUpd
                                 ) : (
                                     <p className="text-sm text-gray-500">No history available.</p>
                                 )}
+                            </div>
+                        )}
+
+                        {activeTab === "attachments" && (
+                            <div className="space-y-6">
+                                <form onSubmit={handleUploadAttachments} className="space-y-3">
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                                        onChange={(e) => setAttachmentFiles(Array.from(e.target.files || []))}
+                                        className="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-purple-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-purple-700 hover:file:bg-purple-100"
+                                        disabled={loading}
+                                    />
+                                    <button
+                                        type="submit"
+                                        disabled={loading || !attachmentFiles.length}
+                                        className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-purple-700 disabled:opacity-50"
+                                    >
+                                        Upload
+                                    </button>
+                                </form>
+
+                                <div className="space-y-3">
+                                    {document.attachments?.length > 0 ? (
+                                        document.attachments.map((att) => (
+                                            <div
+                                                key={att.id}
+                                                className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-3"
+                                            >
+                                                <div className="min-w-0">
+                                                    <a
+                                                        href={att.file}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="text-sm font-semibold text-purple-700 hover:text-purple-900 truncate block"
+                                                        title={att.original_name || att.file}
+                                                    >
+                                                        {att.original_name || "Attachment"}
+                                                    </a>
+                                                    <p className="text-xs text-gray-500">
+                                                        {att.uploaded_by?.username ? `By ${att.uploaded_by.username} • ` : ""}
+                                                        {att.size ? `${Math.round(att.size / 1024)} KB • ` : ""}
+                                                        {att.content_type || ""}
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteAttachment(att.id)}
+                                                    disabled={loading}
+                                                    className="ml-3 text-xs font-semibold text-red-600 hover:text-red-800 disabled:opacity-50"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-sm text-gray-500">No attachments.</p>
+                                    )}
+                                </div>
                             </div>
                         )}
 
