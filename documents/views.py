@@ -1,5 +1,8 @@
 from django.shortcuts import render
-from django.http import HttpResponseNotFound
+from django.template import TemplateDoesNotExist
+from django.http import HttpResponse, HttpResponseNotFound, HttpResponseServerError
+from django.conf import settings
+from pathlib import Path
 
 
 def _app_user_from_auth_cookie(request):
@@ -18,10 +21,29 @@ def _app_user_from_auth_cookie(request):
     except Exception:
         return None
 
+def _find_react_index_html() -> str | None:
+    candidate_paths = [
+        Path(settings.BASE_DIR) / 'frontend' / 'dist' / 'index.html',
+        Path(settings.BASE_DIR) / 'frontend' / 'index.html',
+    ]
+    for path in candidate_paths:
+        if path.exists():
+            return path.read_text(encoding='utf-8')
+    return None
+
+
 # React App View
 def react_app(request):
     """Serve the React application"""
-    return render(request, 'index.html')
+    try:
+        return render(request, 'index.html')
+    except TemplateDoesNotExist:
+        app_html = _find_react_index_html()
+        if app_html:
+            return HttpResponse(app_html)
+        return HttpResponseServerError(
+            'React index.html template not found. Run `cd frontend && npm run build` then `python manage.py collectstatic`.'
+        )
 
 
 def department_entry(request):

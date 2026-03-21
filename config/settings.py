@@ -84,7 +84,10 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / 'frontend' / 'dist'],
+        "DIRS": [
+            BASE_DIR / 'frontend' / 'dist',
+            BASE_DIR / 'frontend',
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -165,6 +168,7 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [
     BASE_DIR / 'frontend' / 'dist',
+    BASE_DIR / 'frontend',
 ]
 # Serve static files from collectstatic location
 # WhiteNoise will handle serving these in production
