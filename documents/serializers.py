@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import generics,serializers
 from django.contrib.auth.models import User
 from .models import (
@@ -43,6 +44,8 @@ class UserSerializer(serializers.ModelSerializer):
         allow_null=True,
     )
 
+    portal_inbox_username = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -55,7 +58,11 @@ class UserSerializer(serializers.ModelSerializer):
             'position',
             'role',
             'department_id',
+            'portal_inbox_username',
         ]
+
+    def get_portal_inbox_username(self, obj):
+        return getattr(settings, 'PORTAL_INBOX_USERNAME', 'admin')
 
     def create(self, validated_data):
         """
@@ -195,7 +202,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             'document_type', 'confidentiality_level', 'assigned_to_id', 'comments', 'history', 'attachments',
             'portal_submission',
         ]
-        read_only_fields = ['status', 'creator', 'current_owner', 'department']
+        read_only_fields = ['creator', 'current_owner', 'department']
 
     def update(self, instance, validated_data):
         """

@@ -1,33 +1,16 @@
-# --- Stage 1: Build Stage ---
-FROM node:20-alpine AS build-stage
+FROM node:20-alpine
 
 WORKDIR /app
 
+# Install dependencies first for faster caching
 COPY package*.json ./
-RUN npm install --legacy-peer-deps
+RUN npm install --no-audit --no-fund
 
+# Copy the rest of the source
 COPY . .
-RUN npm run build
 
-# --- Stage 2: Production Stage ---
-FROM nginx:stable-alpine
+# Expose Vite's default dev port
+EXPOSE 5173
 
-COPY --from=build-stage /app/dist /usr/share/nginx/html
-
-# Custom nginx config for Portal routing and its specific API bridge
-RUN printf "server { \n\
-    listen 8002; \n\
-    location / { \n\
-        root /usr/share/nginx/html; \n\
-        index index.html; \n\
-        try_files \$uri \$uri/ /index.html; \n\
-    } \n\
-    location /api { \n\
-        proxy_pass http://client-portal:8001; \n\
-        rewrite ^/api/(.*) /\$1 break; \n\
-    } \n\
-}" > /etc/nginx/conf.d/default.conf
-
-EXPOSE 8002
-
-CMD ["nginx", "-g", "daemon off;"]
+# Run the live dev server
+CMD ["npm", "run", "dev", "--", "--host"]

@@ -18,10 +18,20 @@ def _app_user_from_auth_cookie(request):
     except Exception:
         return None
 
-# React App View
+from django.http import JsonResponse
+
+# React App View (Now just an API entry point in Production)
 def react_app(request):
-    """Serve the React application"""
-    return render(request, 'index.html')
+    """Entry point for the API backend"""
+    return JsonResponse({
+        "status": "online",
+        "message": "EDCM Backend API is running",
+        "endpoints": {
+            "admin": "/admin/",
+            "api": "/api/",
+            "frontend": "http://localhost:5173"
+        }
+    })
 
 
 def department_entry(request):
@@ -34,6 +44,9 @@ def department_entry(request):
     dept_id = getattr(getattr(user, "profile", None), "department_id", None) if user else None
 
     if user and user.is_active and role == "Manager" and dept_id:
-        return render(request, "index.html")
+        return JsonResponse({
+            "status": "ready",
+            "message": "Authorized. Please use the Department Panel in the Frontend."
+        })
 
     return HttpResponseNotFound()

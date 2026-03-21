@@ -1,43 +1,48 @@
-# --- Stage 1: Build dependencies ---
-FROM python:3.10-alpine AS builder
+FROM python:3.10-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Install build dependencies for PostgreSQL and common Python tools
-RUN apk add --no-cache \
-    postgresql-dev \
-    gcc \
-    musl-dev \
-    python3-dev \
-    libffi-dev
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:${PATH}"
 
 COPY requirements.txt .
-RUN pip install --user --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# --- Stage 2: Final Runtime ---
-FROM python:3.10-alpine
+
+FROM python:3.10-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/opt/venv/bin:${PATH}"
 
 WORKDIR /app
 
-# Create non-root user
-RUN adduser -D -u 1000 appuser
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl \
+        postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy installed python packages from builder
-COPY --from=builder /root/.local /home/appuser/.local
-ENV PATH=/home/appuser/.local/bin:$PATH
+RUN useradd --create-home --uid 1000 appuser
 
-# Copy project code
-COPY --chown=appuser:appuser . .
+COPY --from=builder /opt/venv /opt/venv
+COPY . /app
 
-# Prepare static/media dirs
-RUN mkdir -p /app/staticfiles /app/media /app/logs && \
-    chown -R appuser:appuser /app/staticfiles /app/media /app/logs
+RUN chmod +x /app/entrypoint.sh \
+    && chown -R appuser:appuser /app
 
 USER appuser
 
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8000/api/health/ || exit 1
+  CMD curl -fsS http://localhost:8000/api/health/ >/dev/null || exit 1
 
 ENTRYPOINT ["/app/entrypoint.sh"]

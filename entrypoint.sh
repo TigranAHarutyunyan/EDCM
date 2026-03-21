@@ -1,21 +1,18 @@
-#!/bin/bash
-set -e
+#!/bin/sh
+set -eu
 
 echo "======================================"
 echo "🚀 EDCM Docker Entrypoint"
 echo "======================================"
-
-# Load environment variables from .env file if it exists
-if [ -f ".env" ]; then
-    echo "📂 Loading environment variables from .env..."
-    ls -la  
-fi
 
 # Configuration
 DB_HOST=${DB_HOST:-db}
 DB_PORT=${DB_PORT:-5432}
 DB_USER=${DB_USER:-postgres}
 DB_NAME=${DB_NAME:-edcm_db}
+DEBUG=${DEBUG:-}
+SEED_DATA=${SEED_DATA:-}
+PORT=${PORT:-8000}
 MAX_RETRIES=30
 RETRY_COUNT=0
 
@@ -30,7 +27,7 @@ wait_for_db() {
     echo -e "${YELLOW}⏳ Waiting for PostgreSQL at ${DB_HOST}:${DB_PORT}...${NC}"
     
     while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-        if pg_isready -h "$DB_HOST" -p "$DB_PORT" 2>/dev/null; then
+        if pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; then
             echo -e "${GREEN}✅ PostgreSQL is ready!${NC}"
             return 0
         fi
@@ -73,7 +70,7 @@ create_superuser() {
         echo -e "${YELLOW}👤 Checking for superuser...${NC}"
         
         # Check if superuser exists
-        if python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); exit(0 if User.objects.filter(is_superuser=True).exists() else 1)"; then
+        if python manage.py shell -c "import sys; from django.contrib.auth import get_user_model; User = get_user_model(); sys.exit(0 if User.objects.filter(is_superuser=True).exists() else 1)"; then
             echo -e "${GREEN}✅ Superuser already exists${NC}"
         else
             echo -e "${YELLOW}📝 Creating default superuser (admin/admin123)...${NC}"
@@ -129,20 +126,20 @@ seed_data
 echo -e "${GREEN}════════════════════════════════════${NC}"
 echo -e "${GREEN}🎉 EDCM Application Starting${NC}"
 echo -e "${GREEN}════════════════════════════════════${NC}"
-echo ""
-echo "📍 Web Server: http://localhost:${PORT:-8000}"
-echo "👨‍💼 Admin Panel: http://localhost:${PORT:-8000}/admin"
-echo "📱 API: http://localhost:${PORT:-8000}/api"
+echo "📍 Backend API: http://localhost:5173"
+echo "👨‍💼 Admin Panel: http://localhost:5173/admin"
+echo "📱 Main Dashboard: http://localhost:8000"
+echo "🌐 Client Portal: http://localhost:8002"
 echo ""
 
 # Start server
 if [ "$DEBUG" = "True" ] || [ "$DEBUG" = "true" ]; then
     echo -e "${YELLOW}🚀 Starting Django development server (with hot-reload)...${NC}"
-    exec python manage.py runserver 0.0.0.0:${PORT:-8000}
+    exec python manage.py runserver 0.0.0.0:${PORT}
 else
     echo -e "${YELLOW}🚀 Starting Gunicorn server...${NC}"
     exec gunicorn \
-        --bind 0.0.0.0:${PORT:-8000} \
+        --bind 0.0.0.0:${PORT} \
         --workers 3 \
         --worker-class sync \
         --worker-tmp-dir /dev/shm \

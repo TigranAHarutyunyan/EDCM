@@ -14,6 +14,7 @@ from .api_views import (
     DepartmentListCreateView,
     DepartmentDetailView,
     DocumentTypeListView,
+    DocumentStatusListView,
     ConfidentialityLevelListView,
     UserListCreateView,
     UserDetailView,
@@ -57,6 +58,7 @@ urlpatterns = [
     path('departments/', DepartmentListCreateView.as_view(), name='api_department_list'),
     path('departments/<int:pk>/', DepartmentDetailView.as_view(), name='api_department_detail'),
     path('document-types/', DocumentTypeListView.as_view(), name='api_document_types'),
+    path('document-statuses/', DocumentStatusListView.as_view(), name='api_document_statuses'),
     path('confidentiality-levels/', ConfidentialityLevelListView.as_view(), name='api_confidentiality_levels'),
     
     # Portal Gatekeeper & Sync

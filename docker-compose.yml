@@ -1,123 +1,111 @@
-version: "3.10"
-
 services:
-    # PostgreSQL Database Service
-    db:
-        image: postgres:15
-        container_name: edcm_db
-        environment:
-            POSTGRES_DB: ${DB_NAME:-edcm_db}
-            POSTGRES_USER: ${DB_USER:-postgres}
-            POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres1}
-            POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
-        volumes:
-            - postgres_data:/var/lib/postgresql/data
-            - ./init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
-        healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
-            interval: 10s
-            timeout: 5s
-            retries: 5
-            start_period: 10s
-        ports:
-            - "5432:5432"
-        networks:
-            - edcm_network
-        restart: unless-stopped
+  db:
+    image: postgres:15
+    container_name: edcm_db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-edcm_db}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres1}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-edcm_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - edcm
 
-    # Django Backend Service
-    backend:
-        build:
-            context: .
-            dockerfile: Dockerfile
-        container_name: edcm_backend
-        entrypoint: /app/entrypoint.sh
-        env_file:
-            - .env
-        environment:
-            DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres1}@db:5432/${DB_NAME:-edcm_db}
-            DEBUG: ${DEBUG:-True}
-            SECRET_KEY: ${SECRET_KEY:-django-insecure-change-in-production}
-            ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,.runpod.net,.runpod.io}
-            DB_ENGINE: django.db.backends.postgresql
-            DB_HOST: db
-            DB_PORT: 5432
-            DB_NAME: ${DB_NAME:-edcm_db}
-            DB_USER: ${DB_USER:-postgres}
-            DB_PASSWORD: ${DB_PASSWORD:-postgres1}
-            SEED_DATA: ${SEED_DATA:-True}
-        volumes:
-            - .:/app
-            - static_volume:/app/staticfiles
-            - media_volume:/app/media
-        ports:
-            - "8000:8000"
-        depends_on:
-            db:
-                condition: service_healthy
-        networks:
-            - edcm_network
-        restart: unless-stopped
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: edcm_backend
+    env_file:
+      - .env
+    # ADDED VOLUMES FOR HOT RELOAD
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres1}@db:5432/${DB_NAME:-edcm_db}
+      DEBUG: ${DEBUG:-True}
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "5173:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - edcm
 
-    # Main Frontend Service
-    frontend:
-        build:
-            context: ./frontend
-            dockerfile: Dockerfile
-        container_name: edcm_frontend
-        environment:
-            - VITE_BACKEND_URL=http://backend:8000
-        volumes:
-            - ./frontend:/app
-            - /app/node_modules
-        ports:
-            - "5173:5173"
-        depends_on:
-            - backend
-        networks:
-            - edcm_network
-        restart: unless-stopped
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: edcm_frontend
+    # ADDED VOLUMES FOR REACT
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "8000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - edcm
 
-    # Client Portal Backend
-    client-portal:
-        build:
-            context: ./client_portal/backend
-        container_name: edcm_client_portal
-        environment:
-            - EDCM_BACKEND_URL=http://backend:8000/api
-        ports:
-            - "8001:8001"
-        depends_on:
-            - backend
-        networks:
-            - edcm_network
-        restart: unless-stopped
+  client-portal:
+    build:
+      context: ./client_portal/backend
+      dockerfile: Dockerfile
+    container_name: edcm_client_portal
+    # ADDED VOLUMES FOR FASTAPI RELOAD
+    volumes:
+      - ./client_portal/backend:/app
+    env_file:
+      - .env
+    environment:
+      EDCM_BACKEND_URL: http://backend:8000/api
+      PORT: 8001
+    ports:
+      - "8001:8001"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - edcm
 
-    # Client Portal Frontend
-    client-portal-frontend:
-        build:
-            context: ./client_portal/frontend
-            dockerfile: Dockerfile
-        container_name: edcm_client_portal_frontend
-        volumes:
-            - ./client_portal/frontend:/app
-            - /app/node_modules
-        ports:
-            - "8002:8002"
-        depends_on:
-            - client-portal
-        networks:
-            - edcm_network
-        restart: unless-stopped
+  client-portal-frontend:
+    build:
+      context: ./client_portal/frontend
+      dockerfile: Dockerfile
+    container_name: edcm_client_portal_frontend
+    command: npm run dev -- --host
+    volumes:
+      - ./client_portal/frontend:/app
+      - /app/node_modules
+    ports:
+      - "8002:5173"
+    depends_on:
+      - client-portal
+    restart: unless-stopped
+    networks:
+      - edcm
 
 volumes:
-    postgres_data:
-        driver: local
-    static_volume:
-        driver: local
-    media_volume:
-        driver: local
+  postgres_data:
+  static_volume:
+  media_volume:
 
 networks:
-    edcm_network:
-        driver: bridge
+  edcm:
+    driver: bridge

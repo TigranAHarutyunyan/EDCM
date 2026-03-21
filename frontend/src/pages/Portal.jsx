@@ -71,10 +71,22 @@ const Portal = () => {
                 )}
 
                 {success?.id && (
-                    <div className="mb-6 bg-green-50 border-l-4 border-green-400 p-4 rounded">
-                        <p className="text-sm text-green-800">
-                            Submitted successfully. Your document ID is <span className="font-bold">#{success.id}</span>.
-                        </p>
+                    <div className="mb-6 bg-green-50 border-l-4 border-green-400 p-6 rounded-xl border border-green-100 shadow-sm">
+                        <div className="flex items-center">
+                            <div className="flex-shrink-0">
+                                <svg className="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <div className="ml-3">
+                                <h3 className="text-sm font-bold text-green-900">
+                                    Submission Received!
+                                </h3>
+                                <p className="text-sm text-green-800 mt-1">
+                                    Your document has been safely submitted. Reference ID: <span className="font-mono bg-white px-2 py-0.5 rounded border border-green-200">#{success.id}</span>
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 )}
 

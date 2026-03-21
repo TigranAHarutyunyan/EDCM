@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
-import { FilePlus, FileText, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { FilePlus, FileText, CheckCircle, Clock, AlertCircle, User } from 'lucide-react';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();

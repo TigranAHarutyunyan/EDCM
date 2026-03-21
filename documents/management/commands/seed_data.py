@@ -96,6 +96,18 @@ class Command(BaseCommand):
                 chef.profile.save()
                 self.stdout.write(self.style.SUCCESS("✅ Department Chef user created."))
 
+            # Portal Manager
+            if not User.objects.filter(username='portal_manager').exists():
+                portal_mgr = User.objects.create_user('portal_manager', 'portal_manager@example.com', 'PortalPass123!')
+                if not hasattr(portal_mgr, 'profile'):
+                    UserProfile.objects.create(user=portal_mgr)
+                portal_mgr.profile.full_name = "Portal Manager"
+                portal_mgr.profile.position = "External Inbox Manager"
+                portal_mgr.profile.role = 'Manager'
+                portal_mgr.profile.department = it
+                portal_mgr.profile.save()
+                self.stdout.write(self.style.SUCCESS("✅ Portal Manager user created (Pass: PortalPass123!)."))
+
             # Sample documents
             order_type = DocumentType.objects.filter(code="ORDER").first()
             report_type = DocumentType.objects.filter(code="REPORT").first()

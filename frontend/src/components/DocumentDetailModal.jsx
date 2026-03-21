@@ -10,6 +10,7 @@ const DocumentDetailModal = ({ isOpen, onClose, document: initialDocument, onUpd
     const [attachmentFiles, setAttachmentFiles] = useState([]);
     const [departments, setDepartments] = useState([]);
     const [routeDepartmentId, setRouteDepartmentId] = useState("");
+    const [statuses, setStatuses] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [isEditing, setIsEditing] = useState(false);
@@ -38,7 +39,7 @@ const DocumentDetailModal = ({ isOpen, onClose, document: initialDocument, onUpd
             setEditData({
                 title: document.title,
                 description: document.description,
-                status: document.status_details?.id,
+                status: document.status_details?.id || document.status,
             });
             setRouteDepartmentId(document.department?.id || "");
         }
@@ -52,17 +53,26 @@ const DocumentDetailModal = ({ isOpen, onClose, document: initialDocument, onUpd
     );
 
     useEffect(() => {
-        const loadDepartments = async () => {
+        const loadDeps = async () => {
             try {
                 const resp = await api.get("departments/");
                 const list = resp.data?.results || resp.data || [];
                 setDepartments(Array.isArray(list) ? list : []);
-            } catch {
-                // Non-fatal: routing UI will just have an empty list.
-            }
+            } catch { }
         };
 
-        if (isOpen && canRoute) loadDepartments();
+        const loadStatuses = async () => {
+            try {
+                const resp = await api.get("document-statuses/");
+                const list = resp.data?.results || resp.data || [];
+                setStatuses(Array.isArray(list) ? list : []);
+            } catch { }
+        };
+
+        if (isOpen && canRoute) {
+            loadDeps();
+            loadStatuses();
+        }
     }, [isOpen, canRoute]);
 
     const handleTake = async () => {
@@ -184,7 +194,23 @@ const DocumentDetailModal = ({ isOpen, onClose, document: initialDocument, onUpd
                             ) : (
                                 <h2 className="text-2xl font-bold text-gray-900">{document.title}</h2>
                             )}
-                            <p className="text-sm text-gray-500">ID: #{document.id} • {document.status_details?.name}</p>
+                            {isEditing ? (
+                                <div className="mt-2">
+                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</label>
+                                    <select
+                                        className="block w-full text-sm border-b focus:outline-none focus:border-purple-500 bg-transparent py-1"
+                                        value={editData.status}
+                                        onChange={(e) => setEditData({...editData, status: e.target.value})}
+                                    >
+                                        <option value="">Select status</option>
+                                        {statuses.map(s => (
+                                            <option key={s.id} value={s.id}>{s.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            ) : (
+                                <p className="text-sm text-gray-500">ID: #{document.id} • {document.status_details?.name}</p>
+                            )}
                         </div>
                         <div className="flex items-center space-x-2">
                             {!isEditing && (

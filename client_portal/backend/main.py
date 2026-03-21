@@ -9,8 +9,15 @@ from pydantic import BaseModel
 import httpx
 import os
 import sqlite3
+from typing import Dict
 
-SECRET_KEY = "super-secret-key-change-this"
+# Google OAuth Settings
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8002/login/callback")
+GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
+
+SECRET_KEY = os.getenv("SECRET_KEY", "prod-portal-secret-key-change-this")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440 
 
@@ -128,6 +135,71 @@ async def submit(title: str = Form(...), description: str = Form(""), files: Opt
                 multipart_files.append(("files", (f.filename, content, f.content_type)))
         resp = await client.post(f"{EDCM_BACKEND_URL}/portal/submit/", data=data, files=multipart_files)
         return resp.json()
+
+@app.get("/auth/google/login")
+async def google_login():
+    """Build and return the Google OAuth2 redirect URL."""
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(GOOGLE_DISCOVERY_URL)
+        config = resp.json()
+        auth_endpoint = config["authorization_endpoint"]
+        
+    params = {
+        "client_id": GOOGLE_CLIENT_ID,
+        "redirect_uri": GOOGLE_REDIRECT_URI,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "access_type": "offline",
+        "prompt": "select_account"
+    }
+    encoded_params = "&".join([f"{k}={v}" for k, v in params.items()])
+    return {"url": f"{auth_endpoint}?{encoded_params}"}
+
+@app.get("/auth/google/callback")
+async def google_callback(code: str):
+    """Exchange the Google code for User info and issue a Portal token."""
+    async with httpx.AsyncClient() as client:
+        # 1. Get Google Discovery config
+        resp = await client.get(GOOGLE_DISCOVERY_URL)
+        config = resp.json()
+        token_endpoint = config["token_endpoint"]
+        userinfo_endpoint = config["userinfo_endpoint"]
+        
+        # 2. Exchange code for access token
+        data = {
+            "code": code,
+            "client_id": GOOGLE_CLIENT_ID,
+            "client_secret": GOOGLE_CLIENT_SECRET,
+            "redirect_uri": GOOGLE_REDIRECT_URI,
+            "grant_type": "authorization_code"
+        }
+        token_resp = await client.post(token_endpoint, data=data)
+        token_data = token_resp.json()
+        access_token = token_data.get("access_token")
+        
+        if not access_token:
+            raise HTTPException(status_code=400, detail="Failed to get access token from Google")
+            
+        # 3. Get User info
+        user_resp = await client.get(userinfo_endpoint, headers={"Authorization": f"Bearer {access_token}"})
+        google_user = user_resp.json()
+        
+    email = google_user.get("email")
+    full_name = google_user.get("name", "")
+    
+    # 4. Check/Create User in local Portal DB
+    user = get_user(email) # Using email as username for google logins
+    if not user:
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        c.execute("INSERT INTO users (username, email, password, full_name, company) VALUES (?, ?, ?, ?, ?)",
+                  (email, email, "GOOGLE_AUTH_NO_PASSWORD", full_name, "External via Google"))
+        conn.commit()
+        conn.close()
+        user = get_user(email)
+        
+    portal_token = create_access_token(data={"sub": user["username"]})
+    return {"access_token": portal_token, "token_type": "bearer"}
 
 @app.get("/my-documents")
 async def sync(current_user: dict = Depends(get_current_user)):

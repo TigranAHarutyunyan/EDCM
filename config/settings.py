@@ -31,12 +31,12 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-for-build-only-ch
 # Any value other than the string "True" (case-sensitive) will be treated as False.
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,edcm.onrender.com,.onrender.com').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,backend,frontend,edcm.onrender.com,.onrender.com').split(',')
 
 # CSRF settings for production
 CSRF_TRUSTED_ORIGINS = os.getenv(
     'CSRF_TRUSTED_ORIGINS',
-    'https://*.onrender.com,http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,https://*.runpod.net,https://*.runpod.io'
+    'http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000,http://127.0.0.1:8000,http://localhost:8001,http://127.0.0.1:8001,http://localhost:8002,http://127.0.0.1:8002,https://*.runpod.net,https://*.runpod.io'
 ).split(',')
 
 # Security settings
@@ -60,11 +60,37 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
     "corsheaders",
     "rest_framework",
     "rest_framework.authtoken",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
+    "dj_rest_auth",
+    "dj_rest_auth.registration",
     "documents",
 ]
+
+SITE_ID = 1
+
+# SOCIAL AUTH CONFIG
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'OAUTH_PKCE_ENABLED': True,
+    }
+}
+# Don't require email verification for social login
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
+SOCIALACCOUNT_EMAIL_REQUIRED = True
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -76,6 +102,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "documents.middleware.DepartmentGateMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -212,8 +239,8 @@ REST_FRAMEWORK = {
 }
 
 # Public portal intake configuration.
-# All portal-submitted documents are assigned to this username.
-PORTAL_INBOX_USERNAME = os.getenv("PORTAL_INBOX_USERNAME", "admin")
+# All portal-submitted documents are assigned to this specific staff member.
+PORTAL_INBOX_USERNAME = os.getenv("PORTAL_INBOX_USERNAME", "portal_manager")
 
 # Email Configuration
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')

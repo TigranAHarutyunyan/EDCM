@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { UserPlus } from 'lucide-react';
+import api from '../api';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -14,6 +15,15 @@ const Register = () => {
   const [error, setError] = useState('');
   const { register } = useAuth();
   const navigate = useNavigate();
+
+  const handleGoogleRegister = async () => {
+    try {
+      const response = await api.get('/auth/google/login');
+      window.location.href = response.data.url;
+    } catch (err) {
+      setError('Could not connect to Google Login. Please try traditional registration instead.');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,9 +48,13 @@ const Register = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          {error && (
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm text-center">
+              {error}
+            </div>
+          )}
+          
           <form className="space-y-4" onSubmit={handleSubmit}>
-            {error && <div className="text-red-600 text-sm text-center">{error}</div>}
-            
             <div>
               <label className="block text-sm font-medium text-gray-700">Full Name</label>
               <input
@@ -94,11 +108,33 @@ const Register = () => {
               type="submit"
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
             >
-              Register
+              Create Account
             </button>
           </form>
+
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or register with</span>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <button
+                onClick={handleGoogleRegister}
+                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+              >
+                <img className="h-5 w-5 mr-3" src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google logo" />
+                <span>Sign up with Google</span>
+              </button>
+            </div>
+          </div>
+
           <div className="mt-6 text-center">
-            <Link to="/login" className="text-blue-600 hover:text-blue-500">
+            <Link to="/login" className="text-blue-600 hover:text-blue-500 text-sm">
               Already have an account? Sign In
             </Link>
           </div>

@@ -299,6 +299,11 @@ class ConfidentialityLevelListView(generics.ListAPIView):
     serializer_class = ConfidentialityLevelSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+class DocumentStatusListView(generics.ListAPIView):
+    queryset = DocumentStatus.objects.all()
+    serializer_class = DocumentStatusSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
 # Admin User Management Views
 class UserListCreateView(generics.ListCreateAPIView):
     serializer_class = UserSerializer
@@ -669,14 +674,25 @@ class PortalStatusSyncView(APIView):
         if not email:
             return Response({"error": "email is required"}, status=400)
             
-        submissions = PortalSubmission.objects.filter(client_email=email).select_related('document__status')
+        submissions = PortalSubmission.objects.filter(client_email=email).select_related('document', 'document__status')
         results = []
         for sub in submissions:
+            # Defensive check for missing documents or statuses
+            if not sub.document:
+                continue
+                
+            status_name = "Processing"
+            status_code = "PENDING"
+            
+            if sub.document.status:
+                status_name = sub.document.status.name
+                status_code = sub.document.status.code
+                
             results.append({
                 "id": sub.document_id,
                 "title": sub.document.title,
-                "status_name": sub.document.status.name,
-                "status_code": sub.document.status.code,
+                "status_name": status_name,
+                "status_code": status_code,
                 "updated_at": sub.document.updated_at
             })
         return Response(results)

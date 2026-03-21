@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
+import GoogleCallback from './pages/GoogleCallback';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -19,6 +20,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/login/callback" element={<GoogleCallback />} />
           <Route 
             path="/" 
             element={
