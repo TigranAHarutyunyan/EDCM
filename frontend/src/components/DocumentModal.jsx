@@ -17,8 +17,30 @@ const DocumentModal = ({
         confidentiality_level: "PUBLIC",
         assigned_to_id: "",
     });
+    const [attachmentFiles, setAttachmentFiles] = useState([]);
+    const [createdDocument, setCreatedDocument] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+
+    const resetForm = () => {
+        setFormData({
+            title: "",
+            description: "",
+            department: "",
+            document_type: "",
+            confidentiality_level: "PUBLIC",
+            assigned_to_id: "",
+        });
+        setAttachmentFiles([]);
+        setCreatedDocument(null);
+        setError("");
+    };
+
+    const handleModalClose = () => {
+        if (loading) return;
+        resetForm();
+        onClose();
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -28,32 +50,44 @@ const DocumentModal = ({
         }));
     };
 
+    const handleFilesChange = (e) => {
+        const files = Array.from(e.target.files || []);
+        setAttachmentFiles(files);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
         setLoading(true);
 
         try {
-            const payload = {
-                title: formData.title,
-                description: formData.description,
-                document_type: formData.document_type || null,
-                confidentiality_level: formData.confidentiality_level || 'PUBLIC',
-                assigned_to_id: formData.assigned_to_id || null,
-                // Department is derived on the backend
-            };
+            let doc = createdDocument;
 
-            const response = await api.post("documents/", payload);
+            if (!doc) {
+                const payload = {
+                    title: formData.title,
+                    description: formData.description,
+                    document_type: formData.document_type || null,
+                    confidentiality_level: formData.confidentiality_level || "PUBLIC",
+                    assigned_to_id: formData.assigned_to_id || null,
+                    // Department is derived on the backend
+                };
 
-            onSuccess(response.data);
-            setFormData({
-                title: "",
-                description: "",
-                department: "",
-                document_type: "",
-                confidentiality_level: "PUBLIC",
-                assigned_to_id: "",
-            });
+                const response = await api.post("documents/", payload);
+                doc = response.data;
+                setCreatedDocument(doc);
+                onSuccess(doc);
+            }
+
+            if (attachmentFiles.length > 0) {
+                for (const file of attachmentFiles) {
+                    const fd = new FormData();
+                    fd.append("file", file);
+                    await api.post(`documents/${doc.id}/attachments/`, fd);
+                }
+            }
+
+            resetForm();
             onClose();
         } catch (err) {
             // Try to surface a useful backend error message, including validation errors
@@ -85,7 +119,7 @@ const DocumentModal = ({
             {/* Backdrop with blur */}
             <div 
                 className="fixed inset-0 bg-gray-900 bg-opacity-75 backdrop-blur-sm transition-opacity"
-                onClick={onClose}
+                onClick={handleModalClose}
             ></div>
 
             {/* Modal Container */}
@@ -108,7 +142,7 @@ const DocumentModal = ({
                             </p>
                         </div>
                         <button
-                            onClick={onClose}
+                            onClick={handleModalClose}
                             disabled={loading}
                             className="rounded-full p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none"
                         >
@@ -136,6 +170,11 @@ const DocumentModal = ({
 
                     {/* Form */}
                     <form onSubmit={handleSubmit} className="px-8 py-6 space-y-6">
+                        {createdDocument?.id && (
+                            <div className="rounded-lg border border-purple-200 bg-purple-50 px-4 py-3 text-sm text-purple-800">
+                                Document created (ID: #{createdDocument.id}). You can upload attachments now.
+                            </div>
+                        )}
                         {/* Title Section */}
                         <div className="space-y-1">
                             <label className="block text-sm font-semibold text-gray-700">
@@ -281,11 +320,31 @@ const DocumentModal = ({
                             </div>
                         </div>
 
+                        {/* Attachments */}
+                        <div className="space-y-1">
+                            <label className="block text-sm font-semibold text-gray-700">
+                                Attachments (PDF, Word, Excel, PowerPoint)
+                            </label>
+                            <input
+                                type="file"
+                                multiple
+                                onChange={handleFilesChange}
+                                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                                className="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-purple-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-purple-700 hover:file:bg-purple-100"
+                                disabled={loading}
+                            />
+                            {attachmentFiles.length > 0 && (
+                                <p className="text-xs text-gray-500">
+                                    Selected: {attachmentFiles.map((f) => f.name).join(", ")}
+                                </p>
+                            )}
+                        </div>
+
                         {/* Footer Buttons */}
                         <div className="mt-8 flex items-center justify-end gap-3 border-t border-gray-100 pt-6">
                             <button
                                 type="button"
-                                onClick={onClose}
+                                onClick={handleModalClose}
                                 disabled={loading}
                                 className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 transition-colors"
                             >
@@ -305,7 +364,7 @@ const DocumentModal = ({
                                         Creating...
                                     </>
                                 ) : (
-                                    "Create Document"
+                                    createdDocument ? "Upload Attachments" : "Create Document"
                                 )}
                             </button>
                         </div>

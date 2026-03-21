@@ -12,6 +12,7 @@ EDCM is a modern, enterprise-grade Electronic Document Control Management system
 - **Collaboration Suite**:
     - **Comments**: Real-time discussion on every document.
     - **Audit History**: Transparent tracking of every change, including field updates and ownership transfers.
+    - **Attachments**: Upload and download files (PDF/Word/Excel/PowerPoint) per document.
 - **Personalized Profiles**:
     - Detailed user profiles with personal bios and avatars.
     - Individual tracking of "Created" vs. "Taken" documents.
@@ -37,6 +38,8 @@ EDCM is a modern, enterprise-grade Electronic Document Control Management system
     - `POST /api/auth/login/` (sets `edcm_auth` cookie)
     - `POST /api/auth/logout/` (clears cookies)
     - `GET /api/auth/me/` (current user info used by the frontend)
+    - `GET/POST /api/documents/<id>/attachments/` (list/upload attachments for a document)
+    - `DELETE /api/documents/<doc_id>/attachments/<attachment_id>/` (delete an attachment)
 
 ## 🐳 Quick Start with Docker
 
@@ -62,12 +65,18 @@ The easiest way to run the project locally is using Docker.
     ```
     _Note: By default, the container runs migrations + `python manage.py seed_data` on startup. You can toggle this with `SEED_DATA=False` in your `.env`._
 
+4.  **Open the app**:
+    - Frontend: `http://localhost:5173`
+    - Backend/API: `http://localhost:8000`
+
 ## 📍 Access Points
 
-- **App (Django serves built frontend)**: [http://localhost:8000](http://localhost:8000)
-- **API**: [http://localhost:8000/api/](http://localhost:8000/api/)
-- **Django Admin**: [http://localhost:8000/admin/](http://localhost:8000/admin/)
-- **API Health Check**: [http://localhost:8000/api/health/](http://localhost:8000/api/health/)
+- **Frontend (Vite, Docker)**: `http://localhost:5173`
+  - API and Admin are proxied through Vite (`/api`, `/admin`, `/static`, `/media`)
+- **Backend (Django)**: `http://localhost:8000`
+  - **API**: `http://localhost:8000/api/`
+  - **Django Admin**: `http://localhost:8000/admin/`
+  - **API Health Check**: `http://localhost:8000/api/health/`
 
 ## 🔑 Default Credentials (after running seed_data)
 
@@ -83,6 +92,14 @@ The easiest way to run the project locally is using Docker.
 - **Department Panel**: `/department/` (React page)
     - Only **Managers** can access it.
     - The backend enforces department scoping: managers only see employees/documents from their own department.
+
+## 🌐 Public Portal (Client Submissions)
+
+- **Public Portal UI**: `/portal` (no login)
+- **API endpoint**: `POST /api/portal/submit/` (multipart form)
+- All portal-submitted documents are assigned to the configured inbox user:
+    - `PORTAL_INBOX_USERNAME` (defaults to `admin`)
+    - The inbox user can route the document to a department via: `PATCH /api/documents/<id>/route/`
 
 ## 🧑‍💻 Local Development (without Docker)
 

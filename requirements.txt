@@ -7,3 +7,5 @@ gunicorn
 whitenoise
 dj-database-url
 Pillow
+django-allauth==0.61.1
+dj-rest-auth==5.0.2
