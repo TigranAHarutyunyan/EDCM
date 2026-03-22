@@ -44,7 +44,6 @@ def react_app(request):
         return HttpResponseServerError(
             'React index.html template not found. Run `cd frontend && npm run build` then `python manage.py collectstatic`.'
         )
-=======
 from django.http import JsonResponse
 
 # React App View (Now just an API entry point in Production)
