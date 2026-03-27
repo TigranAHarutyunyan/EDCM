@@ -43,7 +43,10 @@ wait_for_db() {
 
 # Function to run Django migrations
 run_migrations() {
-    echo -e "${YELLOW}📊 Running Django migrations...${NC}"
+    echo -e "${YELLOW}📊 Detecting and running Django migrations...${NC}"
+    
+    # Generate migrations for any new models/fields (auto-detect)
+    python manage.py makemigrations --noinput
     
     if python manage.py migrate --noinput; then
         echo -e "${GREEN}✅ Migrations completed successfully!${NC}"
@@ -89,12 +92,14 @@ END
 
 # Function to seed initial data
 seed_data() {
-    if [ "$SEED_DATA" = "True" ] || [ "$SEED_DATA" = "true" ] || [ "$DEBUG" = "True" ] || [ "$DEBUG" = "true" ]; then
-        echo -e "${YELLOW}🌱 Seeding initial data...${NC}"
+    # We now run seeding by default unless SEED_DATA is explicitly False.
+    # The script uses get_or_create, so it is safe to run multiple times.
+    if [ "${SEED_DATA:-True}" = "True" ] || [ "${SEED_DATA:-True}" = "true" ]; then
+        echo -e "${YELLOW}🌱 Building organizational structure (Seeding)...${NC}"
         if python manage.py seed_data; then
-            echo -e "${GREEN}✅ Data seeding completed successfully!${NC}"
+            echo -e "${GREEN}✅ Organization is ready!${NC}"
         else
-            echo -e "${RED}⚠️  Warning: Data seeding failed (continuing anyway)${NC}"
+            echo -e "${RED}⚠️  Warning: Seeding had issues (continuing anyway)${NC}"
         fi
     fi
 }

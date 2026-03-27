@@ -96,7 +96,6 @@ class Notification(models.Model):
     def __str__(self):
         return f"{self.notification_type} for {self.user}"
 
-# Renaming AuditLog to ActivityLog to match concept, but keeping class name AuditLog for now to minimize breakage in views
 class AuditLog(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='audit_logs')
@@ -111,6 +110,7 @@ class DocumentComment(models.Model):
     document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='comments')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
+    is_external = models.BooleanField(default=False) # Flag to allow communication with portal users
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -118,7 +118,6 @@ class DocumentComment(models.Model):
 
     def __str__(self):
         return f"Comment by {self.user} on {self.document}"
-
 
 class PortalSubmission(models.Model):
     """
@@ -146,7 +145,6 @@ class PortalSubmission(models.Model):
 def document_attachment_upload_to(instance, filename):
     # Store per-document to keep uploads organized.
     return f"documents/{instance.document_id}/attachments/{filename}"
-
 
 class DocumentAttachment(models.Model):
     document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name="attachments")
@@ -177,6 +175,19 @@ class DocumentAttachment(models.Model):
 
     def __str__(self):
         return self.original_name or self.file.name
+
+class PortalNotification(models.Model):
+    client_email = models.EmailField()
+    document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='portal_notifications')
+    text = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Portal Notif for {self.client_email} on {self.document_id}"
 
 # Signals
 @receiver(post_save, sender=User)

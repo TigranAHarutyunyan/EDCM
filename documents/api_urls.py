@@ -30,6 +30,11 @@ from .api_views import (
     DocumentRouteToDepartmentView,
     PortalInboxListView,
     PortalStatusSyncView,
+    NotificationListView,
+    NotificationMarkReadView,
+    NotificationUnreadCountView,
+    PortalNotificationListView,
+    PortalNotificationMarkReadView,
 )
 
 urlpatterns = [
@@ -64,15 +69,20 @@ urlpatterns = [
     # Portal Gatekeeper & Sync
     path('portal/inbox/', PortalInboxListView.as_view(), name='api_portal_inbox'),
     path('portal/sync-status/', PortalStatusSyncView.as_view(), name='api_portal_status_sync'),
+    path('portal/notifications/', PortalNotificationListView.as_view(), name='api_portal_notifications'),
+    path('portal/notifications/<int:pk>/read/', PortalNotificationMarkReadView.as_view(), name='api_portal_notification_read'),
     
     # User Management
     path('users/', UserListCreateView.as_view(), name='api_users'),
     path('users/<int:pk>/', UserDetailView.as_view(), name='api_user_detail'),
     path('admin-users/', AdminUserCreateView.as_view(), name='api_admin_users'),
+    path('notifications/unread-count/', NotificationUnreadCountView.as_view(), name='api_notifications_unread_count'),
 
     # Department Chef panel
     path('department/documents/', DepartmentDocumentsView.as_view(), name='api_department_documents'),
     path('department/employees/', DepartmentEmployeesView.as_view(), name='api_department_employees'),
     path('department/employees/<int:pk>/', DepartmentEmployeeDeleteView.as_view(), name='api_department_employee_delete'),
     path('department/documents/<int:pk>/owner/', DepartmentDocumentOwnerUpdateView.as_view(), name='api_department_document_owner'),
+    path('notifications/', NotificationListView.as_view(), name='api_notifications'),
+    path('notifications/<int:pk>/read/', NotificationMarkReadView.as_view(), name='api_notifications_mark_read'),
 ]

@@ -203,6 +203,34 @@ async def google_callback(code: str):
 
 @app.get("/my-documents")
 async def sync(current_user: dict = Depends(get_current_user)):
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(f"{EDCM_BACKEND_URL}/portal/sync-status/", params={"email": current_user["email"]})
-        return resp.json()
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(f"{EDCM_BACKEND_URL}/portal/sync-status/", params={"email": current_user["email"]}, timeout=10.0)
+            return resp.json()
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Backend unreachable: {str(e)}")
+
+@app.get("/notifications")
+async def get_notifications(current_user: dict = Depends(get_current_user)):
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{EDCM_BACKEND_URL}/portal/notifications/", 
+                params={"email": current_user["email"]},
+                timeout=10.0
+            )
+            return resp.json()
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Backend unreachable: {str(e)}")
+
+@app.post("/notifications/{notif_id}/read")
+async def mark_notification_read(notif_id: int, current_user: dict = Depends(get_current_user)):
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{EDCM_BACKEND_URL}/portal/notifications/{notif_id}/read/",
+                timeout=10.0
+            )
+            return resp.json()
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Backend unreachable: {str(e)}")

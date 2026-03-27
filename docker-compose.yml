@@ -37,6 +37,7 @@ services:
       DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres1}@db:5432/${DB_NAME:-edcm_db}
       DEBUG: ${DEBUG:-True}
       PYTHONUNBUFFERED: 1
+      SEED_DATA: ${SEED_DATA:-True}
     ports:
       - "5173:8000"
     depends_on:
@@ -51,14 +52,19 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: edcm_frontend
-    # ADDED VOLUMES FOR REACT
+    # ADDED VOLUMES FOR REACT + DEV COMMAND
+    command: npm run dev -- --host
     volumes:
       - ./frontend:/app
       - /app/node_modules
     ports:
-      - "8000:80"
+      - "8000:5173"
     depends_on:
       - backend
+    env_file:
+      - .env
+    environment:
+      VITE_BACKEND_URL: http://backend:8000
     restart: unless-stopped
     networks:
       - edcm
