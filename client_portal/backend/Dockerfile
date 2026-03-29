@@ -1,3 +1,15 @@
+FROM python:3.10-slim AS builder
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN  apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir  --prefix=/install -r requirements.txt
+
+#stage 2
 FROM python:3.10-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -5,23 +17,18 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:${PATH}"
 
-RUN pip install --no-cache-dir \
-    fastapi \
-    uvicorn \
-    httpx \
-    python-multipart \
-    "python-jose[cryptography]" \
-    "passlib[bcrypt]"
+COPY --from=builder /install /usr/local/
 
-COPY . /app
+
+COPY . /app 
+
 
 RUN useradd --create-home --uid 1000 portaluser \
     && chown -R portaluser:portaluser /app
 
 USER portaluser
+
 
 EXPOSE 8001
 

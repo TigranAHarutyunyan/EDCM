@@ -1,44 +1,39 @@
 FROM python:3.10-slim AS builder
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
-
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
-        libpq-dev \
+    build-essential \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:${PATH}"
-
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir  --prefix=/install -r requirements.txt
 
-
+#stage 2
 FROM python:3.10-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PATH="/opt/venv/bin:${PATH}"
+    PYTHONUNBUFFERED=1 
 
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        curl \
-        postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
+    curl \
+    libpq5 \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/* 
+    
 
-RUN useradd --create-home --uid 1000 appuser
-
-COPY --from=builder /opt/venv /opt/venv
+COPY --from=builder /install  /usr/local/
 COPY . /app
 
-RUN chmod +x /app/entrypoint.sh \
+RUN chmod +x /app/entrypoint.sh  \
+    && useradd --create-home --uid 1000 appuser \
     && chown -R appuser:appuser /app
 
 USER appuser
+
 
 EXPOSE 8000
 

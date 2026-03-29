@@ -1,117 +1,118 @@
 services:
-  db:
-    image: postgres:15
-    container_name: edcm_db
-    environment:
-      POSTGRES_DB: ${DB_NAME:-edcm_db}
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres1}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-edcm_db}"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    ports:
-      - "5432:5432"
-    restart: unless-stopped
-    networks:
-      - edcm
+    db:
+        image: postgres:15
+        container_name: edcm_db
+        environment:
+            POSTGRES_DB: ${DB_NAME:-edcm_db}
+            POSTGRES_USER: ${DB_USER:-postgres}
+            POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres1}
+            POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-edcm_db}",
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 10
+            start_period: 30s
+        ports:
+            - "${DB_PORT}:5432"
+        restart: unless-stopped
+        networks:
+            - edcm
 
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: edcm_backend
-    env_file:
-      - .env
-    # ADDED VOLUMES FOR HOT RELOAD
-    volumes:
-      - .:/app
-      - static_volume:/app/staticfiles
-      - media_volume:/app/media
-    environment:
-      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres1}@db:5432/${DB_NAME:-edcm_db}
-      DEBUG: ${DEBUG:-True}
-      PYTHONUNBUFFERED: 1
-      SEED_DATA: ${SEED_DATA:-True}
-    ports:
-      - "5173:8000"
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - edcm
+    backend:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: edcm_backend
+        env_file:
+            - .env
+        # ADDED VOLUMES FOR HOT RELOAD
+        volumes:
+            - .:/app
+            - static_volume:/app/staticfiles
+            - media_volume:/app/media
+        environment:
+            DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres1}@db:5432/${DB_NAME:-edcm_db}
+            DEBUG: ${DEBUG:-True}
+            PYTHONUNBUFFERED: 1
+            SEED_DATA: ${SEED_DATA:-True}
+        ports:
+            - "${BACKEND_PORT}:8000"
+        depends_on:
+            db:
+                condition: service_healthy
+        restart: unless-stopped
+        networks:
+            - edcm
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: edcm_frontend
-    # ADDED VOLUMES FOR REACT + DEV COMMAND
-    command: npm run dev -- --host
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    ports:
-      - "8000:5173"
-    depends_on:
-      - backend
-    env_file:
-      - .env
-    environment:
-      VITE_BACKEND_URL: http://backend:8000
-    restart: unless-stopped
-    networks:
-      - edcm
+    frontend:
+        build:
+            context: ./frontend
+            dockerfile: Dockerfile
+        container_name: edcm_frontend
+        volumes:
+            - ./frontend:/app
+            - /app/node_modules
+        ports:
+            - "${FRONTEND_PORT}:8080"
+        depends_on:
+            - backend
+        env_file:
+            - .env
+        environment:
+            VITE_BACKEND_URL: http://backend:8000
+        restart: unless-stopped
+        networks:
+            - edcm
 
-  client-portal:
-    build:
-      context: ./client_portal/backend
-      dockerfile: Dockerfile
-    container_name: edcm_client_portal
-    # ADDED VOLUMES FOR FASTAPI RELOAD
-    volumes:
-      - ./client_portal/backend:/app
-    env_file:
-      - .env
-    environment:
-      EDCM_BACKEND_URL: http://backend:8000/api
-      PORT: 8001
-    ports:
-      - "8001:8001"
-    depends_on:
-      - backend
-    restart: unless-stopped
-    networks:
-      - edcm
+    client-portal:
+        build:
+            context: ./client_portal/backend
+            dockerfile: Dockerfile
+        container_name: edcm_client_portal
+        volumes:
+            - ./client_portal/backend:/app
+        env_file:
+            - .env
+        environment:
+            EDCM_BACKEND_URL: http://backend:8000/api
+        ports:
+            - "${CLIENT_BACKEND_PORT}:8001"
+        depends_on:
+            - db
+        restart: unless-stopped
+        networks:
+            - edcm
 
-  client-portal-frontend:
-    build:
-      context: ./client_portal/frontend
-      dockerfile: Dockerfile
-    container_name: edcm_client_portal_frontend
-    command: npm run dev -- --host
-    volumes:
-      - ./client_portal/frontend:/app
-      - /app/node_modules
-    ports:
-      - "8002:5173"
-    depends_on:
-      - client-portal
-    restart: unless-stopped
-    networks:
-      - edcm
+    client-portal-frontend:
+        build:
+            context: ./client_portal/frontend
+            dockerfile: Dockerfile
+        container_name: edcm_client_portal_frontend
+        volumes:
+            - ./client_portal/frontend:/app
+            - /app/node_modules
+        env_file:
+            - .env
+        ports:
+            - "${CLIENT_FRONTEND_PORT}:8080"
+        depends_on:
+            - client-portal
+        restart: unless-stopped
+        networks:
+            - edcm
 
 volumes:
-  postgres_data:
-  static_volume:
-  media_volume:
+    postgres_data:
+    static_volume:
+    media_volume:
 
 networks:
-  edcm:
-    driver: bridge
+    edcm:
+        driver: bridge
