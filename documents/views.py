@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.template import TemplateDoesNotExist
-from django.http import HttpResponse, HttpResponseNotFound, HttpResponseServerError
+from django.http import JsonResponse, HttpResponse, HttpResponseNotFound, HttpResponseServerError
 from django.conf import settings
 from pathlib import Path
 
@@ -44,21 +44,6 @@ def react_app(request):
         return HttpResponseServerError(
             'React index.html template not found. Run `cd frontend && npm run build` then `python manage.py collectstatic`.'
         )
-from django.http import JsonResponse
-
-# React App View (Now just an API entry point in Production)
-def react_app(request):
-    """Entry point for the API backend"""
-    return JsonResponse({
-        "status": "online",
-        "message": "EDCM Backend API is running",
-        "endpoints": {
-            "admin": "/admin/",
-            "api": "/api/",
-            "frontend": "http://localhost:5173"
-        }
-    })
->>>>>>> fix_route_google
 
 
 def department_entry(request):
