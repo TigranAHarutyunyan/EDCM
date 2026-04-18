@@ -1,0 +1,59 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "documents": "Documents",
+    "departments": "Departments",
+    "profile": "Profile",
+    "logout": "Logout",
+    "login": "Login",
+    "portal": "Client Portal"
+  },
+  "dashboard": {
+    "title": "Document Control Dashboard",
+    "stats": {
+      "total": "Total Documents",
+      "pending": "Pending Actions",
+      "active": "Active Projects",
+      "completed": "Completed"
+    },
+    "recent": "Recent Activity",
+    "addNew": "Add New Document"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search...",
+    "language": "Language",
+    "submit": "Submit",
+    "submitting": "Submitting..."
+  },
+  "portal": {
+    "title": "Public Portal",
+    "subtitle": "Submit a document. It will be received by our intake team and routed to the correct department.",
+    "success_title": "Submission Received!",
+    "success_message": "Your document has been safely submitted.",
+    "name": "Your Name",
+    "email": "Email",
+    "phone": "Phone",
+    "company": "Company",
+    "doc_title": "Document Title",
+    "doc_description": "Description",
+    "attachments": "Attachments (PDF, Word, Excel, PowerPoint)"
+  },
+  "profile": {
+    "title": "My Profile",
+    "edit_profile": "Edit Profile",
+    "full_name": "Full Name",
+    "position": "Position",
+    "bio": "Biography / Bio",
+    "profile_picture": "Profile Picture",
+    "about": "About",
+    "created": "Created Documents",
+    "assigned": "Assigned Documents",
+    "save_changes": "Save Changes",
+    "no_created": "No documents created yet.",
+    "no_assigned": "No documents assigned yet."
+  }
+}

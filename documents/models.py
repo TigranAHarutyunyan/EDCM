@@ -160,6 +160,11 @@ class DocumentAttachment(models.Model):
                     "xlsx",
                     "ppt",
                     "pptx",
+                    "jpg",
+                    "jpeg",
+                    "png",
+                    "gif",
+                    "webp",
                 ]
             )
         ],

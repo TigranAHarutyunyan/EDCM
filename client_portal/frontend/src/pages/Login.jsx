@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogIn } from 'lucide-react';
+import { LogIn, Sun, Moon } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 import api from '../api';
 
 const Login = () => {
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const { login } = useAuth();
+  const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -16,7 +18,8 @@ const Login = () => {
       await login(formData.username, formData.password);
       navigate('/');
     } catch (err) {
-      setError('Invalid username or password');
+      const msg = err.response?.data?.detail || 'Invalid username or password';
+      setError(msg);
     }
   };
 
@@ -36,96 +39,115 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className={`min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 transition-all duration-500 ${isDarkMode ? 'bg-slate-900' : 'bg-gray-50'}`}>
+      <div className="absolute top-8 right-8">
+        <button 
+          onClick={toggleTheme}
+          className={`p-3 rounded-2xl border backdrop-blur-md transition-all hover:scale-110 ${isDarkMode ? 'bg-slate-800 border-slate-700 text-yellow-500' : 'bg-white border-gray-200 text-gray-500 shadow-lg'}`}
+        >
+          {isDarkMode ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
+        </button>
+      </div>
+
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center">
-          <LogIn className="h-12 w-12 text-blue-600" />
+        <div className="flex justify-center mb-6">
+          <div className={`p-4 rounded-3xl ${isDarkMode ? 'bg-blue-500/10' : 'bg-blue-100'}`}>
+            <LogIn className={`h-12 w-12 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+          </div>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h2 className={`text-center text-4xl font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
           Client Portal
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Sign in to manage your documents
+        <p className={`mt-2 text-center text-sm font-bold ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+          Sign in to manage your submissions
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-md px-4">
+        <div className={`py-10 px-8 shadow-2xl rounded-3xl border backdrop-blur-xl transition-all duration-300 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
           {error && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
+            <div className="mb-6 bg-red-500/10 border-l-4 border-red-500 text-red-500 px-4 py-3 rounded-xl text-sm font-bold">
               {error}
             </div>
           )}
           
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="username" className={`block text-[10px] font-black uppercase tracking-widest mb-1 ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>
                 Username
               </label>
-              <div className="mt-1">
-                <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  value={formData.username}
-                  onChange={(e) => setFormData({...formData, username: e.target.value})}
-                />
-              </div>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                required
+                className={`block w-full px-5 py-4 rounded-2xl border font-bold outline-none transition-all focus:ring-4 ${
+                  isDarkMode 
+                    ? 'bg-slate-900 border-slate-700 text-white placeholder-slate-600 focus:ring-blue-500/20 focus:border-blue-500' 
+                    : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:ring-blue-100 focus:border-blue-500'
+                }`}
+                placeholder="Your username"
+                value={formData.username}
+                onChange={(e) => setFormData({...formData, username: e.target.value})}
+              />
             </div>
 
             <div>
-              <label htmlFor="password" title="Password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" title="Password" className={`block text-[10px] font-black uppercase tracking-widest mb-1 ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>
                 Password
               </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                />
-              </div>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                className={`block w-full px-5 py-4 rounded-2xl border font-bold outline-none transition-all focus:ring-4 ${
+                  isDarkMode 
+                    ? 'bg-slate-900 border-slate-700 text-white placeholder-slate-600 focus:ring-blue-500/20 focus:border-blue-500' 
+                    : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:ring-blue-100 focus:border-blue-500'
+                }`}
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
+              />
             </div>
 
-            <div>
-              <button
-                type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Sign in
-              </button>
-            </div>
+            <button
+              type="submit"
+              className="w-full flex justify-center py-4 px-4 rounded-2xl shadow-xl text-sm font-black text-white bg-blue-600 hover:bg-blue-500 transition-all hover:scale-[1.02] active:scale-95 uppercase tracking-widest"
+            >
+              Sign in
+            </button>
           </form>
 
-          <div className="mt-6">
+          <div className="mt-8">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
+                <div className={`w-full border-t ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`} />
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              <div className="relative flex justify-center text-[10px] font-black uppercase tracking-widest">
+                <span className={`px-4 transition-colors ${isDarkMode ? 'bg-slate-800 text-slate-500' : 'bg-white text-gray-400'}`}>Secure Social Auth</span>
               </div>
             </div>
 
             <div className="mt-6">
               <button
                 onClick={handleGoogleLogin}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                className={`w-full flex items-center justify-center py-4 px-4 rounded-2xl border font-black transition-all hover:scale-[1.02] active:scale-95 ${
+                  isDarkMode 
+                    ? 'bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-700' 
+                    : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm'
+                }`}
               >
-                <img className="h-5 w-5 mr-3" src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google logo" />
+                <img className="h-6 w-6 mr-3" src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google logo" />
                 <span>Continue with Google</span>
               </button>
             </div>
           </div>
 
-          <div className="mt-6 text-center">
-            <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500 text-sm">
-              Don't have an account? Register now
+          <div className="mt-10 text-center">
+            <Link to="/register" className={`font-bold text-sm underline underline-offset-4 decoration-2 transition-colors ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}>
+              New here? Create an account
             </Link>
           </div>
         </div>

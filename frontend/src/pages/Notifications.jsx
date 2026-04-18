@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
 import api from "../services/api";
+import { useTheme } from "../context/ThemeContext";
+import { Bell, CheckCircle, Info, AlertTriangle, FileText, ChevronLeft, Check } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Notifications = () => {
+    const { isDarkMode } = useTheme();
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -25,75 +29,120 @@ const Notifications = () => {
 
     const markRead = async (id) => {
         try {
-            await api.patch(`notifications/${id}/read/`);
+            await api.post(`notifications/${id}/read/`);
             loadNotifications();
         } catch (err) {
             setError("Unable to update notification status.");
         }
     };
 
+    const getIcon = (type) => {
+        switch(type?.code) {
+            case 'NEW_DOCUMENT': return <FileText className="h-5 w-5 text-blue-500" />;
+            case 'NEEDS_APPROVAL': return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+            case 'DOCUMENT_APPROVED': return <CheckCircle className="h-5 w-5 text-green-500" />;
+            default: return <Bell className="h-5 w-5 text-purple-500" />;
+        }
+    };
+
     return (
-        <div className="max-w-5xl mx-auto py-10 px-4">
-            <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
-            <p className="mt-1 text-sm text-gray-500">
-                Keep track of document routing and status changes for your
-                account.
-            </p>
+        <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'bg-slate-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
+            <div className="max-w-4xl mx-auto py-12 px-4">
+                <div className="mb-8 flex items-center justify-between">
+                    <div>
+                        <Link to="/dashboard" className="flex items-center text-sm font-bold text-purple-600 hover:text-purple-400 mb-2 transition-colors">
+                            <ChevronLeft className="h-4 w-4 mr-1" /> Back to Dashboard
+                        </Link>
+                        <h1 className="text-4xl font-black tracking-tight">System Notifications</h1>
+                        <p className={`mt-2 font-medium ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+                            Stay updated on document routing and status changes.
+                        </p>
+                    </div>
+                </div>
 
-            {error && (
-                <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700">
-                    {error}
-                </div>
-            )}
+                {error && (
+                    <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 font-bold flex items-center">
+                        <AlertTriangle className="h-5 w-5 mr-3" />
+                        {error}
+                    </div>
+                )}
 
-            {loading ? (
-                <div className="mt-10 flex justify-center">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
-                </div>
-            ) : notifications.length === 0 ? (
-                <div className="mt-8 p-4 bg-gray-50 border border-gray-200 rounded-lg text-gray-600">
-                    No notifications.
-                </div>
-            ) : (
-                <div className="mt-6 space-y-3">
-                    {notifications.map((n) => (
-                        <div
-                            key={n.id}
-                            className={`p-4 rounded-lg border ${n.is_read ? "bg-white border-gray-200" : "bg-purple-50 border-purple-200"}`}
-                        >
-                            <div className="flex justify-between items-start gap-3">
-                                <div>
-                                    <p className="text-sm font-medium">
-                                        {n.notification_type?.name ||
-                                            "Notification"}
-                                    </p>
-                                    <p className="mt-1 text-xs text-gray-500">
-                                        {n.document?.title || "General"}
-                                    </p>
-                                </div>
-                                <span
-                                    className={`text-xs px-2 py-1 rounded-full ${n.is_read ? "bg-gray-100 text-gray-400" : "bg-purple-600 text-white"}`}
-                                >
-                                    {n.is_read ? "Read" : "New"}
-                                </span>
-                            </div>
-                            <p className="mt-2 text-sm text-gray-700">
-                                {n.payload || "No detail provided."}
-                            </p>
-                            <div className="mt-3">
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-20">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+                        <p className="font-bold text-slate-500 uppercase tracking-widest text-xs">Loading Activity...</p>
+                    </div>
+                ) : notifications.length === 0 ? (
+                    <div className={`text-center py-20 rounded-3xl border-2 border-dashed ${isDarkMode ? 'bg-slate-800/30 border-slate-700 text-slate-500' : 'bg-white border-gray-200 text-gray-400'}`}>
+                        <Bell className="h-16 w-16 mx-auto mb-4 opacity-20" />
+                        <p className="text-xl font-bold italic">No notifications found.</p>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {notifications.map((n) => (
+                            <div
+                                key={n.id}
+                                className={`group p-6 rounded-3xl border transition-all duration-300 shadow-sm relative overflow-hidden ${
+                                    n.is_read 
+                                    ? (isDarkMode ? 'bg-slate-800/50 border-slate-700 opacity-60' : 'bg-white border-gray-100 opacity-80') 
+                                    : (isDarkMode ? 'bg-slate-800 border-purple-500/30 shadow-purple-500/5' : 'bg-white border-purple-200 shadow-purple-600/5')
+                                }`}
+                            >
                                 {!n.is_read && (
-                                    <button
-                                        onClick={() => markRead(n.id)}
-                                        className="text-xs font-semibold text-purple-700 hover:text-purple-900"
-                                    >
-                                        Mark as read
-                                    </button>
+                                    <div className="absolute top-0 left-0 w-1.5 h-full bg-purple-600" />
                                 )}
+                                <div className="flex gap-5">
+                                    <div className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-gray-50 border border-gray-100'}`}>
+                                        {getIcon(n.notification_type)}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-start mb-1">
+                                            <h3 className={`text-lg font-black ${isDarkMode ? (n.is_read ? 'text-slate-400' : 'text-white') : (n.is_read ? 'text-gray-500' : 'text-gray-900')}`}>
+                                                {n.payload || "Activity Alert"}
+                                            </h3>
+                                            <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border transition-all ${
+                                                n.is_read 
+                                                ? (isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-500' : 'bg-gray-100 border-gray-200 text-gray-400') 
+                                                : 'bg-purple-600 border-purple-500 text-white shadow-lg'
+                                            }`}>
+                                                {n.is_read ? "Archived" : "New Activity"}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <p className={`text-sm font-bold ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+                                                {n.document?.title || "System-wide"}
+                                            </p>
+                                            <span className="h-1 w-1 rounded-full bg-slate-400" />
+                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-tighter">
+                                                {new Date(n.created_at).toLocaleString()}
+                                            </p>
+                                        </div>
+                                        
+                                        {!n.is_read && (
+                                            <div className="mt-4 flex gap-3">
+                                                <button
+                                                    onClick={() => markRead(n.id)}
+                                                    className="flex items-center px-4 py-2 bg-purple-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-purple-500 transition-all shadow-lg active:scale-95"
+                                                >
+                                                    <Check className="h-3 w-3 mr-2" /> Mark as read
+                                                </button>
+                                                <button
+                                                    onClick={() => navigate(`/documents`)}
+                                                    className={`flex items-center px-4 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all border ${
+                                                        isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-300 hover:text-white' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-white'
+                                                    }`}
+                                                >
+                                                    View Details
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
-            )}
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

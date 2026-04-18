@@ -10,11 +10,16 @@ import httpx
 import os
 import sqlite3
 from typing import Dict
+import uuid
+import secrets
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # Google OAuth Settings
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
-GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8002/login/callback")
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8002/google-callback")
 GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
 
 SECRET_KEY = os.getenv("SECRET_KEY", "prod-portal-secret-key-change-this")
@@ -25,7 +30,14 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # We use the internal service name 'backend' defined in docker-compose
+# Service Settings
 EDCM_BACKEND_URL = os.getenv("EDCM_BACKEND_URL", "http://backend:8000/api")
+SMTP_SERVER = os.getenv("EMAIL_HOST", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("EMAIL_PORT", "587"))
+SMTP_USER = os.getenv("EMAIL_HOST_USER", "")
+SMTP_PASS = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_NAME = os.getenv("DEFAULT_FROM_EMAIL_NAME", "EDCM Administrator")
+APP_URL = os.getenv("APP_URL", "http://localhost:3001")
 
 app = FastAPI(title="EDCM Client Portal API")
 
@@ -48,7 +60,14 @@ def init_db():
                   email TEXT UNIQUE,
                   password TEXT,
                   full_name TEXT,
-                  company TEXT)''')
+                  company TEXT,
+                  is_verified INTEGER DEFAULT 0)''')
+    
+    c.execute('''CREATE TABLE IF NOT EXISTS verification_tokens
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  user_id INTEGER,
+                  token TEXT,
+                  created_at DATETIMEDEFAULT CURRENT_TIMESTAMP)''')
     conn.commit()
     conn.close()
 
@@ -59,13 +78,11 @@ class UserRegister(BaseModel):
     password: str
     email: str
     full_name: str
-    company: Optional[str] = ""
 
 class User(BaseModel):
     username: str
     email: str
     full_name: str
-    company: str
 
 class Token(BaseModel):
     access_token: str
@@ -78,8 +95,41 @@ def get_user(username: str):
     row = c.fetchone()
     conn.close()
     if row:
-        return {"id": row[0], "username": row[1], "email": row[2], "password": row[3], "full_name": row[4], "company": row[5]}
+        return {"id": row[0], "username": row[1], "email": row[2], "password": row[3], "full_name": row[4], "is_verified": bool(row[6])}
     return None
+
+def send_verification_email(email: str, token: str):
+    if not SMTP_USER or not SMTP_PASS:
+        print(f"SMTP not configured. Verification token for {email}: {token}")
+        return
+
+    msg = MIMEMultipart()
+    msg['From'] = f"{EMAIL_NAME} <{SMTP_USER}>"
+    msg['To'] = email
+    msg['Subject'] = f"{token} is your EDCM Verification Code"
+    
+    body = f"""
+Hello,
+
+Your verification code for EDCM Client Portal is:
+
+{token}
+
+Please enter this code on the registration page to activate your account.
+This code will expire shortly.
+
+Thank you!
+"""
+    msg.attach(MIMEText(body, 'plain'))
+
+    try:
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(SMTP_USER, SMTP_PASS)
+        server.send_message(msg)
+        server.quit()
+    except Exception as e:
+        print(f"Failed to send email: {e}")
 
 def create_access_token(data: dict):
     to_encode = data.copy()
@@ -103,20 +153,88 @@ async def register(user: UserRegister):
     c = conn.cursor()
     try:
         hashed_password = pwd_context.hash(user.password)
-        c.execute("INSERT INTO users (username, email, password, full_name, company) VALUES (?, ?, ?, ?, ?)",
-                  (user.username, user.email, hashed_password, user.full_name, user.company))
+        c.execute("INSERT INTO users (username, email, password, full_name) VALUES (?, ?, ?, ?)",
+                  (user.username, user.email, hashed_password, user.full_name))
+        user_id = c.lastrowid
+        
+        # Generate and store 6-digit code
+        code = ''.join(secrets.choice('0123456789') for _ in range(6))
+        c.execute("INSERT INTO verification_tokens (user_id, token) VALUES (?, ?)", (user_id, code))
         conn.commit()
-    except sqlite3.IntegrityError:
-        raise HTTPException(status_code=400, detail="Username or email already taken")
+        
+        # Send email background
+        send_verification_email(user.email, code)
+        
+    except sqlite3.IntegrityError as e:
+        error_msg = str(e)
+        if "users.username" in error_msg or "UNIQUE constraint failed: users.username" in error_msg:
+             raise HTTPException(status_code=400, detail="This username is already taken. Please choose another.")
+        if "users.email" in error_msg or "UNIQUE constraint failed: users.email" in error_msg:
+             raise HTTPException(status_code=400, detail="This email is already registered. Please login instead.")
+        raise HTTPException(status_code=400, detail="Registration failed: Username or email already taken.")
     finally:
         conn.close()
-    return {"message": "Success"}
+    return {"message": "Verification code sent to your email."}
+
+class VerifyRequest(BaseModel):
+    email: str
+    code: str
+
+@app.post("/verify-code")
+async def verify_code(req: VerifyRequest):
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    # Find user by email first
+    c.execute("SELECT id, username FROM users WHERE email=?", (req.email,))
+    user_row = c.fetchone()
+    if not user_row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user_id, username = user_row
+    # Check token
+    c.execute("SELECT user_id FROM verification_tokens WHERE user_id=? AND token=?", (user_id, req.code))
+    token_row = c.fetchone()
+    
+    if not token_row:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Invalid verification code")
+    
+    c.execute("UPDATE users SET is_verified = 1 WHERE id=?", (user_id,))
+    c.execute("DELETE FROM verification_tokens WHERE user_id=? AND token=?", (user_id, req.code))
+    conn.commit()
+    conn.close()
+    
+    # Generate token for auto-login
+    access_token = create_access_token(data={"sub": username})
+    return {"access_token": access_token, "token_type": "bearer", "message": "Account activated successfully!"}
+
+@app.get("/verify-email")
+async def verify_email(token: str):
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute("SELECT user_id FROM verification_tokens WHERE token=?", (token,))
+    row = c.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+    
+    user_id = row[0]
+    c.execute("UPDATE users SET is_verified = 1 WHERE id=?", (user_id,))
+    c.execute("DELETE FROM verification_tokens WHERE token=?", (token,))
+    conn.commit()
+    conn.close()
+    return {"message": "Email verified successfully. You can now log in."}
 
 @app.post("/token", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     user = get_user(form_data.username)
     if not user or not pwd_context.verify(form_data.password, user["password"]):
         raise HTTPException(status_code=400, detail="Invalid credentials")
+    
+    if not user.get("is_verified"):
+        raise HTTPException(status_code=403, detail="Email not verified. Please check your inbox.")
+        
     access_token = create_access_token(data={"sub": user["username"]})
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -152,6 +270,7 @@ async def google_login():
         "access_type": "offline",
         "prompt": "select_account"
     }
+    print(f"DEBUG: Using GOOGLE_REDIRECT_URI = {GOOGLE_REDIRECT_URI}", flush=True)
     encoded_params = "&".join([f"{k}={v}" for k, v in params.items()])
     return {"url": f"{auth_endpoint}?{encoded_params}"}
 
@@ -192,8 +311,8 @@ async def google_callback(code: str):
     if not user:
         conn = sqlite3.connect(DB_FILE)
         c = conn.cursor()
-        c.execute("INSERT INTO users (username, email, password, full_name, company) VALUES (?, ?, ?, ?, ?)",
-                  (email, email, "GOOGLE_AUTH_NO_PASSWORD", full_name, "External via Google"))
+        c.execute("INSERT INTO users (username, email, password, full_name, is_verified) VALUES (?, ?, ?, ?, ?)",
+                  (email, email, "GOOGLE_AUTH_NO_PASSWORD", full_name, 1)) # Verified by default
         conn.commit()
         conn.close()
         user = get_user(email)

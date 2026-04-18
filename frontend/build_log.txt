@@ -1,0 +1,23 @@
+
+> frontend@0.0.0 build
+> vite build
+
+vite v7.3.2 building client environment for production...
+transforming...
+✓ 34 modules transformed.
+✗ Build failed in 231ms
+error during build:
+[vite]: Rollup failed to resolve import "lucide-react" from "/Users/tigran/Desktop/EDCM/frontend/src/pages/Dashboard.jsx".
+This is most likely unintended because it can break your application at runtime.
+If you do want to externalize this module explicitly add it to
+`build.rollupOptions.external`
+    at viteLog (file:///Users/tigran/Desktop/EDCM/frontend/node_modules/vite/dist/node/chunks/config.js:33639:57)
+    at file:///Users/tigran/Desktop/EDCM/frontend/node_modules/vite/dist/node/chunks/config.js:33673:73
+    at onwarn (file:///Users/tigran/Desktop/EDCM/frontend/node_modules/@vitejs/plugin-react/dist/index.js:76:7)
+    at file:///Users/tigran/Desktop/EDCM/frontend/node_modules/vite/dist/node/chunks/config.js:33673:28
+    at onRollupLog (file:///Users/tigran/Desktop/EDCM/frontend/node_modules/vite/dist/node/chunks/config.js:33668:63)
+    at onLog (file:///Users/tigran/Desktop/EDCM/frontend/node_modules/vite/dist/node/chunks/config.js:33471:4)
+    at file:///Users/tigran/Desktop/EDCM/frontend/node_modules/rollup/dist/es/shared/node-entry.js:21028:32
+    at Object.logger [as onLog] (file:///Users/tigran/Desktop/EDCM/frontend/node_modules/rollup/dist/es/shared/node-entry.js:23023:9)
+    at ModuleLoader.handleInvalidResolvedId (file:///Users/tigran/Desktop/EDCM/frontend/node_modules/rollup/dist/es/shared/node-entry.js:21767:26)
+    at file:///Users/tigran/Desktop/EDCM/frontend/node_modules/rollup/dist/es/shared/node-entry.js:21725:26

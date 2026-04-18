@@ -8,3 +8,36 @@
     to { opacity: 1; transform: translateY(0); }
   }
 }
+
+@layer base {
+  body {
+    @apply transition-colors duration-300;
+  }
+  
+  html.dark body {
+    background-color: #0f172a; /* Slate 900 */
+    color: #f8fafc; /* Slate 50 */
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+}
+
+/* Custom scrollbar for dark mode */
+.dark ::-webkit-scrollbar {
+  width: 10px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 5px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}

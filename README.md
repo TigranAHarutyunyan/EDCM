@@ -1,185 +1,160 @@
-# EDCM - Electronic Document Control Management
+![EDCM Banner](./edcm_banner_1776263815533.png)
 
-> Last updated: 2026-03-29
+# 📄 EDCM — Electronic Document Control Management
 
-EDCM is a modern, enterprise-grade Electronic Document Control Management system designed for efficient tracking, collaboration, and management of corporate documents. Built with a powerful Django REST API and a high-performance React frontend.
+> **Enterprise-grade document tracking, collaboration, and management system.**
 
-## 📌 Table of Contents
+EDCM is a modern, high-performance Electronic Document Control Management system designed for corporate environments. It streamlines document lifecycles through efficient tracking, real-time collaboration, and robust role-based access control.
 
-- [Key Features](#-key-features)
-- [Tech Stack](#-tech-stack)
-- [Authentication (API)](#-authentication-api)
-- [Quick Start with Docker](#-quick-start-with-docker)
-- [Access Points](#-access-points)
-- [Default Credentials](#-default-credentials-after-running-seed_data)
-- [Panels](#-panels)
-- [Public Portal](#-public-portal-client-submissions)
-- [Local Development](#-local-development-without-docker)
-- [Project Structure](#-project-structure)
-- [Contributing & Support](#-contributing--support)
-- [Tests](#-tests)
-- [License](#-license)
+---
+
+## 🏛 Project Architecture
+
+```mermaid
+graph TD
+    User([User / Browser])
+    Proxy[Vite Proxy / Nginx]
+    FE[React 19 Frontend]
+    BE[Django REST API]
+    DB[(PostgreSQL 15)]
+    Storage[Static/Media Storage]
+
+    User <--> Proxy
+    Proxy <--> FE
+    Proxy <--> BE
+    BE <--> DB
+    BE <--> Storage
+```
+
+---
 
 ## 🚀 Key Features
 
-- **Dynamic Dashboard**: Full overview of document statistics, recent activity, and quick search.
-- **Advanced Document Workflow**:
-    - Create, edit, and archive documents.
-    - **"Take" System**: Users can claim unassigned documents.
-    - **Department Assignment**: Heads of Department (Managers) can manage ownership/assignment for documents in their department.
-- **Collaboration Suite**:
-    - **Comments**: Real-time discussion on every document.
-    - **Audit History**: Transparent tracking of every change, including field updates and ownership transfers.
-    - **Attachments**: Upload and download files (PDF/Word/Excel/PowerPoint) per document.
-- **Personalized Profiles**:
-    - Detailed user profiles with personal bios and avatars.
-    - Individual tracking of "Created" vs. "Taken" documents.
-- **Role-Based Access Control (RBAC)**:
-    - **Admins**: Access to Django Admin (`/admin/`) and system-wide management.
-    - **Managers (Head of Department)**: Department Panel (`/department/`) to manage employees + department documents.
-    - **Employees**: Focus on assigned tasks and department-wide collaboration.
-- **Modern UI/UX**: Premium design using Tailwind CSS with glassmorphism effects and smooth transitions.
+- **⚡ Dynamic Dashboard**: real-time overview of document statistics, recent activity, and global search.
+- **🛠 Advanced Workflow**:
+    - Full CRUD operations with archiving capabilities.
+    - **"Take" System**: Instant document claiming for unassigned tasks.
+    - **Department Governance**: Managers oversee ownership and assignments within their departments.
+- **🤝 Collaboration Suite**:
+    - **Live Comments**: Threaded discussions on every document.
+    - **Deep Audit Log**: Transparent tracking of every field change and ownership transfer.
+    - **Multi-Format Attachments**: Support for PDF, Word, Excel, and PowerPoint.
+- **🔐 Secure RBAC**:
+    - **Admin**: System-wide configuration and Django Admin access.
+    - **Manager**: Departmental control and employee management.
+    - **Employee**: Task focus and cross-department collaboration.
+- **💎 Premium UI**: Built with Tailwind CSS v4, featuring glassmorphism, smooth transitions, and a mobile-first responsive design.
+
+---
 
 ## 🛠 Tech Stack
 
-- **Backend**: Python 3.10, Django 4.2, Django REST Framework
-- **Frontend**: React 19, Vite, Tailwind CSS v4, Axios
-- **Database**: PostgreSQL 15
-- **Containerization**: Docker & Docker Compose
-- **Server**: Gunicorn & Whitenoise (for static assets)
+| Component | Technology |
+| :--- | :--- |
+| **Backend** | Python 3.10+, Django 4.2+, DRF |
+| **Frontend** | React 19, Vite, Tailwind CSS v4, Axios |
+| **Database** | PostgreSQL 15 |
+| **DevOps** | Docker, Docker Compose, Gunicorn |
+| **Styling** | Modern CSS with Glassmorphism |
 
-## 🔐 Authentication (API)
+---
 
-- The API uses DRF Token auth, stored in an **HttpOnly cookie** (`edcm_auth`) on login (frontend does not store tokens in `localStorage`).
-- CSRF is enabled for cookie-auth unsafe methods (frontend boots CSRF via `GET /api/csrf/`).
-- Useful endpoints:
-    - `POST /api/auth/login/` (sets `edcm_auth` cookie)
-    - `POST /api/auth/logout/` (clears cookies)
-    - `GET /api/auth/me/` (current user info used by the frontend)
-    - `GET/POST /api/documents/<id>/attachments/` (list/upload attachments for a document)
-    - `DELETE /api/documents/<doc_id>/attachments/<attachment_id>/` (delete an attachment)
+## 📖 Documentation Index
+
+| Guide | Description |
+| :--- | :--- |
+| 🚀 [**QUICKSTART.md**](./QUICKSTART.md) | The fastest way to get the project running. |
+| 🐳 [**DOCKER_SETUP.md**](./DOCKER_SETUP.md) | Detailed Docker and containerization guide. |
+| 🌍 [**DEPLOYMENT_GUIDE.md**](./DEPLOYMENT_GUIDE.md) | Production deployment instructions (Render/VPS). |
+| 🔑 [**ENV_VARIABLES.md**](./ENV_VARIABLES.md) | Full reference for configuration and secrets. |
+| 🛂 [**PORTAL_SYSTEM.md**](./PORTAL_SYSTEM.md) | Details on the client-facing submission portal. |
+
+---
 
 ## 🐳 Quick Start with Docker
 
-The easiest way to run the project locally is using Docker.
+The fastest way to experience EDCM is via Docker.
 
-1.  **Clone the repository**:
-
-    ```bash
-    git clone <repository-url>
-    cd EDCM
-    ```
-
-2.  **Configure environment variables**:
-    Copy the example env file and update your settings (defaults work with Docker):
-
+1.  **Environment Setup**:
     ```bash
     cp .env.example .env
     ```
 
-3.  **Start the application**:
-
+2.  **Spin Up Containers**:
     ```bash
     docker-compose up --build -d
     ```
 
-    _Note: By default, the container runs migrations + `python manage.py seed_data` on startup. You can toggle this with `SEED_DATA=False` in your `.env`._
-
-4.  **Open the app**:
-    - Frontend: `http://localhost:5173`
-    - Backend/API: `http://localhost:8000`
-
-## 📍 Access Points
-
-- **Frontend (Vite, Docker)**: `http://localhost:5173`
-    - API and Admin are proxied through Vite (`/api`, `/admin`, `/static`, `/media`)
-- **Backend (Django)**: `http://localhost:8000`
-    - **API**: `http://localhost:8000/api/`
+3.  **Access the System**:
+    - **Frontend**: `http://localhost:5173`
+    - **Backend API**: `http://localhost:8000`
     - **Django Admin**: `http://localhost:8000/admin/`
-    - **API Health Check**: `http://localhost:8000/api/health/`
 
-## 🔑 Default Credentials (after running seed_data)
+> [!TIP]
+> By default, the system runs migrations and `seed_data` on first boot. Toggle this via `SEED_DATA=False` in your `.env`.
+
+### 🔑 Default Credentials
+*Available after running `seed_data`*
 
 - **Admin**: `admin` / `adminpass`
 - **Manager**: `manager` / `managerpass`
 - **Employee**: `employee` / `employeepass`
 
-## 🧭 Panels
+---
 
-- **Admin Panel**: `/admin/` (Django admin)
-    - Access requires either a Django superuser or a user with business role `Admin` (and `is_staff=True`).
-    - Styled via template override in `documents/templates/admin/` and `documents/static/admin/edcm_admin.css`.
-- **Department Panel**: `/department/` (React page)
-    - Only **Managers** can access it.
-    - The backend enforces department scoping: managers only see employees/documents from their own department.
+## 🧑‍💻 Local Development
 
-## 🌐 Public Portal (Client Submissions)
+If you prefer running without containers:
 
-- **Public Portal UI**: `/portal` (no login)
-- **API endpoint**: `POST /api/portal/submit/` (multipart form)
-- All portal-submitted documents are assigned to the configured inbox user:
-    - `PORTAL_INBOX_USERNAME` (defaults to `admin`)
-    - The inbox user can route the document to a department via: `PATCH /api/documents/<id>/route/`
+### 1. Backend
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python3 manage.py migrate
+python3 manage.py seed_data
+python3 manage.py runserver
+```
 
-## 🧑‍💻 Local Development (without Docker)
+### 2. Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-1. Backend:
-
-    ```bash
-    python3 -m venv venv
-    source venv/bin/activate
-    pip install -r requirements.txt
-    cp .env.example .env
-    python3 manage.py migrate
-    python3 manage.py seed_data
-    python3 manage.py runserver
-    ```
-
-2. Frontend (Vite dev server + proxy to Django):
-
-    ```bash
-    cd frontend
-    npm install
-    npm run dev
-    ```
-
-    - Frontend dev URL: `http://localhost:5173`
-    - Backend URL: `http://127.0.0.1:8000`
-
-## 🧪 Tests
-
-- Django backend tests:
-
-    ```bash
-    python3 manage.py test
-    ```
-
-- React frontend tests (if configured):
-
-    ```bash
-    cd frontend
-    npm test
-    ```
+---
 
 ## 📁 Project Structure
 
-- `/documents`: Core Django application (Models, Views, Serializers).
-- `/frontend`: React application source code.
-- `/config`: Project settings and URL routing.
-- `docker-compose.yml`: Orchestration for app and database services.
-- `entrypoint.sh`: Startup script for migrations and static collection.
+```text
+EDCM/
+├── documents/          # Core App (Models, Views, Serializers)
+├── frontend/           # React Source Code
+├── config/             # Django Project Settings
+├── media/              # User Uploaded Attachments
+├── staticfiles/        # Collected Static Assets
+└── docker-compose.yml  # Container Orchestration
+```
+
+---
 
 ## 🤝 Contributing & Support
 
-- To contribute, fork the repo, create a feature branch, and submit a PR against `main`.
-- Add tests in `documents/tests.py` and `frontend/src` coverage before requesting review.
-- For questions, open an issue with a reproducible bug report and expected behavior.
-- Use `manage.py test` (backend) and `npm test` (frontend) to validate changes.
+1. **Fork** the repository.
+2. Create a **Feature Branch** (`git checkout -b feature/AmazingFeature`).
+3. **Commit** your changes.
+4. **Push** to the branch.
+5. Open a **Pull Request**.
 
-## 📝 Changelog
+> [!IMPORTANT]
+> Always run `python3 manage.py test` before submitting changes to ensure core logic remains intact.
 
-- 2026-03-28: README updated with contribution and support guidance.
+---
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+*Built with ❤️ by the EDCM Team*
