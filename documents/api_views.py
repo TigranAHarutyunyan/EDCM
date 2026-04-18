@@ -21,6 +21,8 @@ from .serializers import (
     ConfidentialityLevelSerializer,
     DocumentCommentSerializer,
     DocumentAttachmentSerializer,
+    NotificationSerializer,
+    NotificationTypeSerializer,
 )
 from .models import (
     Document,
@@ -33,6 +35,9 @@ from .models import (
     UserProfile,
     DocumentAttachment,
     PortalSubmission,
+    Notification,
+    NotificationType,
+    PortalNotification,
 )
 
 
@@ -299,6 +304,7 @@ class ConfidentialityLevelListView(generics.ListAPIView):
     serializer_class = ConfidentialityLevelSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+# API view for listing document statuses
 class DocumentStatusListView(generics.ListAPIView):
     queryset = DocumentStatus.objects.all()
     serializer_class = DocumentStatusSerializer
@@ -452,6 +458,18 @@ class DocumentTakeView(APIView):
                 document=document,
                 action="Taken",
                 details=f"Document taken by {user.username}"
+            )
+            _create_notification(
+                document.creator,
+                "DOCUMENT_TAKEN",
+                document=document,
+                payload=f"{user.username} took document {document.title}."
+            )
+            _create_notification(
+                user,
+                "DOCUMENT_ASSIGNED",
+                document=document,
+                payload=f"You have taken {document.title}."
             )
             
             return Response(DocumentSerializer(document).data)
@@ -613,11 +631,13 @@ class DocumentRouteToDepartmentView(APIView):
     def patch(self, request, pk):
         actor = request.user
         role = getattr(getattr(actor, "profile", None), "role", None)
+
         is_allowed = bool(
             actor.is_superuser
-            or role == "Admin"
+            or role in ("Admin", "Department Chef", "Manager")
             or actor.username == (getattr(settings, "PORTAL_INBOX_USERNAME", None) or "admin")
         )
+
         if not is_allowed:
             raise PermissionDenied("You do not have permission to route documents.")
 
@@ -634,6 +654,9 @@ class DocumentRouteToDepartmentView(APIView):
         if assigned_to_id not in (None, "", "null"):
             assigned_to = generics.get_object_or_404(User, pk=assigned_to_id)
 
+        # Previously Managers were restricted, but user requirements now allow cross-dept routing.
+        pass
+
         document.department = department
         if assigned_to is not None:
             document.assigned_to = assigned_to
@@ -645,6 +668,21 @@ class DocumentRouteToDepartmentView(APIView):
             action="Routed",
             details=f"Routed to {department.name}",
         )
+
+        _create_notification(
+            document.creator,
+            "DOCUMENT_ROUTED",
+            document=document,
+            payload=f"Document {document.title} routed to {department.name} by {actor.username}."
+        )
+
+        if assigned_to:
+            _create_notification(
+                assigned_to,
+                "DOCUMENT_ASSIGNED",
+                document=document,
+                payload=f"You were assigned to {document.title}."
+            )
 
         return Response(DocumentSerializer(document).data)
 
@@ -674,28 +712,142 @@ class PortalStatusSyncView(APIView):
         if not email:
             return Response({"error": "email is required"}, status=400)
             
-        submissions = PortalSubmission.objects.filter(client_email=email).select_related('document', 'document__status')
+        submissions = PortalSubmission.objects.filter(client_email=email).select_related(
+            'document', 
+            'document__status'
+        ).prefetch_related('document__comments', 'document__comments__user')
+        
         results = []
         for sub in submissions:
-            # Defensive check for missing documents or statuses
             if not sub.document:
                 continue
                 
-            status_name = "Processing"
-            status_code = "PENDING"
+            status_name = sub.document.status.name if sub.document.status else "Processing"
+            status_code = sub.document.status.code if sub.document.status else "PENDING"
             
-            if sub.document.status:
-                status_name = sub.document.status.name
-                status_code = sub.document.status.code
-                
+            # Fetch public comments ONLY
+            external_comments = []
+            for comment in sub.document.comments.filter(is_external=True).order_by('created_at'):
+                external_comments.append({
+                    "id": comment.id,
+                    "text": comment.text,
+                    "sender_name": comment.user.profile.full_name or comment.user.username,
+                    "created_at": comment.created_at
+                })
+
+            attachments = []
+            for att in sub.document.attachments.all():
+                attachments.append({
+                    "id": att.id,
+                    "name": att.original_name,
+                    "url": att.file.url if att.file else None,
+                    "size": att.size
+                })
+
             results.append({
                 "id": sub.document_id,
                 "title": sub.document.title,
+                "description": sub.document.description,
                 "status_name": status_name,
                 "status_code": status_code,
-                "updated_at": sub.document.updated_at
+                "updated_at": sub.document.updated_at,
+                "comments": external_comments,
+                "attachments": attachments
             })
         return Response(results)
+
+def _create_portal_notification(document, text):
+    """
+    Helper to send a notification to a portal client if the document originated from there.
+    """
+    if hasattr(document, 'portal_submission'):
+        PortalNotification.objects.create(
+            client_email=document.portal_submission.client_email,
+            document=document,
+            text=text
+        )
+
+class PortalNotificationListView(APIView):
+    """
+    Fetch unread and recent notifications for a specific client email.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        email = request.query_params.get("email")
+        if not email:
+            return Response({"error": "email is required"}, status=400)
+        
+        notifs = PortalNotification.objects.filter(client_email=email).order_by('-created_at')[:20]
+        results = []
+        for n in notifs:
+            results.append({
+                "id": n.id,
+                "text": n.text,
+                "document_id": n.document_id,
+                "is_read": n.is_read,
+                "created_at": n.created_at
+            })
+        return Response(results)
+
+class PortalNotificationMarkReadView(APIView):
+    """
+    Allow client portal to mark specific notification as read.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, pk):
+        try:
+            notif = PortalNotification.objects.get(pk=pk)
+            notif.is_read = True
+            notif.save()
+            return Response({"status": "ok"})
+        except PortalNotification.DoesNotExist:
+            return Response({"error": "not found"}, status=404)
+
+def _get_notification_type(code, default_name=None):
+    defaults = {"name": default_name or code.replace("_", " ").title()}
+    obj, _ = NotificationType.objects.get_or_create(code=code, defaults=defaults)
+    return obj
+
+
+def _create_notification(user, code, document=None, payload=None):
+    if not user or not user.is_active:
+        return
+    notif_type = _get_notification_type(code)
+    Notification.objects.create(
+        user=user,
+        notification_type=notif_type,
+        document=document,
+        payload=payload or "",
+    )
+
+
+class NotificationListView(generics.ListAPIView):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user).order_by('-created_at')
+
+
+class NotificationMarkReadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def patch(self, request, pk):
+        notification = generics.get_object_or_404(Notification, pk=pk, user=request.user)
+        notification.is_read = True
+        notification.save()
+        return Response(NotificationSerializer(notification).data)
+
+
+class NotificationUnreadCountView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        count = Notification.objects.filter(user=request.user, is_read=False).count()
+        return Response({"unread_count": count})
+
 
 class DocumentCommentCreateView(generics.CreateAPIView):
     serializer_class = DocumentCommentSerializer
@@ -704,14 +856,35 @@ class DocumentCommentCreateView(generics.CreateAPIView):
     def perform_create(self, serializer):
         document_id = self.kwargs.get('pk')
         document = Document.objects.get(pk=document_id)
-        serializer.save(user=self.request.user, document=document)
+        
+        # Pull is_external from request data if user is staff/admin
+        is_external = self.request.data.get('is_external', False)
+        
+        serializer.save(
+            user=self.request.user, 
+            document=document,
+            is_external=is_external
+        )
         
         AuditLog.objects.create(
             user=self.request.user,
             document=document,
             action="Commented",
-            details=f"New comment added"
+            details=f"New {'external ' if is_external else ''}comment added"
         )
+        
+        # 1. Notify Client (Portal) if it's external
+        if is_external:
+            _create_portal_notification(document, f"New message from our team regarding '{document.title}'")
+
+        # 2. Notify Internal Creator if it's NOT their own comment
+        if document.creator_id != self.request.user.id:
+            _create_notification(
+                document.creator,
+                "DOCUMENT_COMMENTED",
+                document=document,
+                payload=f"{self.request.user.username} commented on {document.title}"
+            )
 
 
 class UserProfileView(APIView):
@@ -885,3 +1058,19 @@ class DepartmentDocumentOwnerUpdateView(APIView):
             details=f"Updated {', '.join(changed_fields)}",
         )
         return Response(DocumentSerializer(document).data)
+
+class NotificationListView(generics.ListAPIView):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user).order_by("-created_at")
+
+class NotificationMarkReadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        notification = Notification.objects.get(pk=pk, user=request.user)
+        notification.is_read = True
+        notification.save()
+        return Response({"status": "read"})

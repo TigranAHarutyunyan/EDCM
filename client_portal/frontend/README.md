@@ -1,16 +1,32 @@
-# React + Vite
+# EDCM Client Portal Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite frontend for the public portal of the EDCM system. This app allows public users to submit documents without login.
 
-Currently, two official plugins are available:
+## Prerequisites
 
+- Node.js installed.
+- Client portal backend running and accessible from `http://127.0.0.1:8000`.
+
+## Setup
+
+1. `cd client_portal/frontend`
+2. `npm install`
+
+## Running
+
+`npm run dev`
+
+## Build
+
+`npm run build`
+
+## Integration
+
+- Public submissions call `/api/portal/submit/`.
+- The inbox user for portal items is configured by `PORTAL_INBOX_USERNAME` in the backend environment.
+
+## Notes
+
+- This README was improved from the default Vite template to reflect EDCM project usage.
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
 - [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.

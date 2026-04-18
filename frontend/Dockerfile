@@ -1,19 +1,19 @@
-FROM node:20-alpine AS build
-
+FROM node:20-alpine AS builder
 WORKDIR /app
-
 COPY package*.json ./
-RUN npm install --legacy-peer-deps --no-audit --no-fund
-
+RUN npm ci
 COPY . .
 RUN npm run build
 
+FROM nginx:alpine
+RUN addgroup -S appgroup && adduser -S -G appgroup appuser
 
-FROM nginx:stable-alpine
+# Copy our custom main nginx.conf directly to /etc/nginx/nginx.conf
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/dist /usr/share/nginx/html
+RUN chown -R appuser:appgroup /usr/share/nginx/html /var/cache/nginx /var/log/nginx
 
-EXPOSE 80
-
+USER appuser
+EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]

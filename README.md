@@ -1,6 +1,24 @@
 # EDCM - Electronic Document Control Management
 
+> Last updated: 2026-03-29
+
 EDCM is a modern, enterprise-grade Electronic Document Control Management system designed for efficient tracking, collaboration, and management of corporate documents. Built with a powerful Django REST API and a high-performance React frontend.
+
+## 📌 Table of Contents
+
+- [Key Features](#-key-features)
+- [Tech Stack](#-tech-stack)
+- [Authentication (API)](#-authentication-api)
+- [Quick Start with Docker](#-quick-start-with-docker)
+- [Access Points](#-access-points)
+- [Default Credentials](#-default-credentials-after-running-seed_data)
+- [Panels](#-panels)
+- [Public Portal](#-public-portal-client-submissions)
+- [Local Development](#-local-development-without-docker)
+- [Project Structure](#-project-structure)
+- [Contributing & Support](#-contributing--support)
+- [Tests](#-tests)
+- [License](#-license)
 
 ## 🚀 Key Features
 
@@ -60,9 +78,11 @@ The easiest way to run the project locally is using Docker.
     ```
 
 3.  **Start the application**:
+
     ```bash
     docker-compose up --build -d
     ```
+
     _Note: By default, the container runs migrations + `python manage.py seed_data` on startup. You can toggle this with `SEED_DATA=False` in your `.env`._
 
 4.  **Open the app**:
@@ -72,11 +92,11 @@ The easiest way to run the project locally is using Docker.
 ## 📍 Access Points
 
 - **Frontend (Vite, Docker)**: `http://localhost:5173`
-  - API and Admin are proxied through Vite (`/api`, `/admin`, `/static`, `/media`)
+    - API and Admin are proxied through Vite (`/api`, `/admin`, `/static`, `/media`)
 - **Backend (Django)**: `http://localhost:8000`
-  - **API**: `http://localhost:8000/api/`
-  - **Django Admin**: `http://localhost:8000/admin/`
-  - **API Health Check**: `http://localhost:8000/api/health/`
+    - **API**: `http://localhost:8000/api/`
+    - **Django Admin**: `http://localhost:8000/admin/`
+    - **API Health Check**: `http://localhost:8000/api/health/`
 
 ## 🔑 Default Credentials (after running seed_data)
 
@@ -126,6 +146,21 @@ The easiest way to run the project locally is using Docker.
     - Frontend dev URL: `http://localhost:5173`
     - Backend URL: `http://127.0.0.1:8000`
 
+## 🧪 Tests
+
+- Django backend tests:
+
+    ```bash
+    python3 manage.py test
+    ```
+
+- React frontend tests (if configured):
+
+    ```bash
+    cd frontend
+    npm test
+    ```
+
 ## 📁 Project Structure
 
 - `/documents`: Core Django application (Models, Views, Serializers).
@@ -133,6 +168,17 @@ The easiest way to run the project locally is using Docker.
 - `/config`: Project settings and URL routing.
 - `docker-compose.yml`: Orchestration for app and database services.
 - `entrypoint.sh`: Startup script for migrations and static collection.
+
+## 🤝 Contributing & Support
+
+- To contribute, fork the repo, create a feature branch, and submit a PR against `main`.
+- Add tests in `documents/tests.py` and `frontend/src` coverage before requesting review.
+- For questions, open an issue with a reproducible bug report and expected behavior.
+- Use `manage.py test` (backend) and `npm test` (frontend) to validate changes.
+
+## 📝 Changelog
+
+- 2026-03-28: README updated with contribution and support guidance.
 
 ## 📄 License
 

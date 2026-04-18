@@ -12,6 +12,8 @@ from .models import (
     AuditLog,
     DocumentAttachment,
     PortalSubmission,
+    Notification,
+    NotificationType,
 )
 
 class DepartmentSerializer(serializers.ModelSerializer):
@@ -112,7 +114,7 @@ class DocumentCommentSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = DocumentComment
-        fields = ['id', 'user', 'text', 'created_at']
+        fields = ['id', 'user', 'text', 'is_external', 'created_at']
         read_only_fields = ['user', 'created_at']
 
 class AuditLogSerializer(serializers.ModelSerializer):
@@ -175,19 +177,31 @@ class DocumentSerializer(serializers.ModelSerializer):
     attachments = DocumentAttachmentSerializer(many=True, read_only=True)
     portal_submission = PortalSubmissionSerializer(read_only=True)
 
-    # Write-only field for creation (frontend sends `document_type` id)
+    # Write-only fields for creation/update (frontend sends IDs)
     document_type = serializers.PrimaryKeyRelatedField(
-        queryset=DocumentType.objects.all(), write_only=True
+        queryset=DocumentType.objects.all(), write_only=True, required=False
     )
-    confidentiality_level = serializers.SlugRelatedField(
+    confidentiality_level = serializers.PrimaryKeyRelatedField(
         queryset=ConfidentialityLevel.objects.all(), 
-        slug_field='code', 
         write_only=True, 
         required=False
+    )
+    status = serializers.PrimaryKeyRelatedField(
+        queryset=DocumentStatus.objects.all(),
+        write_only=True,
+        required=False,
+        allow_null=True,
     )
     assigned_to_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
         source='assigned_to',
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
+    department_id = serializers.PrimaryKeyRelatedField(
+        queryset=Department.objects.all(),
+        source='department',
         write_only=True,
         required=False,
         allow_null=True
@@ -199,27 +213,85 @@ class DocumentSerializer(serializers.ModelSerializer):
             'id', 'title', 'description', 'created_at', 'updated_at', 'due_date',
             'external_reference', 'creator', 'current_owner', 'department', 'assigned_to',
             'document_type_details', 'status_details', 'confidentiality_level_details',
-            'document_type', 'confidentiality_level', 'assigned_to_id', 'comments', 'history', 'attachments',
-            'portal_submission',
+            'document_type', 'confidentiality_level', 'assigned_to_id', 'status', 'department_id',
+            'comments', 'history', 'attachments', 'portal_submission',
         ]
-        read_only_fields = ['creator', 'current_owner', 'department']
+        read_only_fields = ['creator', 'current_owner']
 
     def update(self, instance, validated_data):
         """
-        Prevent arbitrary users from re-assigning documents.
-        - Document creation can include `assigned_to_id`
-        - Document updates can change assignment only for Admin/Department Chef/superuser
+        Prevent arbitrary users from re-assigning documents and/or changing status.
+        - Document creation can include `assigned_to_id` and `status` via API.
+        - Document updates can change assignment only for Admin/Department Chef/superuser.
+        - Status updates are allowed for owner/assignee/manager roles, and enforced safely.
         """
         request = self.context.get("request")
         user = getattr(request, "user", None)
+        role = getattr(getattr(user, "profile", None), "role", None) if user else None
+
+        # Capture old values to track changes
+        old_assigned_to_id = instance.assigned_to_id
+        old_status_id = instance.status_id
 
         if "assigned_to" in validated_data:
-            role = getattr(getattr(user, "profile", None), "role", None) if user else None
-            can_reassign = bool(user and (user.is_superuser or role == "Admin"))
+            can_reassign = bool(user and (user.is_superuser or role in ("Admin", "Department Chef", "Manager")))
             if not can_reassign:
                 validated_data.pop("assigned_to", None)
 
-        return super().update(instance, validated_data)
+        if "status" in validated_data:
+            can_update_status = bool(
+                user
+                and (
+                    user.is_superuser
+                    or role in ("Admin", "Department Chef", "Manager")
+                    or instance.creator_id == user.id
+                    or instance.assigned_to_id == user.id
+                )
+            )
+            if not can_update_status:
+                validated_data.pop("status", None)
+        
+        new_instance = super().update(instance, validated_data)
+
+        # Audit assignment change
+        if "assigned_to" in validated_data and old_assigned_to_id != new_instance.assigned_to_id:
+            assignee_name = new_instance.assigned_to.username if new_instance.assigned_to else "Unassigned"
+            AuditLog.objects.create(
+                user=user,
+                document=new_instance,
+                action="Assignment updated",
+                details=f"Document assigned to {assignee_name} by {user.username if user else 'unknown'}",
+            )
+
+        # Audit status change
+        if "status" in validated_data and old_status_id != new_instance.status_id:
+            from .api_views import _create_portal_notification
+            current_status_name = new_instance.status.name if new_instance.status else "Updated"
+            _create_portal_notification(new_instance, f"Status of '{new_instance.title}' updated to {current_status_name}")
+            AuditLog.objects.create(
+                user=user,
+                document=new_instance,
+                action="Status updated",
+                details=f"Status changed to {current_status_name} by {user.username if user else 'unknown'}",
+            )
+
+        return new_instance
+
+class NotificationTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotificationType
+        fields = ['id', 'name', 'code']
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    notification_type = NotificationTypeSerializer(read_only=True)
+    document = DocumentSerializer(read_only=True)
+
+    class Meta:
+        model = Notification
+        fields = ['id', 'notification_type', 'document', 'is_read', 'payload', 'created_at']
+        read_only_fields = ['id', 'notification_type', 'document', 'created_at']
+
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)

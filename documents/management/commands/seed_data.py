@@ -17,136 +17,71 @@ class Command(BaseCommand):
         self.stdout.write("🌱 Starting database seeding...")
         
         try:
-            # Departments
-            hr, _ = Department.objects.get_or_create(name="HR", defaults={"description": "Human Resources"})
-            it, _ = Department.objects.get_or_create(name="IT", defaults={"description": "Information Technology"})
-            sales, _ = Department.objects.get_or_create(name="Sales", defaults={"description": "Sales Department"})
-            self.stdout.write(self.style.SUCCESS("✅ Departments created."))
+            # 1. Departments
+            dept_names = ["HR", "IT", "Finance", "Legal", "Marketing", "Sales", "Operations", "Troubleshooting"]
+            depts = {}
+            for name in dept_names:
+                d, _ = Department.objects.get_or_create(name=name, defaults={"description": f"{name} Department"})
+                depts[name] = d
+            self.stdout.write(self.style.SUCCESS(f"✅ Created {len(dept_names)} departments."))
 
-            # Document Types
-            DocumentType.objects.get_or_create(name="Order", defaults={"code": "ORDER"})
-            DocumentType.objects.get_or_create(name="Report", defaults={"code": "REPORT"})
-            DocumentType.objects.get_or_create(name="Request", defaults={"code": "REQUEST"})
-            self.stdout.write(self.style.SUCCESS("✅ Document Types created."))
-
-            # Document Statuses
-            DocumentStatus.objects.get_or_create(name="Draft", defaults={"code": "DRAFT"})
-            DocumentStatus.objects.get_or_create(name="Pending Approval", defaults={"code": "PENDING"})
-            DocumentStatus.objects.get_or_create(name="Approved", defaults={"code": "APPROVED"})
-            DocumentStatus.objects.get_or_create(name="Rejected", defaults={"code": "REJECTED"})
-            self.stdout.write(self.style.SUCCESS("✅ Document Statuses created."))
-
-            # Confidentiality Levels
-            ConfidentialityLevel.objects.get_or_create(name="Public", defaults={"code": "PUBLIC"})
-            ConfidentialityLevel.objects.get_or_create(name="Internal", defaults={"code": "INTERNAL"})
-            ConfidentialityLevel.objects.get_or_create(name="Confidential", defaults={"code": "CONFIDENTIAL"})
-            self.stdout.write(self.style.SUCCESS("✅ Confidentiality Levels created."))
+            # 2. Document Metadata
+            DocumentType.objects.get_or_create(code="ORDER", defaults={"name": "Order"})
+            DocumentType.objects.get_or_create(code="REPORT", defaults={"name": "Report"})
+            DocumentType.objects.get_or_create(code="REQUEST", defaults={"name": "Request"})
             
-            # Notification Types
-            NotificationType.objects.get_or_create(name="New Document", defaults={"code": "NEW_DOCUMENT"})
-            NotificationType.objects.get_or_create(name="Needs Approval", defaults={"code": "NEEDS_APPROVAL"})
-            self.stdout.write(self.style.SUCCESS("✅ Notification Types created."))
+            DocumentStatus.objects.get_or_create(code="DRAFT", defaults={"name": "Draft"})
+            DocumentStatus.objects.get_or_create(code="PENDING", defaults={"name": "Pending Approval"})
+            DocumentStatus.objects.get_or_create(code="APPROVED", defaults={"name": "Approved"})
+            DocumentStatus.objects.get_or_create(code="REJECTED", defaults={"name": "Rejected"})
+            
+            ConfidentialityLevel.objects.get_or_create(code="PUBLIC", defaults={"name": "Public"})
+            ConfidentialityLevel.objects.get_or_create(code="INTERNAL", defaults={"name": "Internal"})
+            ConfidentialityLevel.objects.get_or_create(code="CONFIDENTIAL", defaults={"name": "Confidential"})
+            
+            NotificationType.objects.get_or_create(code="NEW_DOCUMENT", defaults={"name": "New Document"})
+            NotificationType.objects.get_or_create(code="NEEDS_APPROVAL", defaults={"name": "Needs Approval"})
+            NotificationType.objects.get_or_create(code="DOCUMENT_ROUTED", defaults={"name": "Document Routed"})
+            NotificationType.objects.get_or_create(code="DOCUMENT_ASSIGNED", defaults={"name": "Document Assigned"})
+            NotificationType.objects.get_or_create(code="DOCUMENT_COMMENTED", defaults={"name": "Document Commented"})
+            self.stdout.write(self.style.SUCCESS("✅ Metadata (Types, Statuses, Levels) ensured."))
 
-            # Users
-            # Admin
+            # 3. Users
+            from documents.utils import create_user_with_profile
+
+            # Standard Admin
             if not User.objects.filter(username='admin').exists():
-                admin = User.objects.create_superuser('admin', 'admin@example.com', 'adminpass')
-                if not hasattr(admin, 'profile'):
-                    UserProfile.objects.create(user=admin)
-                admin.profile.full_name = "System Administrator"
-                admin.profile.position = "Head of IT"
-                admin.profile.role = 'Admin'
-                admin.profile.department = it
-                admin.profile.save()
+                admin = create_user_with_profile(
+                    username='admin', password='adminpass', email='admin@example.com',
+                    role='Admin', full_name="System Administrator", position="Head of IT",
+                    department=depts["IT"]
+                )
                 self.stdout.write(self.style.SUCCESS("✅ Admin user created."))
-            
-            # Manager
-            if not User.objects.filter(username='manager').exists():
-                manager = User.objects.create_user('manager', 'manager@example.com', 'managerpass')
-                if not hasattr(manager, 'profile'):
-                    UserProfile.objects.create(user=manager)
-                manager.profile.full_name = "HR Manager"
-                manager.profile.position = "HR Manager"
-                manager.profile.role = 'Manager'
-                manager.profile.department = hr
-                manager.profile.save()
-                self.stdout.write(self.style.SUCCESS("✅ Manager user created."))
-            
-            # Employee
-            if not User.objects.filter(username='employee').exists():
-                employee = User.objects.create_user('employee', 'employee@example.com', 'employeepass')
-                if not hasattr(employee, 'profile'):
-                    UserProfile.objects.create(user=employee)
-                employee.profile.full_name = "John Employee"
-                employee.profile.position = "HR Specialist"
-                employee.profile.role = 'Employee'
-                employee.profile.department = hr
-                employee.profile.save()
-                self.stdout.write(self.style.SUCCESS("✅ Employee user created."))
 
-            # Department Chef
-            if not User.objects.filter(username='chef').exists():
-                chef = User.objects.create_user('chef', 'chef@example.com', 'chefpass')
-                if not hasattr(chef, 'profile'):
-                    UserProfile.objects.create(user=chef)
-                chef.profile.full_name = "Department Chef"
-                chef.profile.position = "Dept Head"
-                chef.profile.role = 'Department Chef'
-                chef.profile.department = sales
-                chef.profile.save()
-                self.stdout.write(self.style.SUCCESS("✅ Department Chef user created."))
-
-            # Portal Manager
+            # Portal Manager (Moved to Troubleshooting)
             if not User.objects.filter(username='portal_manager').exists():
-                portal_mgr = User.objects.create_user('portal_manager', 'portal_manager@example.com', 'PortalPass123!')
-                if not hasattr(portal_mgr, 'profile'):
-                    UserProfile.objects.create(user=portal_mgr)
-                portal_mgr.profile.full_name = "Portal Manager"
-                portal_mgr.profile.position = "External Inbox Manager"
-                portal_mgr.profile.role = 'Manager'
-                portal_mgr.profile.department = it
-                portal_mgr.profile.save()
-                self.stdout.write(self.style.SUCCESS("✅ Portal Manager user created (Pass: PortalPass123!)."))
-
-            # Sample documents
-            order_type = DocumentType.objects.filter(code="ORDER").first()
-            report_type = DocumentType.objects.filter(code="REPORT").first()
-            draft_status = DocumentStatus.objects.filter(code="DRAFT").first()
-            pending_status = DocumentStatus.objects.filter(code="PENDING").first()
-            public_level = ConfidentialityLevel.objects.filter(code="PUBLIC").first()
-            internal_level = ConfidentialityLevel.objects.filter(code="INTERNAL").first()
-
-            employee_user = User.objects.filter(username="employee").first()
-            manager_user = User.objects.filter(username="manager").first()
-
-            if employee_user and order_type and draft_status and public_level:
-                Document.objects.get_or_create(
-                    title="Sample Order Draft",
-                    creator=employee_user,
-                    defaults={
-                        "description": "Initial draft of an order document.",
-                        "document_type": order_type,
-                        "status": draft_status,
-                        "confidentiality_level": public_level,
-                        "current_owner": employee_user,
-                        "department": employee_user.profile.department,
-                    },
+                pm = create_user_with_profile(
+                    username='portal_manager', password='PortalPass123!', email='pm@example.com',
+                    role='Admin', full_name="Portal Inbox Manager", position="Support Lead",
+                    department=depts["Troubleshooting"]
                 )
+                # Ensure they have staff access for cross-dept visibility
+                pm.is_staff = True
+                pm.save()
+                self.stdout.write(self.style.SUCCESS("✅ Portal Manager created in Troubleshooting department."))
 
-            if manager_user and report_type and pending_status and internal_level:
-                Document.objects.get_or_create(
-                    title="Quarterly Report Pending Approval",
-                    creator=manager_user,
-                    defaults={
-                        "description": "Quarterly performance report awaiting approval.",
-                        "document_type": report_type,
-                        "status": pending_status,
-                        "confidentiality_level": internal_level,
-                        "current_owner": manager_user,
-                        "department": manager_user.profile.department,
-                    },
-                )
-            self.stdout.write(self.style.SUCCESS("✅ Database seeding completed!"))
+            # Create 1 Employee for each department
+            for name, d in depts.items():
+                username = f"user_{name.lower()}"
+                if not User.objects.filter(username=username).exists():
+                    create_user_with_profile(
+                        username=username, password='password123', email=f"{username}@example.com",
+                        role='Employee', full_name=f"{name} Specialist", position=f"{name} Associate",
+                        department=d
+                    )
+                    self.stdout.write(self.style.SUCCESS(f"✅ Employee created for {name} ({username})."))
+
+            self.stdout.write(self.style.SUCCESS("✅ Database seeding completed successfully!"))
             
         except Exception as e:
             self.stderr.write(self.style.ERROR(f"❌ Error during seeding: {str(e)}"))
