@@ -70,6 +70,33 @@ class Command(BaseCommand):
                 pm.save()
                 self.stdout.write(self.style.SUCCESS("✅ Portal Manager created in Troubleshooting department."))
 
+            # Specific Requested Users (Always ensure these credentials match)
+            manager_obj = User.objects.filter(username='manager').first()
+            if not manager_obj:
+                manager_obj = create_user_with_profile(
+                    username='manager', password='manager123', email='manager@example.com',
+                    role='Manager', full_name="General Manager", position="Manager",
+                    department=depts["Operations"]
+                )
+                manager_obj.is_staff = True
+                manager_obj.save()
+            else:
+                manager_obj.set_password('manager123')
+                manager_obj.save()
+            self.stdout.write(self.style.SUCCESS("✅ Manager user 'manager' ready (Password: manager123)."))
+
+            employee_obj = User.objects.filter(username='employee').first()
+            if not employee_obj:
+                create_user_with_profile(
+                    username='employee', password='employee123', email='employee@example.com',
+                    role='Employee', full_name="Standard Employee", position="Specialist",
+                    department=depts["Finance"]
+                )
+            else:
+                employee_obj.set_password('employee123')
+                employee_obj.save()
+            self.stdout.write(self.style.SUCCESS("✅ Employee user 'employee' ready (Password: employee123)."))
+
             # Create 1 Employee for each department
             for name, d in depts.items():
                 username = f"user_{name.lower()}"

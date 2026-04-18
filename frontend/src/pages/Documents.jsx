@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
 import DocumentModal from "../components/DocumentModal";
+import DocumentDetailModal from "../components/DocumentDetailModal";
+import { useTheme } from "../context/ThemeContext";
 
 const Documents = () => {
+    const { isDarkMode } = useTheme();
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [startDate, setStartDate] = useState("");
@@ -10,6 +13,8 @@ const Documents = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [departments, setDepartments] = useState([]);
     const [documentTypes, setDocumentTypes] = useState([]);
+    const [selectedDocument, setSelectedDocument] = useState(null);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
     useEffect(() => {
         // Fetch dependencies for modal
@@ -58,20 +63,23 @@ const Documents = () => {
     }, [startDate, endDate]);
 
     const handleDocumentSuccess = (newDocument) => {
-        // Re-fetch or prepend
-        // Prepending is faster feedback
         setDocuments((prev) => [newDocument, ...prev]);
         setIsModalOpen(false);
     };
 
+    const handleViewDocument = (doc) => {
+        setSelectedDocument(doc);
+        setIsDetailModalOpen(true);
+    };
+
     return (
-        <div className="space-y-6">
+        <div className={`space-y-6 transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             <header className="flex justify-between items-end gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">
+                    <h1 className="text-3xl font-black">
                         Documents
                     </h1>
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p className={`mt-1 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
                         Manage and view all your documents
                     </p>
                 </div>
@@ -87,30 +95,34 @@ const Documents = () => {
             </header>
 
             {/* Filters */}
-            <div className="bg-white p-4 rounded-lg shadow flex flex-wrap gap-4 items-center">
-                <span className="text-sm font-medium text-gray-700">Filter by Creation Date:</span>
+            <div className={`p-5 rounded-2xl shadow-xl flex flex-wrap gap-4 items-center border transition-colors ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
+                <span className={`text-sm font-bold uppercase tracking-wider ${isDarkMode ? 'text-slate-400' : 'text-gray-700'}`}>Filter by Creation Date:</span>
                 <div className="flex items-center gap-2">
-                    <label className="text-xs text-gray-500">From</label>
+                    <label className={`text-xs font-semibold ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>From</label>
                     <input
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
-                        className="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-purple-500 focus:border-purple-500"
+                        className={`border rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-purple-500 outline-none transition-colors ${
+                            isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-gray-300 text-gray-900'
+                        }`}
                     />
                 </div>
                 <div className="flex items-center gap-2">
-                    <label className="text-xs text-gray-500">To</label>
+                    <label className={`text-xs font-semibold ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>To</label>
                     <input
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
-                        className="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-purple-500 focus:border-purple-500"
+                        className={`border rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-purple-500 outline-none transition-colors ${
+                            isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-gray-300 text-gray-900'
+                        }`}
                     />
                 </div>
                 {(startDate || endDate) && (
                     <button
                         onClick={() => { setStartDate(""); setEndDate(""); }}
-                        className="text-sm text-purple-600 hover:text-purple-800"
+                        className="text-sm font-bold text-purple-600 hover:text-purple-400 transition-colors"
                     >
                         Clear Filters
                     </button>
@@ -118,30 +130,34 @@ const Documents = () => {
             </div>
 
             {/* Documents List */}
-            <div className="bg-white shadow rounded-lg overflow-hidden">
+            <div className={`shadow-xl rounded-2xl overflow-hidden transition-colors border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
                 {loading ? (
                      <div className="flex justify-center items-center h-64">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                        <table className="min-w-full">
+                            <thead className={isDarkMode ? 'bg-slate-900/50' : 'bg-gray-50'}>
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Title</th>
+                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
+                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Created</th>
+                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Department</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className={`divide-y ${isDarkMode ? 'divide-slate-700' : 'divide-gray-100'}`}>
                                 {documents.length > 0 ? (
                                     documents.map((doc) => (
-                                        <tr key={doc.id} className="hover:bg-gray-50 transition">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{doc.title}</td>
+                                        <tr 
+                                            key={doc.id} 
+                                            onClick={() => handleViewDocument(doc)}
+                                            className={`transition-colors cursor-pointer ${isDarkMode ? 'hover:bg-slate-700/50' : 'hover:bg-gray-50'}`}
+                                        >
+                                            <td className={`px-6 py-4 whitespace-nowrap text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{doc.title}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                <span className={`px-2 inline-flex text-xs leading-5 font-bold rounded-full 
                                                     ${doc.status_details?.code === 'APPROVED' ? 'bg-green-100 text-green-800' : 
                                                       doc.status_details?.code === 'REJECTED' ? 'bg-red-100 text-red-800' : 
                                                       doc.status_details?.code === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 
@@ -149,13 +165,13 @@ const Documents = () => {
                                                     {doc.status_details?.name || 'N/A'}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
                                                 {doc.document_type_details?.name}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
                                                 {new Date(doc.created_at).toLocaleDateString()}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
                                                 {doc.department?.name || '-'}
                                             </td>
                                         </tr>
@@ -179,6 +195,13 @@ const Documents = () => {
                 onSuccess={handleDocumentSuccess}
                 departments={departments}
                 documentTypes={documentTypes}
+            />
+
+            <DocumentDetailModal
+                isOpen={isDetailModalOpen}
+                onClose={() => setIsDetailModalOpen(false)}
+                document={selectedDocument}
+                onUpdate={() => {}} // Could refetch if needed
             />
         </div>
     );

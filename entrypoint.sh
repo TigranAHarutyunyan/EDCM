@@ -13,6 +13,9 @@ DB_NAME=${DB_NAME:-edcm_db}
 DEBUG=${DEBUG:-}
 SEED_DATA=${SEED_DATA:-}
 PORT=${PORT:-8000}
+BACKEND_PORT=${BACKEND_PORT:-8000}
+FRONTEND_PORT=${FRONTEND_PORT:-3000}
+CLIENT_FRONTEND_PORT=${CLIENT_FRONTEND_PORT:-8002}
 MAX_RETRIES=30
 RETRY_COUNT=0
 
@@ -92,15 +95,14 @@ END
 
 # Function to seed initial data
 seed_data() {
-    # We now run seeding by default unless SEED_DATA is explicitly False.
-    # The script uses get_or_create, so it is safe to run multiple times.
-    if [ "${SEED_DATA:-True}" = "True" ] || [ "${SEED_DATA:-True}" = "true" ]; then
-        echo -e "${YELLOW}🌱 Building organizational structure (Seeding)...${NC}"
-        if python manage.py seed_data; then
-            echo -e "${GREEN}✅ Organization is ready!${NC}"
-        else
-            echo -e "${RED}⚠️  Warning: Seeding had issues (continuing anyway)${NC}"
-        fi
+    echo -e "${YELLOW}🌱 Initializing Organizational Data & Default Users...${NC}"
+    
+    # We run seeding to ensure 'manager', 'employee', and default departments exist.
+    # The command uses get_or_create internally, so it's safe to run on every start.
+    if python manage.py seed_data; then
+        echo -e "${GREEN}✅ Database seeding successful! Default accounts are ready.${NC}"
+    else
+        echo -e "${RED}⚠️  Seeding encountered issues. Check the backend logs for details.${NC}"
     fi
 }
 
@@ -131,10 +133,10 @@ seed_data
 echo -e "${GREEN}════════════════════════════════════${NC}"
 echo -e "${GREEN}🎉 EDCM Application Starting${NC}"
 echo -e "${GREEN}════════════════════════════════════${NC}"
-echo "📍 Backend API: http://localhost:5173"
-echo "👨‍💼 Admin Panel: http://localhost:5173/admin"
-echo "📱 Main Dashboard: http://localhost:8000"
-echo "🌐 Client Portal: http://localhost:8002"
+echo "📍 Backend API: http://localhost:${BACKEND_PORT}"
+echo "👨‍💼 Admin Panel: http://localhost:${BACKEND_PORT}/admin"
+echo "📱 Main Dashboard: http://localhost:${FRONTEND_PORT}"
+echo "🌐 Client Portal: http://localhost:${CLIENT_FRONTEND_PORT}"
 echo ""
 
 # Start server

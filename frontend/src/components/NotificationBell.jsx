@@ -1,51 +1,130 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
+import { useTheme } from '../context/ThemeContext';
+import { Bell, Check, ExternalLink } from 'lucide-react';
 
 const NotificationBell = () => {
+    const { isDarkMode } = useTheme();
     const [unreadCount, setUnreadCount] = useState(0);
+    const [recentNotifications, setRecentNotifications] = useState([]);
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
     const navigate = useNavigate();
 
+    const fetchNotifications = async () => {
+        try {
+            const countRes = await api.get('notifications/unread-count/');
+            setUnreadCount(countRes.data.unread_count || 0);
+
+            const listRes = await api.get('notifications/?page_size=5');
+            setRecentNotifications(listRes.data.results || listRes.data);
+        } catch (err) {
+            console.error("Error fetching notifications", err);
+        }
+    };
+
     useEffect(() => {
-        const fetchUnreadCount = async () => {
-            try {
-                const response = await api.get('notifications/unread-count/');
-                setUnreadCount(response.data.unread_count || 0);
-            } catch (err) {
-                console.error("Error fetching unread count", err);
+        fetchNotifications();
+        const interval = setInterval(fetchNotifications, 30000);
+        
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
             }
         };
-
-        fetchUnreadCount();
-        const interval = setInterval(fetchUnreadCount, 30000); // Poll every 30 seconds
-        return () => clearInterval(interval);
+        document.addEventListener('mousedown', handleClickOutside);
+        
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
     }, []);
 
+    const handleMarkRead = async (e, id) => {
+        e.stopPropagation();
+        try {
+            await api.post(`notifications/${id}/read/`);
+            fetchNotifications();
+        } catch (err) {
+            console.error("Error marking as read", err);
+        }
+    };
+
     return (
-        <button
-            onClick={() => navigate('/notifications')}
-            className="relative p-2 text-gray-400 hover:text-purple-600 transition-colors duration-200 focus:outline-none"
-            aria-label="Notifications"
-        >
-            <svg
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+        <div className="relative" ref={dropdownRef}>
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className={`relative p-2.5 rounded-xl transition-all duration-300 transform active:scale-95 ${
+                    isDarkMode 
+                    ? 'hover:bg-slate-700 text-slate-400 hover:text-purple-400' 
+                    : 'hover:bg-purple-50 text-gray-400 hover:text-purple-600'
+                }`}
+                aria-label="Notifications"
             >
-                <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                />
-            </svg>
-            {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-lg animate-pulse ring-2 ring-white">
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
+                <Bell className="h-6 w-6" />
+                {unreadCount > 0 && (
+                    <span className="absolute top-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-black text-white shadow-lg animate-pulse ring-2 ring-white hover:ring-purple-400 transition-all">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                )}
+            </button>
+
+            {isOpen && (
+                <div className={`absolute right-0 mt-3 w-80 rounded-2xl shadow-2xl overflow-hidden border transition-all z-50 transform origin-top-right ${
+                    isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
+                }`}>
+                    <div className={`px-4 py-3 border-b flex justify-between items-center ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-gray-50 border-gray-100'}`}>
+                        <span className={`text-sm font-black uppercase tracking-wider ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Notifications</span>
+                        <Link to="/notifications" onClick={() => setIsOpen(false)} className="text-xs font-bold text-purple-600 hover:text-purple-400 flex items-center">
+                            View All <ExternalLink className="h-3 w-3 ml-1" />
+                        </Link>
+                    </div>
+
+                    <div className="max-h-96 overflow-y-auto scrollbar-hide">
+                        {recentNotifications.length > 0 ? (
+                            recentNotifications.map((n) => (
+                                <div
+                                    key={n.id}
+                                    onClick={() => { navigate('/notifications'); setIsOpen(false); }}
+                                    className={`px-4 py-4 border-b flex gap-3 cursor-pointer transition-colors ${
+                                        n.is_read 
+                                        ? (isDarkMode ? 'hover:bg-slate-700/50 grayscale opacity-60' : 'hover:bg-gray-50 opacity-70') 
+                                        : (isDarkMode ? 'bg-purple-500/5 hover:bg-purple-500/10' : 'bg-purple-50 hover:bg-purple-100/50')
+                                    } ${isDarkMode ? 'border-slate-700' : 'border-gray-50'}`}
+                                >
+                                    <div className={`mt-1 h-2 w-2 rounded-full shrink-0 ${n.is_read ? 'bg-transparent' : 'bg-purple-600 shadow-sm'}`} />
+                                    <div className="flex-1 min-w-0">
+                                        <p className={`text-xs font-black uppercase tracking-tighter mb-1 ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+                                            {n.document?.title || "Update"}
+                                        </p>
+                                        <p className={`text-sm font-bold truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                            {n.payload}
+                                        </p>
+                                        <p className="text-[10px] mt-1 text-slate-500 uppercase font-bold">
+                                            {new Date(n.created_at).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                    {!n.is_read && (
+                                        <button 
+                                            onClick={(e) => handleMarkRead(e, n.id)}
+                                            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-400 hover:text-purple-600 transition-colors"
+                                            title="Mark Read"
+                                        >
+                                            <Check className="h-4 w-4" />
+                                        </button>
+                                    )}
+                                </div>
+                            ))
+                        ) : (
+                            <div className={`px-4 py-10 text-center text-sm font-bold ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
+                                All caught up! 🎉
+                            </div>
+                        )}
+                    </div>
+                </div>
             )}
-        </button>
+        </div>
     );
 };
 

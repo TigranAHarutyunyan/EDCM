@@ -5,6 +5,7 @@ import {
     Navigate,
 } from "react-router-dom";
 import { AuthProvider } from "./context/AuthProvider";
+import { ThemeProvider } from "./context/ThemeContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Login from "./pages/Login";
@@ -18,7 +19,8 @@ import Notifications from "./pages/Notifications";
 function App() {
     return (
         <Router>
-            <AuthProvider>
+            <ThemeProvider>
+                <AuthProvider>
                 <ErrorBoundary>
                     <Routes>
                         <Route path="/login" element={<Login />} />
@@ -53,7 +55,8 @@ function App() {
                         </Route>
                     </Routes>
                 </ErrorBoundary>
-            </AuthProvider>
+                </AuthProvider>
+            </ThemeProvider>
         </Router>
     );
 }

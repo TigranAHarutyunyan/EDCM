@@ -1,4 +1,7 @@
 from rest_framework import generics, permissions, status
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from dj_rest_auth.registration.views import SocialLoginView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError, PermissionDenied
@@ -11,6 +14,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.conf import settings
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.core.mail import send_mail
 from .serializers import (
     UserSerializer,
     RegisterSerializer,
@@ -726,8 +730,11 @@ class PortalStatusSyncView(APIView):
             status_code = sub.document.status.code if sub.document.status else "PENDING"
             
             # Fetch public comments ONLY
+            external_comments_queryset = sub.document.comments.filter(is_external=True)
+            message_count = external_comments_queryset.count()
+            
             external_comments = []
-            for comment in sub.document.comments.filter(is_external=True).order_by('created_at'):
+            for comment in external_comments_queryset.order_by('created_at'):
                 external_comments.append({
                     "id": comment.id,
                     "text": comment.text,
@@ -752,20 +759,40 @@ class PortalStatusSyncView(APIView):
                 "status_code": status_code,
                 "updated_at": sub.document.updated_at,
                 "comments": external_comments,
-                "attachments": attachments
+                "attachments": attachments,
+                "message_count": message_count
             })
         return Response(results)
 
 def _create_portal_notification(document, text):
     """
     Helper to send a notification to a portal client if the document originated from there.
+    Also sends a real email notification.
     """
     if hasattr(document, 'portal_submission'):
+        client_email = document.portal_submission.client_email
         PortalNotification.objects.create(
-            client_email=document.portal_submission.client_email,
+            client_email=client_email,
             document=document,
             text=text
         )
+        
+        # Send real email notification
+        try:
+            subject = "New Message in your EDCM Portal"
+            # Try to build a link if possible, otherwise just inform
+            # We don't have a reliable PUBLIC_PORTAL_URL here, so we give a general message
+            message = f"Hello,\n\n{text}.\n\nPlease log in to your EDCM Client Portal to view the details.\n\nThank you,\nThe EDCM Team"
+            
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [client_email],
+                fail_silently=True,
+            )
+        except Exception as e:
+            print(f"Failed to send portal email notification: {e}")
 
 class PortalNotificationListView(APIView):
     """
@@ -889,9 +916,18 @@ class DocumentCommentCreateView(generics.CreateAPIView):
 
 class UserProfileView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     def get(self, request):
         user = request.user
+        
+        # Self-healing: Ensure profile exists
+        if not hasattr(user, 'profile'):
+            role = 'Admin' if user.is_superuser else 'Employee'
+            UserProfile.objects.get_or_create(user=user, defaults={'role': role})
+            # Refresh user from DB to pick up the profile
+            user = User.objects.get(pk=user.pk)
+
         profile_serializer = UserSerializer(user)
         
         # Documents created by user
@@ -1074,3 +1110,9 @@ class NotificationMarkReadView(APIView):
         notification.is_read = True
         notification.save()
         return Response({"status": "read"})
+
+
+class GoogleLogin(SocialLoginView):
+    adapter_class = GoogleOAuth2Adapter
+    callback_url = "http://localhost:8002/google-callback"
+    client_class = OAuth2Client

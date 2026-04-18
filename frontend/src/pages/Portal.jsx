@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import api from "../services/api";
 
 const Portal = () => {
+    const { t } = useTranslation();
     const [formData, setFormData] = useState({
         client_name: "",
         client_email: "",
@@ -58,9 +60,9 @@ const Portal = () => {
         <div className="min-h-screen bg-gray-50">
             <div className="max-w-3xl mx-auto py-10 px-4">
                 <div className="mb-6">
-                    <h1 className="text-3xl font-bold text-gray-900">Public Portal</h1>
+                    <h1 className="text-3xl font-bold text-gray-900">{t('portal.title')}</h1>
                     <p className="mt-1 text-sm text-gray-600">
-                        Submit a document. It will be received by our intake team and routed to the correct department.
+                        {t('portal.subtitle')}
                     </p>
                 </div>
 
@@ -80,10 +82,10 @@ const Portal = () => {
                             </div>
                             <div className="ml-3">
                                 <h3 className="text-sm font-bold text-green-900">
-                                    Submission Received!
+                                    {t('portal.success_title')}
                                 </h3>
                                 <p className="text-sm text-green-800 mt-1">
-                                    Your document has been safely submitted. Reference ID: <span className="font-mono bg-white px-2 py-0.5 rounded border border-green-200">#{success.id}</span>
+                                    {t('portal.success_message')} Reference ID: <span className="font-mono bg-white px-2 py-0.5 rounded border border-green-200">#{success.id}</span>
                                 </p>
                             </div>
                         </div>
@@ -95,7 +97,7 @@ const Portal = () => {
                     <form onSubmit={handleSubmit} className="p-6 space-y-5">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700">Your Name</label>
+                                <label className="block text-sm font-semibold text-gray-700">{t('portal.name')}</label>
                                 <input
                                     name="client_name"
                                     value={formData.client_name}
@@ -105,7 +107,7 @@ const Portal = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700">Email</label>
+                                <label className="block text-sm font-semibold text-gray-700">{t('portal.email')}</label>
                                 <input
                                     type="email"
                                     name="client_email"
@@ -116,7 +118,7 @@ const Portal = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700">Phone</label>
+                                <label className="block text-sm font-semibold text-gray-700">{t('portal.phone')}</label>
                                 <input
                                     name="client_phone"
                                     value={formData.client_phone}
@@ -126,7 +128,7 @@ const Portal = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700">Company</label>
+                                <label className="block text-sm font-semibold text-gray-700">{t('portal.company')}</label>
                                 <input
                                     name="company"
                                     value={formData.company}
@@ -139,7 +141,7 @@ const Portal = () => {
 
                         <div>
                             <label className="block text-sm font-semibold text-gray-700">
-                                Document Title <span className="text-red-500">*</span>
+                                {t('portal.doc_title')} <span className="text-red-500">*</span>
                             </label>
                             <input
                                 required
@@ -152,7 +154,7 @@ const Portal = () => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700">Description</label>
+                            <label className="block text-sm font-semibold text-gray-700">{t('portal.doc_description')}</label>
                             <textarea
                                 name="description"
                                 value={formData.description}
@@ -165,7 +167,7 @@ const Portal = () => {
 
                         <div>
                             <label className="block text-sm font-semibold text-gray-700">
-                                Attachments (PDF, Word, Excel, PowerPoint)
+                                {t('portal.attachments')}
                             </label>
                             <input
                                 type="file"
@@ -177,13 +179,13 @@ const Portal = () => {
                             />
                         </div>
 
-                        <div className="pt-2">
+                        <div className="pt-2 flex items-center justify-between">
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 transition-all"
+                                className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 transition-all font-inter"
                             >
-                                {loading ? "Submitting..." : "Submit"}
+                                {loading ? t('common.submitting') : t('common.submit')}
                             </button>
                         </div>
                     </form>

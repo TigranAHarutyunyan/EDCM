@@ -4,9 +4,14 @@ import { Link } from "react-router-dom";
 import DocumentModal from "../components/DocumentModal";
 import DocumentDetailModal from "../components/DocumentDetailModal";
 import { useAuth } from "../context/auth";
+import { useTheme } from "../context/ThemeContext";
+import { useTranslation } from "react-i18next";
+import { MessageSquare } from "lucide-react";
 
 const Dashboard = () => {
     const { user } = useAuth();
+    const { isDarkMode } = useTheme();
+    const { t } = useTranslation();
     const [stats, setStats] = useState({
         pending_count: 0,
         my_docs_count: 0,
@@ -126,13 +131,13 @@ const Dashboard = () => {
               : null;
 
     return (
-        <div className="space-y-6">
-            <header className="flex justify-between items-end gap-4">
+        <div className={`space-y-6 transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">
-                        Dashboard
+                    <h1 className="text-3xl font-black">
+                        {t('dashboard.title')}
                     </h1>
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p className={`mt-1 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
                         Overview of your document activities
                     </p>
                 </div>
@@ -191,7 +196,7 @@ const Dashboard = () => {
                     </button>
                     <div className="flex justify-between items-start mb-4">
                         <div>
-                            <h2 className="text-xl font-bold text-gray-900">
+                            <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                                 {searchResult.title}
                             </h2>
                             <p className="text-sm text-gray-500">
@@ -223,24 +228,24 @@ const Dashboard = () => {
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {/* Stats Card 1 */}
-                <div className="bg-white overflow-hidden shadow rounded-lg border-l-4 border-purple-500">
-                    <div className="px-4 py-5 sm:p-6">
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                            My Documents
+                <div className={`overflow-hidden shadow-lg rounded-2xl border-l-4 border-purple-500 transition-colors ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white'}`}>
+                    <div className="px-5 py-6">
+                        <dt className={`text-xs font-bold uppercase tracking-widest ${isDarkMode ? 'text-slate-400' : 'text-gray-400'}`}>
+                            {t('dashboard.stats.total')}
                         </dt>
-                        <dd className="mt-1 text-3xl font-semibold text-gray-900">
+                        <dd className="mt-2 text-3xl font-black">
                             {stats.my_docs_count}
                         </dd>
                     </div>
                 </div>
 
                 {/* Stats Card 2 */}
-                <div className="bg-white overflow-hidden shadow rounded-lg border-l-4 border-yellow-500">
-                    <div className="px-4 py-5 sm:p-6">
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                            Pending Approval
+                <div className={`overflow-hidden shadow-lg rounded-2xl border-l-4 border-yellow-500 transition-colors ${isDarkMode ? 'bg-slate-800' : 'bg-white'}`}>
+                    <div className="px-5 py-6">
+                        <dt className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                            {t('dashboard.stats.pending')}
                         </dt>
-                        <dd className="mt-1 text-3xl font-semibold text-gray-900">
+                        <dd className="mt-2 text-3xl font-black">
                             {stats.pending_count}
                         </dd>
                     </div>
@@ -266,23 +271,23 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            <div className="bg-white shadow rounded-lg overflow-hidden">
-                <div className="px-4 py-5 border-b border-gray-200 sm:px-6 flex justify-between items-center">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">
-                        Documents
+            <div className={`shadow-xl rounded-2xl overflow-hidden transition-colors border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
+                <div className={`px-6 py-5 border-b flex flex-col md:flex-row justify-between items-center gap-4 ${isDarkMode ? 'border-slate-700' : 'border-gray-100'}`}>
+                    <h3 className="text-lg font-bold">
+                        {t('nav.documents')}
                     </h3>
-                    <div className="flex bg-gray-100 rounded-lg p-1">
+                    <div className={`flex rounded-xl p-1 ${isDarkMode ? 'bg-slate-900' : 'bg-gray-100'}`}>
                         <button
                             onClick={() => setViewMode("all")}
-                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition ${viewMode === 'all' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${viewMode === 'all' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
                         >
-                            All Documents
+                            All
                         </button>
                         <button
                             onClick={() => setViewMode("my")}
-                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition ${viewMode === 'my' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${viewMode === 'my' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
                         >
-                            My Documents
+                            {t('nav.documents')}
                         </button>
                         {(user?.role === 'Admin' || user?.is_superuser) && (
                             <button
@@ -295,8 +300,8 @@ const Dashboard = () => {
                     </div>
                 </div>
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                    <table className="min-w-full">
+                        <thead className={isDarkMode ? 'bg-slate-900/50' : 'bg-gray-50'}>
                             <tr>
                                 <th
                                     scope="col"
@@ -336,18 +341,18 @@ const Dashboard = () => {
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className={`divide-y ${isDarkMode ? 'divide-slate-700' : 'divide-gray-100'}`}>
                             {stats.recent_docs.length > 0 ? (
                                 stats.recent_docs.map((doc) => (
                                     <tr
                                         key={doc.id}
                                         onClick={() => handleViewDocument(doc)}
-                                        className="hover:bg-gray-50 transition cursor-pointer"
+                                        className={`transition-colors cursor-pointer ${isDarkMode ? 'hover:bg-slate-700/50' : 'hover:bg-gray-50'}`}
                                     >
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-400">
                                             #{doc.id}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                                             {doc.title}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

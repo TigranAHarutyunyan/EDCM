@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { FilePlus, FileText, CheckCircle, Clock, Bell, User } from 'lucide-react';
+import { FilePlus, FileText, CheckCircle, Clock, Bell, User, Moon, Sun, Languages, MessageSquare } from 'lucide-react';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
+  const { isDarkMode, toggleTheme } = useTheme();
+  const { t, i18n } = useTranslation();
   const [documents, setDocuments] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -75,23 +79,39 @@ const Dashboard = () => {
   const getStatusIcon = (code) => {
     switch(code) {
         case 'APPROVED': return <CheckCircle className="h-5 w-5 text-green-500" />;
-        case 'REJECTED': return <Bell className="h-5 w-5 text-red-500" />;
+        case 'REJECTED': return <Bell className="h-5 w-5 text-red-600 font-bold" />; // Red icon for rejected
         default: return <Clock className="h-5 w-5 text-yellow-500" />;
     }
   };
 
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-12">
-      <nav className="bg-white shadow relative z-10">
+    <div className={`min-h-screen ${isDarkMode ? 'dark bg-slate-900 text-white' : 'bg-gray-50 text-gray-900'} pb-12 transition-colors duration-300`}>
+      <nav className={`${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white shadow'} relative z-10 border-b`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">Client Portal</span>
+              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">EDCM Portal</span>
             </div>
-            <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-4">
+              {/* Language Selector */}
+              <div className="flex items-center border rounded-lg overflow-hidden border-gray-200 dark:border-slate-700">
+                <button onClick={() => changeLanguage('en')} className={`px-2 py-1 text-xs font-bold transition ${i18n.language === 'en' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400'}`}>EN</button>
+                <button onClick={() => changeLanguage('hy')} className={`px-2 py-1 text-xs font-bold transition border-l ${i18n.language === 'hy' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400'}`}>HY</button>
+                <button onClick={() => changeLanguage('ru')} className={`px-2 py-1 text-xs font-bold transition border-l ${i18n.language === 'ru' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400'}`}>RU</button>
+              </div>
+
+              {/* Theme Toggle */}
+              <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition">
+                {isDarkMode ? <Sun className="h-5 w-5 text-yellow-400" /> : <Moon className="h-5 w-5 text-gray-500" />}
+              </button>
+
               <button 
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 text-gray-500 hover:text-blue-600 transition"
+                className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 transition"
               >
                 <Bell className="h-6 w-6" />
                 {unreadCount > 0 && (
@@ -101,45 +121,89 @@ const Dashboard = () => {
                 )}
               </button>
               
-              <Link to="/profile" className="text-sm text-gray-700 hover:text-blue-600 font-medium flex items-center">
+              <Link to="/profile" className="text-sm font-medium flex items-center py-2 px-3 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition text-gray-700 dark:text-gray-300">
                  <User className="h-4 w-4 mr-1" />
-                 Profile
+                 {t('profile')}
               </Link>
-              <div className="flex items-center space-x-4 border-l pl-6">
-                <span className="text-sm text-gray-700">Hi, <span className="font-bold text-blue-600">{user.full_name}</span></span>
+              
+              <div className="flex items-center space-x-4 border-l pl-4 border-gray-200 dark:border-slate-700">
+                <span className="text-xs hidden md:inline">{t('hi')}, <span className="font-bold text-blue-600">{user.full_name}</span></span>
                 <button 
                     onClick={logout} 
-                    className="text-sm text-red-600 hover:text-red-500 font-medium"
+                    className="text-sm text-red-600 hover:text-red-500 font-bold"
                 >
-                    Logout
+                    {t('logout')}
                 </button>
               </div>
             </div>
           </div>
         </div>
         
-        {/* Notifications Popover */}
         {showNotifications && (
-          <div className="absolute right-4 top-16 w-80 bg-white shadow-2xl rounded-b-xl border border-gray-100 overflow-hidden transform transition-all">
-            <div className="bg-blue-600 p-4">
-              <h3 className="text-white font-bold flex items-center">
-                Notifications
-              </h3>
+          <div className={`absolute right-4 top-16 w-96 shadow-2xl rounded-3xl border overflow-hidden transform transition-all animate-in fade-in slide-in-from-top-4 duration-300 z-50 ${
+            isDarkMode ? 'bg-slate-800 border-slate-700 shadow-blue-900/10' : 'bg-white border-gray-100 shadow-gray-200'
+          }`}>
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-white font-black uppercase tracking-widest text-xs">
+                  {t('notifications')}
+                </h3>
+                {unreadCount > 0 && (
+                  <span className="bg-white/20 text-white text-[10px] font-black px-2 py-1 rounded-lg">
+                    {unreadCount} {t('unread')}
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="max-h-96 overflow-y-auto divide-y divide-gray-100">
+            <div className="max-h-[30rem] overflow-y-auto custom-scrollbar">
               {notifications.length > 0 ? (
-                notifications.map(n => (
-                  <div 
-                    key={n.id} 
-                    onClick={() => markAsRead(n.id)}
-                    className={`p-4 cursor-pointer hover:bg-gray-50 transition ${!n.is_read ? 'bg-blue-50/30' : ''}`}
-                  >
-                    <p className={`text-sm ${!n.is_read ? 'font-bold text-gray-900' : 'text-gray-600'}`}>{n.text}</p>
-                    <p className="text-[10px] text-gray-400 mt-1">{new Date(n.created_at).toLocaleString()}</p>
-                  </div>
-                ))
+                <div className="divide-y divide-gray-100 dark:divide-slate-700">
+                  {notifications.map(n => (
+                    <div 
+                      key={n.id} 
+                      onClick={() => markAsRead(n.id)}
+                      className={`p-5 cursor-pointer transition-all duration-200 relative group overflow-hidden ${
+                        !n.is_read 
+                        ? (isDarkMode ? 'bg-blue-600/5 hover:bg-blue-600/10' : 'bg-blue-50/50 hover:bg-blue-50') 
+                        : (isDarkMode ? 'hover:bg-slate-700/50' : 'hover:bg-gray-50')
+                      }`}
+                    >
+                      {!n.is_read && (
+                        <div className="absolute top-0 left-0 w-1 h-full bg-blue-600" />
+                      )}
+                      <div className="flex gap-4">
+                        <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
+                          !n.is_read ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : (isDarkMode ? 'bg-slate-900 text-slate-500' : 'bg-gray-100 text-gray-400')
+                        }`}>
+                          <Bell className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm leading-relaxed mb-2 ${!n.is_read ? 'font-bold' : (isDarkMode ? 'text-slate-400' : 'text-gray-600')}`}>
+                            {n.text}
+                          </p>
+                          <div className="flex items-center justify-between">
+                            {n.document_id && (
+                              <div className="flex items-center space-x-1.5">
+                                <FileText className="h-3 w-3 text-blue-500" />
+                                <span className="text-[10px] font-black text-blue-500 uppercase tracking-tighter">
+                                   Doc #{n.document_id}
+                                </span>
+                              </div>
+                            )}
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                                {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : (
-                <div className="p-10 text-center text-gray-400 text-sm italic">No notifications yet.</div>
+                <div className="py-20 text-center px-10">
+                  <Bell className="h-12 w-12 mx-auto mb-4 text-gray-300 opacity-20" />
+                  <p className="text-sm font-bold text-gray-400 italic">{t('no_notifications')}</p>
+                </div>
               )}
             </div>
           </div>
@@ -151,48 +215,48 @@ const Dashboard = () => {
           
           {/* Submission Form */}
           <div className="lg:col-span-1">
-            <div className="bg-white shadow rounded-lg p-6 hover:shadow-md transition">
+            <div className={`shadow rounded-xl p-6 transition ${isDarkMode ? 'bg-slate-800 border border-slate-700' : 'bg-white'}`}>
               <h2 className="text-lg font-bold flex items-center mb-6">
                 <FilePlus className="mr-2 h-5 w-5 text-blue-600" />
-                Submit Document
+                {t('submit_document')}
               </h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Title</label>
+                  <label className="block text-sm font-medium opacity-70">{t('title')}</label>
                   <input
                     type="text"
                     required
                     value={formData.title}
-                    placeholder="Enter document title"
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition"
+                    placeholder={t('enter_title')}
+                    className={`mt-1 block w-full rounded-lg border p-2 outline-none transition ${isDarkMode ? 'bg-slate-900 border-slate-700 focus:border-blue-500' : 'bg-gray-50 border-gray-300 focus:bg-white focus:ring-2 focus:ring-blue-500'}`}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Description</label>
+                  <label className="block text-sm font-medium opacity-70">{t('description')}</label>
                   <textarea
                     rows="3"
                     value={formData.description}
-                    placeholder="Briefly describe your request..."
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition"
+                    placeholder={t('describe_request')}
+                    className={`mt-1 block w-full rounded-lg border p-2 outline-none transition ${isDarkMode ? 'bg-slate-900 border-slate-700 focus:border-blue-500' : 'bg-gray-50 border-gray-300 focus:bg-white focus:ring-2 focus:ring-blue-500'}`}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   ></textarea>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Attachments</label>
+                  <label className="block text-sm font-medium opacity-70">{t('attachments')}</label>
                   <input
                     type="file"
                     multiple
-                    className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                    className={`mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold ${isDarkMode ? 'file:bg-slate-700 file:text-blue-400' : 'file:bg-blue-50 file:text-blue-700'} hover:file:opacity-80 cursor-pointer`}
                     onChange={(e) => setFiles(e.target.files)}
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition disabled:opacity-50 font-bold shadow-sm"
+                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 font-bold shadow-lg shadow-blue-600/20"
                 >
-                  {submitting ? 'Submitting...' : 'Send to EDCM'}
+                  {submitting ? t('submitting') : t('send_to_edcm')}
                 </button>
               </form>
             </div>
@@ -200,40 +264,48 @@ const Dashboard = () => {
 
           {/* Document List */}
           <div className="lg:col-span-2">
-            <div className="bg-white shadow rounded-lg overflow-hidden">
-               <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <div className={`shadow rounded-xl overflow-hidden transition ${isDarkMode ? 'bg-slate-800 border border-slate-700' : 'bg-white'}`}>
+               <div className={`px-6 py-4 border-b flex justify-between items-center ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}>
                   <h2 className="text-lg font-bold flex items-center">
                     <FileText className="mr-2 h-5 w-5 text-blue-600" />
-                    My Submissions
+                    {t('documents')}
                   </h2>
-                  <button onClick={fetchDocuments} className="text-sm text-blue-600 hover:underline">Refresh</button>
+                  <button onClick={fetchDocuments} className="text-sm text-blue-600 hover:underline">{t('refresh')}</button>
                </div>
-               <div className="divide-y divide-gray-200">
+               <div className={`divide-y ${isDarkMode ? 'divide-slate-700' : 'divide-gray-200'}`}>
                   {loading ? (
-                    <div className="p-10 text-center text-gray-500">Loading documents...</div>
+                    <div className="p-10 text-center opacity-50">{t('loading')}...</div>
                   ) : documents.length > 0 ? (
                     documents.map(doc => (
                       <div 
                         key={doc.id} 
                         onClick={() => setSelectedDoc(doc)}
-                        className="p-6 hover:bg-blue-50/30 transition cursor-pointer group"
+                        className={`p-6 transition cursor-pointer group ${isDarkMode ? 'hover:bg-slate-700/50' : 'hover:bg-blue-50/30'}`}
                       >
                          <div className="flex justify-between items-start">
-                            <div>
-                               <h3 className="font-bold text-gray-900 group-hover:text-blue-700 transition">{doc.title}</h3>
-                               <p className="text-xs text-gray-500 mt-1">ID: #{doc.id} • Last Update: {new Date(doc.updated_at).toLocaleDateString()}</p>
+                            <div className="flex-1">
+                               <div className="flex items-center space-x-2">
+                                 <h3 className={`font-bold transition ${isDarkMode ? 'group-hover:text-blue-400' : 'group-hover:text-blue-700 text-gray-900'}`}>{doc.title}</h3>
+                                 {doc.message_count > 0 && (
+                                   <span className="flex items-center bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                     <MessageSquare className="h-3 w-3 mr-1" />
+                                     {doc.message_count}
+                                   </span>
+                                 )}
+                               </div>
+                               <p className="text-xs text-gray-500 mt-1">ID: #{doc.id} • {t('date')}: {new Date(doc.updated_at).toLocaleDateString()}</p>
                             </div>
-                            <div className="flex items-center space-x-2 bg-gray-100 px-3 py-1 rounded-full border group-hover:bg-white transition">
+                            <div className={`flex items-center space-x-2 px-3 py-1 rounded-full border transition ${isDarkMode ? 'bg-slate-900 border-slate-700 group-hover:bg-slate-800' : 'bg-gray-100 border-gray-200 group-hover:bg-white'}`}>
                                {getStatusIcon(doc.status_code)}
-                               <span className="text-sm font-semibold">{doc.status_name}</span>
+                               <span className="text-sm font-bold">{t(doc.status_code?.toLowerCase() || 'pending')}</span>
                             </div>
                          </div>
                       </div>
                     ))
                   ) : (
-                    <div className="p-10 text-center text-gray-400">
-                        <FileText className="h-10 w-10 mx-auto mb-2 opacity-20" />
-                        No documents submitted yet.
+                    <div className="p-10 text-center opacity-30">
+                        <FileText className="h-10 w-10 mx-auto mb-2" />
+                        {t('no_documents')}
                     </div>
                   )}
                </div>
@@ -248,36 +320,36 @@ const Dashboard = () => {
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setSelectedDoc(null)}></div>
           <div className="flex min-h-full items-center justify-center p-4">
-            <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
+            <div className={`relative w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border transition ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
               <div className="h-2 bg-blue-600 w-full"></div>
               
               <div className="px-8 py-6 flex justify-between items-start">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{selectedDoc.title}</h2>
-                  <p className="text-sm text-gray-500 mt-1">Submission ID: #{selectedDoc.id}</p>
+                  <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoc.title}</h2>
+                  <p className="text-sm text-gray-400 mt-1">Submission ID: #{selectedDoc.id}</p>
                 </div>
-                <div className="flex items-center space-x-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-100">
+                <div className={`flex items-center space-x-2 px-3 py-1 rounded-full border ${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-blue-50 border-blue-100 text-blue-700'}`}>
                    {getStatusIcon(selectedDoc.status_code)}
-                   <span className="text-sm font-bold">{selectedDoc.status_name}</span>
+                   <span className="text-sm font-bold">{t(selectedDoc.status_code?.toLowerCase() || 'pending')}</span>
                 </div>
               </div>
 
-              <div className="px-8 py-4 bg-gray-50 border-y grid grid-cols-2 gap-4">
+              <div className={`px-8 py-4 border-y grid grid-cols-2 gap-4 ${isDarkMode ? 'bg-slate-900/50 border-slate-700' : 'bg-gray-50'}`}>
                  <div>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Last Update</span>
-                    <p className="text-sm font-medium text-gray-900">{new Date(selectedDoc.updated_at).toLocaleString()}</p>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('date')}</span>
+                    <p className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{new Date(selectedDoc.updated_at).toLocaleString()}</p>
                  </div>
                  <div className="text-right">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Client Portal Reference</span>
-                    <p className="text-sm font-medium text-gray-900 text-blue-600 font-mono">EDCM-PRT-{selectedDoc.id}</p>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Reference</span>
+                    <p className="text-sm font-medium text-blue-500 font-mono">EDCM-PRT-{selectedDoc.id}</p>
                  </div>
               </div>
 
               <div className="px-8 py-6 space-y-6 max-h-[60vh] overflow-y-auto">
                 {/* Description */}
                 <div>
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Description</h3>
-                  <div className="bg-white border rounded-lg p-4 text-sm text-gray-700 whitespace-pre-wrap min-h-[80px]">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{t('description_label')}</h3>
+                  <div className={`border rounded-xl p-4 text-sm whitespace-pre-wrap min-h-[80px] ${isDarkMode ? 'bg-slate-900 border-slate-700 text-gray-300' : 'bg-white text-gray-700'}`}>
                     {selectedDoc.description || "No description provided."}
                   </div>
                 </div>
@@ -285,22 +357,22 @@ const Dashboard = () => {
                 {/* Attachments */}
                 {selectedDoc.attachments && selectedDoc.attachments.length > 0 && (
                   <div>
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Attachments</h3>
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{t('attachments')}</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                        {selectedDoc.attachments.map(att => (
-                          <div key={att.id} className="flex items-center p-3 border rounded-xl bg-gray-50 hover:bg-white transition shadow-sm group">
-                             <div className="bg-blue-100 p-2 rounded-lg mr-3 text-blue-600 group-hover:scale-110 transition">
+                          <div key={att.id} className={`flex items-center p-3 border rounded-xl transition shadow-sm group ${isDarkMode ? 'bg-slate-900 border-slate-700 hover:bg-slate-700' : 'bg-gray-50 hover:bg-white'}`}>
+                             <div className="bg-blue-600/10 p-2 rounded-lg mr-3 text-blue-600 group-hover:scale-110 transition">
                                 <FileText className="h-4 w-4" />
                              </div>
                              <div className="flex-1 overflow-hidden">
-                                <p className="text-xs font-bold text-gray-900 truncate">{att.name}</p>
-                                <p className="text-[10px] text-gray-400">{(att.size / 1024).toFixed(1)} KB</p>
+                                <p className={`text-xs font-bold truncate ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{att.name}</p>
+                                <p className="text-[10px] text-gray-500">{(att.size / 1024).toFixed(1)} KB</p>
                              </div>
                              <a 
                                 href={att.url} 
                                 target="_blank" 
                                 rel="noreferrer"
-                                className="text-[10px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded"
+                                className="text-[10px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded"
                              >
                                 Open
                              </a>
@@ -312,33 +384,33 @@ const Dashboard = () => {
 
                 {/* Staff Feedback / Comments */}
                 <div>
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Communication History</h3>
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{t('communication_history')}</h3>
                   <div className="space-y-4">
                     {selectedDoc.comments && selectedDoc.comments.length > 0 ? (
                       selectedDoc.comments.map(c => (
-                        <div key={c.id} className="bg-blue-50/50 rounded-xl p-4 border border-blue-100">
-                           <div className="flex justify-between items-center mb-1">
-                              <span className="text-xs font-bold text-blue-600">{c.sender_name} (Staff)</span>
-                              <span className="text-[10px] text-gray-400">{new Date(c.created_at).toLocaleString()}</span>
+                        <div key={c.id} className={`rounded-xl p-4 border ${isDarkMode ? 'bg-blue-900/10 border-blue-900/40' : 'bg-blue-50/50 border-blue-100'}`}>
+                           <div className="flex justify-between items-center mb-2">
+                              <span className="text-xs font-bold text-blue-600">{c.sender_name} ({t('staff')})</span>
+                              <span className="text-[10px] text-gray-500">{new Date(c.created_at).toLocaleString()}</span>
                            </div>
-                           <p className="text-sm text-gray-700">{c.text}</p>
+                           <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{c.text}</p>
                         </div>
                       ))
                     ) : (
-                      <div className="text-center py-6 text-gray-400 text-sm italic border-2 border-dashed rounded-xl">
-                        Awaiting official staff response...
+                      <div className={`text-center py-8 text-sm italic border-2 border-dashed rounded-xl ${isDarkMode ? 'border-slate-700 text-gray-500' : 'border-gray-200 text-gray-400'}`}>
+                        {t('awaiting_staff')}
                       </div>
                     )}
                   </div>
                 </div>
               </div>
 
-              <div className="px-8 py-4 bg-gray-50 flex justify-end">
+              <div className={`px-8 py-4 border-t flex justify-end ${isDarkMode ? 'bg-slate-900/50 border-slate-700' : 'bg-gray-50'}`}>
                 <button 
                   onClick={() => setSelectedDoc(null)}
-                  className="bg-white border border-gray-300 text-gray-700 py-2 px-6 rounded-lg font-bold hover:bg-gray-100 transition shadow-sm"
+                  className={`py-2 px-8 rounded-lg font-bold transition shadow-sm border ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white hover:bg-slate-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-100'}`}
                 >
-                  Close
+                  {t('close')}
                 </button>
               </div>
             </div>
