@@ -23,3 +23,24 @@ npm run dev
 ```
 
 Visit the URL shown in the terminal (usually `http://localhost:5173`).
+
+## Build
+
+Generate production assets:
+
+```bash
+npm run build
+```
+
+## Internationalization (i18n)
+  
+The frontend uses `react-i18next` for full localization:
+- **Languages**: English (en), Armenian (hy), Russian (ru).
+- **Cache Busting**: A timestamp query string is added to translation requests to prevent stale browser cache issues.
+- **Selector**: A premium `LanguageSelector` component with flag indicators is used throughout the app.
+
+## Notes
+
+- Uses Vite proxy to `/api/` and `/admin/` in `vite.config.js`.
+- API URL can be overridden with `VITE_API_URL` in `.env`.
+- OAuth/CSRF and token cookie auth are managed by backend `/api/auth/*` endpoints.
