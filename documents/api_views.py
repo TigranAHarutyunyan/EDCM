@@ -617,6 +617,9 @@ class PortalSubmitView(APIView):
             details=f"Client: {client_name or '-'} / {client_email or '-'}",
         )
 
+        # Notify the client
+        _create_portal_notification(document, f"Your document '{title}' has been successfully received by our team.")
+
         return Response(
             {"id": document.id, "message": "Submitted successfully"},
             status=status.HTTP_201_CREATED,

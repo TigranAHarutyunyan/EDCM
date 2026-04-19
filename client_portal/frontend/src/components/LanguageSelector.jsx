@@ -37,8 +37,8 @@ const LanguageSelector = () => {
                             onClick={() => i18n.changeLanguage(lng.code)}
                             className={`flex items-center justify-between px-4 py-3 text-sm font-bold rounded-xl transition-all ${
                                 lng.code === i18n.language 
-                                    ? (isDarkMode ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'bg-blue-600 text-white shadow-lg shadow-blue-600/20') 
-                                    : (isDarkMode ? 'text-slate-400 hover:bg-slate-700 hover:text-white' : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600')
+                                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20' 
+                                    : (isDarkMode ? 'text-slate-400 hover:bg-slate-700 hover:text-white' : 'text-gray-600 hover:bg-purple-50 hover:text-purple-600')
                             }`}
                         >
                             <div className="flex items-center space-x-3">

@@ -1,5 +1,7 @@
 {
   "dashboard": "Панель управления",
+  "title": "Заголовок",
+  "description": "Описание",
   "profile": "Профиль",
   "logout": "Выйти",
   "documents": "Мои документы",

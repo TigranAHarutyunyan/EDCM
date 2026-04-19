@@ -27,7 +27,10 @@
     "search": "Search...",
     "language": "Language",
     "submit": "Submit",
-    "submitting": "Submitting..."
+    "submitting": "Submitting...",
+    "username": "Username",
+    "password": "Password",
+    "email": "Email"
   },
   "portal": {
     "title": "Public Portal",
@@ -55,5 +58,21 @@
     "save_changes": "Save Changes",
     "no_created": "No documents created yet.",
     "no_assigned": "No documents assigned yet."
+  },
+  "department": {
+    "panel_title": "Department Control Panel",
+    "manage_dept": "Manage department employees and documents.",
+    "employees": "Team Members",
+    "add_employee": "Add Team Member",
+    "no_employees": "No team members found.",
+    "new_user_hint": "New accounts will be created as 'Employee' in your department.",
+    "dept_documents": "Departmental Documents",
+    "no_documents": "No documents found in your department.",
+    "current_owner": "Current Owner",
+    "assigned_to": "Assigned To",
+    "no_owner": "No owner",
+    "unassigned": "Unassigned",
+    "change_hint": "Transfer ownership or reassign tasks.",
+    "access_denied": "You do not have access to this page."
   }
 }

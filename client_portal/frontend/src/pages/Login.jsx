@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { LogIn, Sun, Moon } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import api from '../api';
+import LanguageSelector from '../components/LanguageSelector';
 
 const Login = () => {
   const [formData, setFormData] = useState({ username: '', password: '' });
@@ -40,7 +41,8 @@ const Login = () => {
 
   return (
     <div className={`min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 transition-all duration-500 ${isDarkMode ? 'bg-slate-900' : 'bg-gray-50'}`}>
-      <div className="absolute top-8 right-8">
+      <div className="absolute top-8 right-8 flex items-center space-x-4">
+        <LanguageSelector />
         <button 
           onClick={toggleTheme}
           className={`p-3 rounded-2xl border backdrop-blur-md transition-all hover:scale-110 ${isDarkMode ? 'bg-slate-800 border-slate-700 text-yellow-500' : 'bg-white border-gray-200 text-gray-500 shadow-lg'}`}

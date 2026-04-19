@@ -1,5 +1,7 @@
 {
   "dashboard": "Dashboard",
+  "title": "Title",
+  "description": "Description",
   "profile": "Profile",
   "logout": "Logout",
   "documents": "My Documents",

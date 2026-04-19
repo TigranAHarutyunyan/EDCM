@@ -4,7 +4,9 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { FilePlus, FileText, CheckCircle, Clock, Bell, User, Moon, Sun, Languages, MessageSquare } from 'lucide-react';
+import { FilePlus, FileText, CheckCircle, Clock, Bell, User, Moon, Sun, Languages, MessageSquare, ChevronLeft } from 'lucide-react';
+
+import LanguageSelector from '../components/LanguageSelector';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -18,6 +20,8 @@ const Dashboard = () => {
   const [formData, setFormData] = useState({ title: '', description: '' });
   const [files, setFiles] = useState([]);
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
@@ -56,6 +60,8 @@ const Dashboard = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setErrorMessage('');
+    
     const data = new FormData();
     data.append('title', formData.title);
     data.append('description', formData.description);
@@ -67,10 +73,12 @@ const Dashboard = () => {
       await api.post('/submit', data);
       setFormData({ title: '', description: '' });
       setFiles([]);
+      setShowSuccessOverlay(true);
       fetchDocuments();
-      alert('Document submitted successfully!');
+      // Auto-hide success overlay after 4 seconds
+      setTimeout(() => setShowSuccessOverlay(false), 4000);
     } catch (err) {
-      alert('Submission failed');
+      setErrorMessage(err.response?.data?.detail || 'Submission failed. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -98,11 +106,7 @@ const Dashboard = () => {
             </div>
             <div className="flex items-center space-x-4">
               {/* Language Selector */}
-              <div className="flex items-center border rounded-lg overflow-hidden border-gray-200 dark:border-slate-700">
-                <button onClick={() => changeLanguage('en')} className={`px-2 py-1 text-xs font-bold transition ${i18n.language === 'en' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400'}`}>EN</button>
-                <button onClick={() => changeLanguage('hy')} className={`px-2 py-1 text-xs font-bold transition border-l ${i18n.language === 'hy' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400'}`}>HY</button>
-                <button onClick={() => changeLanguage('ru')} className={`px-2 py-1 text-xs font-bold transition border-l ${i18n.language === 'ru' ? 'bg-blue-600 text-white' : 'text-gray-500 dark:text-gray-400'}`}>RU</button>
-              </div>
+              <LanguageSelector />
 
               {/* Theme Toggle */}
               <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition">
@@ -209,6 +213,44 @@ const Dashboard = () => {
           </div>
         )}
       </nav>
+
+      {/* Success Overlay */}
+      {showSuccessOverlay && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setShowSuccessOverlay(false)}></div>
+           <div className={`relative w-full max-w-sm p-10 rounded-[2.5rem] shadow-2xl text-center transform transition-all animate-in zoom-in-95 duration-300 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
+              <div className="h-24 w-24 bg-green-500 rounded-[2rem] mx-auto mb-8 flex items-center justify-center shadow-2xl shadow-green-500/40 animate-bounce">
+                 <CheckCircle className="h-12 w-12 text-white" />
+              </div>
+              <h3 className={`text-3xl font-black mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{t('success_title') || 'Great!'}</h3>
+              <p className={`text-base font-bold leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+                 {t('success_message') || "Your document has been submitted and is processing."}
+              </p>
+              <button 
+                 onClick={() => setShowSuccessOverlay(false)}
+                 className="mt-10 w-full py-5 bg-green-500 text-white rounded-2xl font-black hover:bg-green-600 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-green-500/20"
+              >
+                 {t('close') || 'Got it'}
+              </button>
+           </div>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+           <div className="bg-red-500 text-white p-5 rounded-2xl flex items-center justify-between shadow-2xl shadow-red-500/20 animate-in slide-in-from-top-4 duration-300">
+              <div className="flex items-center">
+                 <div className="p-2 bg-white/20 rounded-lg mr-4">
+                    <Bell className="h-5 w-5 mr-3" />
+                 </div>
+                 <span className="text-sm font-black uppercase tracking-wide">{errorMessage}</span>
+              </div>
+              <button onClick={() => setErrorMessage('')} className="p-2 hover:bg-white/10 rounded-xl transition">
+                 <ChevronLeft className="h-5 w-5 rotate-90" />
+              </button>
+           </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

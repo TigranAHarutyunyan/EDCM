@@ -95,7 +95,15 @@ def get_user(username: str):
     row = c.fetchone()
     conn.close()
     if row:
-        return {"id": row[0], "username": row[1], "email": row[2], "password": row[3], "full_name": row[4], "is_verified": bool(row[6])}
+        return {
+            "id": row[0], 
+            "username": row[1], 
+            "email": row[2], 
+            "password": row[3], 
+            "full_name": row[4], 
+            "company": row[5] or "",
+            "is_verified": bool(row[6])
+        }
     return None
 
 def send_verification_email(email: str, token: str):
@@ -153,8 +161,8 @@ async def register(user: UserRegister):
     c = conn.cursor()
     try:
         hashed_password = pwd_context.hash(user.password)
-        c.execute("INSERT INTO users (username, email, password, full_name) VALUES (?, ?, ?, ?)",
-                  (user.username, user.email, hashed_password, user.full_name))
+        c.execute("INSERT INTO users (username, email, password, full_name, company) VALUES (?, ?, ?, ?, ?)",
+                  (user.username, user.email, hashed_password, user.full_name, ""))
         user_id = c.lastrowid
         
         # Generate and store 6-digit code
@@ -244,14 +252,28 @@ async def me(current_user: dict = Depends(get_current_user)):
 
 @app.post("/submit")
 async def submit(title: str = Form(...), description: str = Form(""), files: Optional[List[UploadFile]] = File(None), current_user: dict = Depends(get_current_user)):
+    # Standardize data to avoid payload issues
+    company_name = current_user.get("company") or ""
+    client_name = current_user.get("full_name") or current_user["username"]
+    client_email = current_user.get("email") or ""
+
+    data = {
+        "title": title, 
+        "description": description, 
+        "client_name": client_name, 
+        "client_email": client_email, 
+        "company": company_name
+    }
+
     async with httpx.AsyncClient() as client:
-        data = {"title": title, "description": description, "client_name": current_user["full_name"], "client_email": current_user["email"], "company": current_user["company"]}
         multipart_files = []
         if files:
             for f in files:
                 content = await f.read()
                 multipart_files.append(("files", (f.filename, content, f.content_type)))
-        resp = await client.post(f"{EDCM_BACKEND_URL}/portal/submit/", data=data, files=multipart_files)
+        
+        # If no files,httpx.post(data=...) sends as form-encoded, which Django MultiPart/FormParser handles.
+        resp = await client.post(f"{EDCM_BACKEND_URL}/portal/submit/", data=data, files=multipart_files or None)
         return resp.json()
 
 @app.get("/auth/google/login")
@@ -311,8 +333,8 @@ async def google_callback(code: str):
     if not user:
         conn = sqlite3.connect(DB_FILE)
         c = conn.cursor()
-        c.execute("INSERT INTO users (username, email, password, full_name, is_verified) VALUES (?, ?, ?, ?, ?)",
-                  (email, email, "GOOGLE_AUTH_NO_PASSWORD", full_name, 1)) # Verified by default
+        c.execute("INSERT INTO users (username, email, password, full_name, company, is_verified) VALUES (?, ?, ?, ?, ?, ?)",
+                  (email, email, "GOOGLE_AUTH_NO_PASSWORD", full_name, "", 1)) # Verified by default
         conn.commit()
         conn.close()
         user = get_user(email)
