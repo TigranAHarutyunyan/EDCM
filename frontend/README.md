@@ -36,6 +36,13 @@ Generate production assets:
 npm run build
 ```
 
+## Internationalization (i18n)
+  
+The frontend uses `react-i18next` for full localization:
+- **Languages**: English (en), Armenian (hy), Russian (ru).
+- **Cache Busting**: A timestamp query string is added to translation requests to prevent stale browser cache issues.
+- **Selector**: A premium `LanguageSelector` component with flag indicators is used throughout the app.
+
 ## Notes
 
 - Uses Vite proxy to `/api/` and `/admin/` in `vite.config.js`.
