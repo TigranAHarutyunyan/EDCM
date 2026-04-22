@@ -26,6 +26,21 @@ All sensitive configuration is stored in environment variables, loaded from the 
 | `DB_HOST`      | String  | localhost                     | ❌ No           | Database host address                          |
 | `DB_PORT`      | Integer | 5432                          | ❌ No           | Database port number                           |
 
+### Client Portal (FastAPI) PostgreSQL
+
+The client portal stores its own users separately from Django. Use either a **full URL** or **split variables** (URL wins if both are set in `db.py`).
+
+| Variable | Type | Default | Required | Description |
+| -------- | ---- | ------- | -------- | ----------- |
+| `CLIENT_PORTAL_DATABASE_URL` | String | - | ❌ No | Full URL, e.g. `postgresql://user:pass@host:5432/client_portal` (use for an **external** Postgres) |
+| `CLIENT_PORTAL_DB_HOST` | String | - | ❌ No | Hostname (`db` in Docker Compose, or your server IP / `host.docker.internal` on Mac/Windows) |
+| `CLIENT_PORTAL_DB_PORT` | String | `5432` | ❌ No | Port |
+| `CLIENT_PORTAL_DB_NAME` | String | `client_portal` | ❌ No | Database name (create this DB and user on the server first if not using the bundled init script) |
+| `CLIENT_PORTAL_DB_USER` | String | `client_portal` | ❌ No | Dedicated DB user for the portal |
+| `CLIENT_PORTAL_DB_PASSWORD` | String | - | ✅ Yes (prod) | Password for that user |
+
+On a **fresh** `docker compose` Postgres volume, `docker/postgres/init-client-portal.sh` creates the `client_portal` role and database (password must match `CLIENT_PORTAL_DB_PASSWORD` unless you edit the script). If your cluster already exists, create the role/database manually and set the variables above.
+
 ### CORS & Security
 
 | Variable                | Type                     | Default               | Required | Description                                                  |

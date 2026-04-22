@@ -9,6 +9,7 @@ services:
             POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
         volumes:
             - postgres_data:/var/lib/postgresql/data
+            - ./docker/postgres/init-client-portal.sh:/docker-entrypoint-initdb.d/02-client-portal.sh:ro
         healthcheck:
             test:
                 [
@@ -35,7 +36,7 @@ services:
         # ADDED VOLUMES FOR HOT RELOAD
         volumes:
             - .:/app
-            - static_volume:/app/staticfiles,
+            - static_volume:/app/staticfiles
             - media_volume:/app/media
         environment:
             DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres1}@db:5432/${DB_NAME:-edcm_db}
@@ -82,10 +83,12 @@ services:
             - .env
         environment:
             EDCM_BACKEND_URL: http://backend:8000/api
+            # Client Portal DB: set CLIENT_PORTAL_DB_* or CLIENT_PORTAL_DATABASE_URL in .env
         ports:
             - "${CLIENT_BACKEND_PORT}:8001"
         depends_on:
-            - db
+            db:
+                condition: service_healthy
         restart: unless-stopped
         networks:
             - edcm
