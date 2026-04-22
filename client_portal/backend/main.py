@@ -9,7 +9,7 @@ from pydantic import BaseModel
 import httpx
 import os
 import sqlite3
-from typing import Dict
+import db as portal_db
 import uuid
 import secrets
 import smtplib
@@ -49,29 +49,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DB_FILE = "portal.db"
-
-def init_db():
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS users
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  username TEXT UNIQUE,
-                  email TEXT UNIQUE,
-                  password TEXT,
-                  full_name TEXT,
-                  company TEXT,
-                  is_verified INTEGER DEFAULT 0)''')
-    
-    c.execute('''CREATE TABLE IF NOT EXISTS verification_tokens
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  user_id INTEGER,
-                  token TEXT,
-                  created_at DATETIMEDEFAULT CURRENT_TIMESTAMP)''')
-    conn.commit()
-    conn.close()
-
-init_db()
+portal_db.init_db()
 
 class UserRegister(BaseModel):
     username: str
@@ -89,22 +67,7 @@ class Token(BaseModel):
     token_type: str
 
 def get_user(username: str):
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute("SELECT * FROM users WHERE username=?", (username,))
-    row = c.fetchone()
-    conn.close()
-    if row:
-        return {
-            "id": row[0], 
-            "username": row[1], 
-            "email": row[2], 
-            "password": row[3], 
-            "full_name": row[4], 
-            "company": row[5] or "",
-            "is_verified": bool(row[6])
-        }
-    return None
+    return portal_db.get_user(username)
 
 def send_verification_email(email: str, token: str):
     if not SMTP_USER or not SMTP_PASS:
@@ -157,31 +120,31 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 
 @app.post("/register")
 async def register(user: UserRegister):
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
     try:
         hashed_password = pwd_context.hash(user.password)
-        c.execute("INSERT INTO users (username, email, password, full_name, company) VALUES (?, ?, ?, ?, ?)",
-                  (user.username, user.email, hashed_password, user.full_name, ""))
-        user_id = c.lastrowid
-        
-        # Generate and store 6-digit code
-        code = ''.join(secrets.choice('0123456789') for _ in range(6))
-        c.execute("INSERT INTO verification_tokens (user_id, token) VALUES (?, ?)", (user_id, code))
-        conn.commit()
-        
-        # Send email background
+        user_id = portal_db.insert_user_register(
+            user.username, user.email, hashed_password, user.full_name
+        )
+        code = "".join(secrets.choice("0123456789") for _ in range(6))
+        portal_db.insert_verification_token(user_id, code)
         send_verification_email(user.email, code)
-        
     except sqlite3.IntegrityError as e:
         error_msg = str(e)
         if "users.username" in error_msg or "UNIQUE constraint failed: users.username" in error_msg:
-             raise HTTPException(status_code=400, detail="This username is already taken. Please choose another.")
+            raise HTTPException(status_code=400, detail="This username is already taken. Please choose another.")
         if "users.email" in error_msg or "UNIQUE constraint failed: users.email" in error_msg:
-             raise HTTPException(status_code=400, detail="This email is already registered. Please login instead.")
+            raise HTTPException(status_code=400, detail="This email is already registered. Please login instead.")
         raise HTTPException(status_code=400, detail="Registration failed: Username or email already taken.")
-    finally:
-        conn.close()
+    except Exception as e:
+        if portal_db.USE_POSTGRES:
+            import psycopg2
+
+            if isinstance(e, psycopg2.errors.UniqueViolation):
+                err = str(e).lower()
+                if "username" in err:
+                    raise HTTPException(status_code=400, detail="This username is already taken. Please choose another.")
+                raise HTTPException(status_code=400, detail="This email is already registered. Please login instead.")
+        raise
     return {"message": "Verification code sent to your email."}
 
 class VerifyRequest(BaseModel):
@@ -190,48 +153,26 @@ class VerifyRequest(BaseModel):
 
 @app.post("/verify-code")
 async def verify_code(req: VerifyRequest):
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    # Find user by email first
-    c.execute("SELECT id, username FROM users WHERE email=?", (req.email,))
-    user_row = c.fetchone()
+    user_row = portal_db.get_user_by_email(req.email)
     if not user_row:
-        conn.close()
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     user_id, username = user_row
-    # Check token
-    c.execute("SELECT user_id FROM verification_tokens WHERE user_id=? AND token=?", (user_id, req.code))
-    token_row = c.fetchone()
-    
-    if not token_row:
-        conn.close()
+    if not portal_db.verify_token_match(user_id, req.code):
         raise HTTPException(status_code=400, detail="Invalid verification code")
-    
-    c.execute("UPDATE users SET is_verified = 1 WHERE id=?", (user_id,))
-    c.execute("DELETE FROM verification_tokens WHERE user_id=? AND token=?", (user_id, req.code))
-    conn.commit()
-    conn.close()
-    
-    # Generate token for auto-login
+
+    portal_db.mark_verified_and_delete_token(user_id, req.code)
+
     access_token = create_access_token(data={"sub": username})
     return {"access_token": access_token, "token_type": "bearer", "message": "Account activated successfully!"}
 
 @app.get("/verify-email")
 async def verify_email(token: str):
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute("SELECT user_id FROM verification_tokens WHERE token=?", (token,))
-    row = c.fetchone()
-    if not row:
-        conn.close()
+    user_id = portal_db.get_user_id_by_token(token)
+    if user_id is None:
         raise HTTPException(status_code=400, detail="Invalid or expired token")
-    
-    user_id = row[0]
-    c.execute("UPDATE users SET is_verified = 1 WHERE id=?", (user_id,))
-    c.execute("DELETE FROM verification_tokens WHERE token=?", (token,))
-    conn.commit()
-    conn.close()
+
+    portal_db.verify_email_token_complete(user_id, token)
     return {"message": "Email verified successfully. You can now log in."}
 
 @app.post("/token", response_model=Token)
@@ -331,12 +272,7 @@ async def google_callback(code: str):
     # 4. Check/Create User in local Portal DB
     user = get_user(email) # Using email as username for google logins
     if not user:
-        conn = sqlite3.connect(DB_FILE)
-        c = conn.cursor()
-        c.execute("INSERT INTO users (username, email, password, full_name, company, is_verified) VALUES (?, ?, ?, ?, ?, ?)",
-                  (email, email, "GOOGLE_AUTH_NO_PASSWORD", full_name, "", 1)) # Verified by default
-        conn.commit()
-        conn.close()
+        portal_db.insert_google_user(email, full_name)
         user = get_user(email)
         
     portal_token = create_access_token(data={"sub": user["username"]})
