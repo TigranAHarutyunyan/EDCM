@@ -94,8 +94,8 @@ const Dashboard = () => {
         } catch (error) {
             setSearchError(
                 error.response?.status === 404
-                    ? "Document not found"
-                    : "Error fetching document",
+                    ? t('dashboard.docNotFound')
+                    : t('dashboard.fetchError'),
             );
         } finally {
             setSearching(false);
@@ -138,7 +138,7 @@ const Dashboard = () => {
                         {t('dashboard.title')}
                     </h1>
                     <p className={`mt-1 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-                        Overview of your document activities
+                        {t('dashboard.overview')}
                     </p>
                 </div>
 
@@ -149,7 +149,7 @@ const Dashboard = () => {
                             href="/admin/"
                             className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-md hover:from-purple-700 hover:to-pink-700 transition whitespace-nowrap font-medium"
                         >
-                            {panelButton.label}
+                            {t('dashboard.adminPanel')}
                         </a>
                     )}
                     {panelButton?.kind === "department" && (
@@ -157,13 +157,13 @@ const Dashboard = () => {
                             to="/department/"
                             className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-md hover:from-purple-700 hover:to-pink-700 transition whitespace-nowrap font-medium"
                         >
-                            {panelButton.label}
+                            {t('dashboard.departmentPanel')}
                         </Link>
                     )}
                     <form onSubmit={handleSearch} className="flex space-x-2">
                         <input
                             type="text"
-                            placeholder="View Document by ID..."
+                            placeholder={t('dashboard.searchPlaceholder')}
                             className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 w-64"
                             value={searchId}
                             onChange={(e) => setSearchId(e.target.value)}
@@ -173,7 +173,7 @@ const Dashboard = () => {
                             disabled={searching}
                             className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition disabled:opacity-50"
                         >
-                            {searching ? "..." : "View"}
+                            {searching ? "..." : t('common.view')}
                         </button>
                     </form>
                 </div>
@@ -254,17 +254,17 @@ const Dashboard = () => {
                 <div className="bg-gradient-to-r from-purple-600 to-pink-600 overflow-hidden shadow rounded-lg text-white">
                     <div className="px-4 py-5 sm:p-6 flex flex-col justify-center h-full">
                         <h3 className="text-lg font-medium leading-6">
-                            New Document
+                            {t('dashboard.newDocument')}
                         </h3>
                         <div className="mt-2 text-sm text-purple-100 mb-4">
-                            Start a new document workflow
+                            {t('dashboard.startWorkflow')}
                         </div>
                         <div>
                              <button
                                 onClick={() => setIsModalOpen(true)}
                                 className="w-full text-sm bg-white text-purple-600 px-4 py-2 rounded font-bold hover:bg-gray-100 transition shadow-sm"
                             >
-                                + Create New
+                                {t('dashboard.createNew')}
                             </button>
                         </div>
                     </div>
@@ -281,7 +281,7 @@ const Dashboard = () => {
                             onClick={() => setViewMode("all")}
                             className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${viewMode === 'all' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
                         >
-                            All
+                            {t('common.all')}
                         </button>
                         <button
                             onClick={() => setViewMode("my")}
@@ -294,7 +294,7 @@ const Dashboard = () => {
                                 onClick={() => setViewMode("portal")}
                                 className={`px-4 py-1.5 text-sm font-medium rounded-md transition ${viewMode === 'portal' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                             >
-                                Portal Inbox
+                                {t('dashboard.portalInbox')}
                             </button>
                         )}
                     </div>
@@ -307,37 +307,37 @@ const Dashboard = () => {
                                     scope="col"
                                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                 >
-                                    ID
+                                    {t('common.id')}
                                 </th>
                                 <th
                                     scope="col"
                                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                 >
-                                    Title
+                                    {t('common.title')}
                                 </th>
                                 <th
                                     scope="col"
                                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                 >
-                                    Status
+                                    {t('common.status')}
                                 </th>
                                 <th
                                     scope="col"
                                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                 >
-                                    Type
+                                    {t('common.type')}
                                 </th>
                                 <th
                                     scope="col"
                                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                 >
-                                    Created
+                                    {t('common.created')}
                                 </th>
                                 <th
                                     scope="col"
                                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                 >
-                                    Assigned To
+                                    {t('common.assignedTo')}
                                 </th>
                             </tr>
                         </thead>
@@ -392,7 +392,7 @@ const Dashboard = () => {
                                                     {doc.assigned_to.profile?.full_name || doc.assigned_to.username}
                                                 </span>
                                             ) : (
-                                                <span className="text-gray-400 italic">Unassigned</span>
+                                                <span className="text-gray-400 italic">{t('dashboard.unassigned')}</span>
                                             )}
                                         </td>
                                     </tr>
@@ -403,8 +403,7 @@ const Dashboard = () => {
                                         colSpan="4"
                                         className="px-6 py-4 text-center text-gray-500 text-sm"
                                     >
-                                        No documents found. start by creating
-                                        one!
+                                        {t('dashboard.noDocuments')}
                                     </td>
                                 </tr>
                             )}

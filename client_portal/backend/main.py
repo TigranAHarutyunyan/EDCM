@@ -44,7 +44,7 @@ app = FastAPI(title="EDCM Client Portal API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -138,8 +138,9 @@ async def register(user: UserRegister):
     except Exception as e:
         if portal_db.USE_POSTGRES:
             import psycopg2
+            from psycopg2 import errors
 
-            if isinstance(e, psycopg2.errors.UniqueViolation):
+            if isinstance(e, errors.UniqueViolation):
                 err = str(e).lower()
                 if "username" in err:
                     raise HTTPException(status_code=400, detail="This username is already taken. Please choose another.")
@@ -234,7 +235,8 @@ async def google_login():
         "prompt": "select_account"
     }
     print(f"DEBUG: Using GOOGLE_REDIRECT_URI = {GOOGLE_REDIRECT_URI}", flush=True)
-    encoded_params = "&".join([f"{k}={v}" for k, v in params.items()])
+    from urllib.parse import urlencode
+    encoded_params = urlencode(params)
     return {"url": f"{auth_endpoint}?{encoded_params}"}
 
 @app.get("/auth/google/callback")

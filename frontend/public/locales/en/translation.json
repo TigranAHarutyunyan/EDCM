@@ -6,7 +6,8 @@
     "profile": "Profile",
     "logout": "Logout",
     "login": "Login",
-    "portal": "Client Portal"
+    "portal": "Client Portal",
+    "loggedInAs": "Logged in as"
   },
   "dashboard": {
     "title": "Document Control Dashboard",
@@ -17,7 +18,19 @@
       "completed": "Completed"
     },
     "recent": "Recent Activity",
-    "addNew": "Add New Document"
+    "addNew": "Add New Document",
+    "overview": "Overview of your document activities",
+    "adminPanel": "Admin Panel",
+    "departmentPanel": "Department Panel",
+    "searchPlaceholder": "View Document by ID...",
+    "docNotFound": "Document not found",
+    "fetchError": "Error fetching document",
+    "newDocument": "New Document",
+    "startWorkflow": "Start a new document workflow",
+    "createNew": "+ Create New",
+    "portalInbox": "Portal Inbox",
+    "unassigned": "Unassigned",
+    "noDocuments": "No documents found. start by creating one!"
   },
   "common": {
     "save": "Save",
@@ -30,7 +43,16 @@
     "submitting": "Submitting...",
     "username": "Username",
     "password": "Password",
-    "email": "Email"
+    "email": "Email",
+    "all": "All",
+    "id": "ID",
+    "title": "Title",
+    "status": "Status",
+    "type": "Type",
+    "created": "Created",
+    "assignedTo": "Assigned To",
+    "view": "View",
+    "na": "N/A"
   },
   "portal": {
     "title": "Public Portal",
