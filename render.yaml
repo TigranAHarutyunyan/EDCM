@@ -13,7 +13,7 @@ services:
           - key: PYTHON_VERSION
             value: 3.10
           - key: SECRET_KEY
-            fromQuery: SECRET_KEY
+            sync: false      # Set this manually in the Render Dashboard → Environment
           - key: DEBUG
             value: "False"
           - key: ALLOWED_HOSTS
@@ -23,6 +23,8 @@ services:
                 name: edcm-postgres
                 property: connectionString
           - key: CORS_ALLOWED_ORIGINS
+            value: "https://client-portal-frontend.onrender.com,https://edcm-app.onrender.com"
+          - key: CSRF_TRUSTED_ORIGINS
             value: "https://client-portal-frontend.onrender.com,https://edcm-app.onrender.com"
           - key: SECURE_SSL_REDIRECT
             value: "True"
@@ -56,13 +58,15 @@ services:
           - key: PORTAL_DB_PATH
             value: /var/data/portal.db
           - key: EDCM_BACKEND_URL
-            value: http://edcm-app:10000/api
+            # Use the public HTTPS URL — Render web services are not reachable
+            # via simple internal hostnames. Set to your actual edcm-app URL.
+            value: https://edcm-app.onrender.com/api
           - key: SECRET_KEY
-            fromQuery: SECRET_KEY
+            sync: false      # Set this manually in the Render Dashboard → Environment
           - key: GOOGLE_CLIENT_ID
-            fromQuery: GOOGLE_CLIENT_ID
+            sync: false      # Set this manually in the Render Dashboard → Environment
           - key: GOOGLE_CLIENT_SECRET
-            fromQuery: GOOGLE_CLIENT_SECRET
+            sync: false      # Set this manually in the Render Dashboard → Environment
           - key: GOOGLE_REDIRECT_URI
             value: https://client-portal-frontend.onrender.com/google-callback
       disk:
