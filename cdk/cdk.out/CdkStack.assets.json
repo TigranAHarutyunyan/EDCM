@@ -1,0 +1,34 @@
+{
+  "version": "53.0.0",
+  "files": {
+    "0574bb83344fd2222751b27579c39fe93d658c1b0b90a3126e496a59b219f4de": {
+      "displayName": "LambdaFunctions/Code",
+      "source": {
+        "path": "asset.0574bb83344fd2222751b27579c39fe93d658c1b0b90a3126e496a59b219f4de",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region-76901d33": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "0574bb83344fd2222751b27579c39fe93d658c1b0b90a3126e496a59b219f4de.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "efd82d4f6201eac1d50a3fe6d5788a354cd377572a515b72ba56f6c7d397e1de": {
+      "displayName": "CdkStack Template",
+      "source": {
+        "path": "CdkStack.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-current_region-367c89a5": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "efd82d4f6201eac1d50a3fe6d5788a354cd377572a515b72ba56f6c7d397e1de.json",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

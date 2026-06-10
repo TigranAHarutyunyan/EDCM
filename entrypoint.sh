@@ -19,6 +19,46 @@ CLIENT_FRONTEND_PORT=${CLIENT_FRONTEND_PORT:-8002}
 MAX_RETRIES=30
 RETRY_COUNT=0
 
+# Parse DATABASE_URL if available
+if [ -n "${DATABASE_URL:-}" ]; then
+    # Remove protocol: e.g. postgresql://user:pass@host:port/db -> user:pass@host:port/db
+    proto_removed="${DATABASE_URL#*://}"
+    # Remove query string: e.g. user:pass@host:port/db?sslmode=require -> user:pass@host:port/db
+    without_query="${proto_removed%%\?*}"
+    
+    # Extract DB_NAME (everything after first /)
+    if echo "$without_query" | grep -q "/"; then
+        DB_NAME="${without_query#*/}"
+    fi
+    
+    # Extract user_pass_host_port (everything before first /)
+    user_pass_host_port="${without_query%%/*}"
+    
+    # Check if credentials are in URI
+    if echo "$user_pass_host_port" | grep -q "@"; then
+        credentials="${user_pass_host_port%%@*}"
+        host_port="${user_pass_host_port#*@}"
+        
+        # Extract DB_USER (everything before first : in credentials)
+        if echo "$credentials" | grep -q ":"; then
+            DB_USER="${credentials%%:*}"
+        else
+            DB_USER="$credentials"
+        fi
+    else
+        host_port="$user_pass_host_port"
+    fi
+    
+    # Extract DB_HOST and DB_PORT from host_port
+    if echo "$host_port" | grep -q ":"; then
+        DB_HOST="${host_port%%:*}"
+        DB_PORT="${host_port##*:}"
+    else
+        DB_HOST="$host_port"
+        DB_PORT=5432
+    fi
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -27,18 +67,33 @@ NC='\033[0m' # No Color
 
 # Function to wait for PostgreSQL
 wait_for_db() {
-    echo -e "${YELLOW}⏳ Waiting for PostgreSQL at ${DB_HOST}:${DB_PORT}...${NC}"
-    
-    while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-        if pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; then
-            echo -e "${GREEN}✅ PostgreSQL is ready!${NC}"
-            return 0
-        fi
+    if [ -n "${DATABASE_URL:-}" ]; then
+        echo -e "${YELLOW}⏳ Waiting for PostgreSQL database defined in DATABASE_URL...${NC}"
         
-        RETRY_COUNT=$((RETRY_COUNT + 1))
-        echo -e "${YELLOW}⏳ Attempt $RETRY_COUNT/$MAX_RETRIES - Database not ready yet, retrying...${NC}"
-        sleep 2
-    done
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if pg_isready -d "$DATABASE_URL" >/dev/null 2>&1; then
+                echo -e "${GREEN}✅ PostgreSQL is ready!${NC}"
+                return 0
+            fi
+            
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            echo -e "${YELLOW}⏳ Attempt $RETRY_COUNT/$MAX_RETRIES - Database not ready yet, retrying...${NC}"
+            sleep 2
+        done
+    else
+        echo -e "${YELLOW}⏳ Waiting for PostgreSQL at ${DB_HOST}:${DB_PORT}...${NC}"
+        
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; then
+                echo -e "${GREEN}✅ PostgreSQL is ready!${NC}"
+                return 0
+            fi
+            
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            echo -e "${YELLOW}⏳ Attempt $RETRY_COUNT/$MAX_RETRIES - Database not ready yet, retrying...${NC}"
+            sleep 2
+        done
+    fi
     
     echo -e "${RED}❌ Failed to connect to PostgreSQL after $MAX_RETRIES attempts${NC}"
     exit 1

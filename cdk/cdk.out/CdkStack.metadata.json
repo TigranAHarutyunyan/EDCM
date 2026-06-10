@@ -1,0 +1,223 @@
+{
+  "/CdkStack": [
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "<anonymous> (/Users/tigran/Desktop/EDCM/cdk/bin/cdk.ts:6:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/CdkStack/LambdaFunctions": [
+    {
+      "type": "aws:cdk:analytics:construct",
+      "data": {
+        "runtime": "*",
+        "code": "*",
+        "handler": "*"
+      }
+    }
+  ],
+  "/CdkStack/Url": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "Url"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "new CdkStack (/Users/tigran/Desktop/EDCM/cdk/lib/cdk-stack.ts:29:9)",
+        "<anonymous> (/Users/tigran/Desktop/EDCM/cdk/bin/cdk.ts:6:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/CdkStack/BootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BootstrapVersion"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib, node internals, @cspotcode/source-map-support...",
+        "(no user code in 9007199254740991 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/CdkStack/CheckBootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CheckBootstrapVersion"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib, node internals, @cspotcode/source-map-support...",
+        "(no user code in 9007199254740991 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/CdkStack/LambdaFunctions/ServiceRole": [
+    {
+      "type": "aws:cdk:analytics:construct",
+      "data": {
+        "assumedBy": {
+          "principalAccount": "*",
+          "assumeRoleAction": "*"
+        },
+        "managedPolicies": [
+          {
+            "managedPolicyArn": "*"
+          }
+        ]
+      }
+    }
+  ],
+  "/CdkStack/LambdaFunctions/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LambdaFunctionsDC8775EF"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Function2 in aws-cdk-lib...",
+        "new CdkStack (/Users/tigran/Desktop/EDCM/cdk/lib/cdk-stack.ts:15:32)",
+        "<anonymous> (/Users/tigran/Desktop/EDCM/cdk/bin/cdk.ts:6:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/CdkStack/LambdaFunctions/LogGroup": [
+    {
+      "type": "aws:cdk:analytics:construct",
+      "data": {
+        "logGroupName": "*"
+      }
+    }
+  ],
+  "/CdkStack/LambdaFunctions/FunctionUrl": [
+    {
+      "type": "aws:cdk:analytics:construct",
+      "data": {
+        "function": "*",
+        "authType": "NONE",
+        "cors": {
+          "allowedOrigins": "*",
+          "allowedMethods": [
+            "*"
+          ],
+          "allowedHeaders": "*"
+        }
+      }
+    }
+  ],
+  "/CdkStack/LambdaFunctions/invoke-function-url": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LambdaFunctionsinvokefunctionurlE15B6E90"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addFunctionUrl in aws-cdk-lib...",
+        "new CdkStack (/Users/tigran/Desktop/EDCM/cdk/lib/cdk-stack.ts:21:44)",
+        "<anonymous> (/Users/tigran/Desktop/EDCM/cdk/bin/cdk.ts:6:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/CdkStack/LambdaFunctions/invoke-function": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LambdaFunctionsinvokefunctionA1CCB2F4"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addFunctionUrl in aws-cdk-lib...",
+        "new CdkStack (/Users/tigran/Desktop/EDCM/cdk/lib/cdk-stack.ts:21:44)",
+        "<anonymous> (/Users/tigran/Desktop/EDCM/cdk/bin/cdk.ts:6:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/CdkStack/CDKMetadata/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CDKMetadata"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib, node internals, @cspotcode/source-map-support...",
+        "(no user code in 9007199254740991 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/CdkStack/CDKMetadata/Condition": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CDKMetadataAvailable"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib, node internals, @cspotcode/source-map-support...",
+        "(no user code in 9007199254740991 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/CdkStack/LambdaFunctions/ServiceRole/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LambdaFunctionsServiceRoleD66CDA58"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Function2 in aws-cdk-lib...",
+        "new CdkStack (/Users/tigran/Desktop/EDCM/cdk/lib/cdk-stack.ts:15:32)",
+        "<anonymous> (/Users/tigran/Desktop/EDCM/cdk/bin/cdk.ts:6:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/CdkStack/LambdaFunctions/Code/AssetBucket": [
+    {
+      "type": "aws:cdk:analytics:construct",
+      "data": "*"
+    }
+  ],
+  "/CdkStack/LambdaFunctions/LogGroup/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LambdaFunctionsLogGroupEAC5B404"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Function2 in aws-cdk-lib...",
+        "new CdkStack (/Users/tigran/Desktop/EDCM/cdk/lib/cdk-stack.ts:15:32)",
+        "<anonymous> (/Users/tigran/Desktop/EDCM/cdk/bin/cdk.ts:6:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/CdkStack/LambdaFunctions/FunctionUrl/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LambdaFunctionsFunctionUrl52195878"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addFunctionUrl in aws-cdk-lib...",
+        "new CdkStack (/Users/tigran/Desktop/EDCM/cdk/lib/cdk-stack.ts:21:44)",
+        "<anonymous> (/Users/tigran/Desktop/EDCM/cdk/bin/cdk.ts:6:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ]
+}
