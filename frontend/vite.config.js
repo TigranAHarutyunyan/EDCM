@@ -4,7 +4,10 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/',
+  // IMPORTANT: Must match Django's STATIC_URL ('/static/') so that the built
+  // index.html references /static/assets/... which WhiteNoise actually serves.
+  // Without this, the browser gets 404s on all JS/CSS → white screen.
+  base: '/static/',
   plugins: [
     react(),
     tailwindcss(),
