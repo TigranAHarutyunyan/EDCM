@@ -17,13 +17,13 @@ services:
           - key: DEBUG
             value: "False"
           - key: ALLOWED_HOSTS
-            value: "*.onrender.com"
+            value: "localhost,127.0.0.1,edcm-app,.onrender.com"
           - key: DATABASE_URL
             fromDatabase:
                 name: edcm-postgres
                 property: connectionString
           - key: CORS_ALLOWED_ORIGINS
-            value: "https://*.onrender.com"
+            value: "https://client-portal-frontend.onrender.com,https://edcm-app.onrender.com"
           - key: SECURE_SSL_REDIRECT
             value: "True"
           - key: SESSION_COOKIE_SECURE
@@ -46,6 +46,35 @@ services:
 
       # Auto-deploy on push
       autoDeployOnPush: true
+
+    - type: web
+      name: client-portal
+      runtime: docker
+      dockerContext: client_portal/backend
+      dockerfilePath: client_portal/backend/Dockerfile
+      envVars:
+          - key: PORTAL_DB_PATH
+            value: /var/data/portal.db
+          - key: EDCM_BACKEND_URL
+            value: http://edcm-app:10000/api
+          - key: SECRET_KEY
+            fromQuery: SECRET_KEY
+          - key: GOOGLE_CLIENT_ID
+            fromQuery: GOOGLE_CLIENT_ID
+          - key: GOOGLE_CLIENT_SECRET
+            fromQuery: GOOGLE_CLIENT_SECRET
+          - key: GOOGLE_REDIRECT_URI
+            value: https://client-portal-frontend.onrender.com/google-callback
+      disk:
+          name: client-portal-disk
+          mountPath: /var/data
+          sizeGB: 1
+
+    - type: web
+      name: client-portal-frontend
+      runtime: docker
+      dockerContext: client_portal/frontend
+      dockerfilePath: client_portal/frontend/Dockerfile
 
 databases:
     - name: edcm-postgres

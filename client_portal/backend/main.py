@@ -49,7 +49,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DB_FILE = "portal.db"
+DB_FILE = os.getenv("PORTAL_DB_PATH", "portal.db")
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
