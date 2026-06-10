@@ -208,9 +208,8 @@ STATICFILES_DIRS = [
     BASE_DIR / 'frontend' / 'dist',
     BASE_DIR / 'frontend',
 ]
-# Serve static files from collectstatic location
-# WhiteNoise will handle serving these in production
-# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Serve static files from collectstatic location with compression and cache-busting
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # MEDIAFILES STORAGE
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"

@@ -32,4 +32,6 @@ USER portaluser
 
 EXPOSE 8001
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "4"]
+# Use shell form so Render's $PORT env var is respected.
+# Render injects PORT at runtime; fall back to 8001 for local Docker Compose.
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8001} --workers 4"]
