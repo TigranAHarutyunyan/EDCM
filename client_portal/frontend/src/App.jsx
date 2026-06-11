@@ -10,7 +10,13 @@ import VerifyEmail from './pages/VerifyEmail';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-sm font-semibold text-slate-600">
+        Loading...
+      </div>
+    );
+  }
   if (!user) return <Navigate to="/login" replace />;
   return children;
 };

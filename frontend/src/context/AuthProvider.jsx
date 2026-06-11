@@ -6,6 +6,15 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const getStoredUser = () => {
+    try {
+      return JSON.parse(localStorage.getItem("user"));
+    } catch {
+      localStorage.removeItem("user");
+      return null;
+    }
+  };
+
   useEffect(() => {
     // Ensure we have a CSRF cookie so cookie-auth requests can include X-CSRFToken.
     api.get("csrf/").catch(() => {});
@@ -16,7 +25,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem("user", JSON.stringify(meRes.data));
         setUser(meRes.data);
       } catch {
-        const storedUser = JSON.parse(localStorage.getItem("user"));
+        const storedUser = getStoredUser();
         if (storedUser) setUser(storedUser);
       } finally {
         setLoading(false);
@@ -61,8 +70,11 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{ user, login, register, logout, loading }}>
-      {!loading && children}
+      {loading ? (
+        <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm font-semibold text-slate-600">
+          Loading...
+        </div>
+      ) : children}
     </AuthContext.Provider>
   );
 };
-

@@ -8,6 +8,18 @@ import { useTheme } from "../context/ThemeContext";
 import { useTranslation } from "react-i18next";
 import { MessageSquare } from "lucide-react";
 
+const normalizeStats = (data = {}) => ({
+    pending_count: data.pending_count ?? 0,
+    my_docs_count: data.my_docs_count ?? 0,
+    recent_docs: Array.isArray(data.recent_docs) ? data.recent_docs : [],
+});
+
+const normalizeList = (data) => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.results)) return data.results;
+    return [];
+};
+
 const Dashboard = () => {
     const { user } = useAuth();
     const { isDarkMode } = useTheme();
@@ -39,10 +51,10 @@ const Dashboard = () => {
                     api.get("document-types/"),
                     api.get("users/"),
                 ]);
-                setStats(statsRes.data);
-                setDepartments(deptsRes.data.results || deptsRes.data);
-                setDocumentTypes(typesRes.data.results || typesRes.data);
-                setUsers(usersRes.data.results || usersRes.data);
+                setStats(normalizeStats(statsRes.data));
+                setDepartments(normalizeList(deptsRes.data));
+                setDocumentTypes(normalizeList(typesRes.data));
+                setUsers(normalizeList(usersRes.data));
             } catch (error) {
                 console.error("Error fetching data", error);
             } finally {
@@ -61,7 +73,7 @@ const Dashboard = () => {
             const response = await api.get(url);
             setStats(prev => ({
                 ...prev,
-                recent_docs: response.data.results || response.data
+                recent_docs: normalizeList(response.data)
             }));
         } catch (error) {
             console.error("Error fetching documents", error);
@@ -72,7 +84,7 @@ const Dashboard = () => {
         if (viewMode === 'all') {
             const fetchStats = async () => {
                 const res = await api.get("dashboard/");
-                setStats(res.data);
+                setStats(normalizeStats(res.data));
             };
             fetchStats();
         } else {
@@ -112,7 +124,7 @@ const Dashboard = () => {
         setStats((prev) => ({
             ...prev,
             my_docs_count: (prev.my_docs_count || 0) + 1,
-            recent_docs: [newDocument, ...prev.recent_docs].slice(0, 5),
+            recent_docs: [newDocument, ...normalizeList(prev.recent_docs)].slice(0, 5),
         }));
     };
 
@@ -342,8 +354,8 @@ const Dashboard = () => {
                             </tr>
                         </thead>
                         <tbody className={`divide-y ${isDarkMode ? 'divide-slate-700' : 'divide-gray-100'}`}>
-                            {stats.recent_docs.length > 0 ? (
-                                stats.recent_docs.map((doc) => (
+                            {normalizeList(stats.recent_docs).length > 0 ? (
+                                normalizeList(stats.recent_docs).map((doc) => (
                                     <tr
                                         key={doc.id}
                                         onClick={() => handleViewDocument(doc)}

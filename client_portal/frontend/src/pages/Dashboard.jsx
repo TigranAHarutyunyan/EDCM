@@ -8,6 +8,12 @@ import { FilePlus, FileText, CheckCircle, Clock, Bell, User, Moon, Sun, Language
 
 import LanguageSelector from '../components/LanguageSelector';
 
+const normalizeList = (data) => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.results)) return data.results;
+  return [];
+};
+
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
@@ -35,7 +41,7 @@ const Dashboard = () => {
   const fetchDocuments = async () => {
     try {
       const res = await api.get('/my-documents');
-      setDocuments(res.data);
+      setDocuments(normalizeList(res.data));
     } catch (err) {
       console.error(err);
     } finally {
@@ -46,7 +52,7 @@ const Dashboard = () => {
   const fetchNotifications = async () => {
     try {
       const res = await api.get('/notifications');
-      setNotifications(Array.isArray(res.data) ? res.data : []);
+      setNotifications(normalizeList(res.data));
     } catch (err) {}
   };
 

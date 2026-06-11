@@ -5,8 +5,8 @@ services:
       pythonVersion: 3.10
       buildCommand: |
           pip install -r requirements.txt
-          cd frontend && npm install && npm run build && cd ..
-          python manage.py collectstatic --noinput
+          cd frontend && npm ci && npm run build && cd ..
+          python manage.py collectstatic --noinput --clear
       startCommand: python manage.py migrate && python manage.py seed_data && gunicorn --bind 0.0.0.0:${PORT:-8000} --workers 3 config.wsgi:application
       # Environment variables
       envVars:

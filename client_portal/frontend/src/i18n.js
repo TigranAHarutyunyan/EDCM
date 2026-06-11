@@ -3,6 +3,8 @@ import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import HttpBackend from 'i18next-http-backend';
 
+const localeBasePath = `${import.meta.env.BASE_URL}locales/{{lng}}/translation.json`;
+
 i18n
   .use(HttpBackend)
   .use(LanguageDetector)
@@ -15,7 +17,7 @@ i18n
       escapeValue: false,
     },
     backend: {
-      loadPath: `/locales/{{lng}}/translation.json?v=${new Date().getTime()}`,
+      loadPath: `${localeBasePath}?v=${new Date().getTime()}`,
     },
   });
 
