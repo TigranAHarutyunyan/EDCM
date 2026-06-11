@@ -24,7 +24,6 @@ def _app_user_from_auth_cookie(request):
 def _find_react_index_html() -> str | None:
     candidate_paths = [
         Path(settings.BASE_DIR) / 'frontend' / 'dist' / 'index.html',
-        Path(settings.BASE_DIR) / 'frontend' / 'index.html',
     ]
     for path in candidate_paths:
         if path.exists():
