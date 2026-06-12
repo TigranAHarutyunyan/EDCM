@@ -795,8 +795,17 @@ def _create_portal_notification(document, text):
         try:
             subject = "New Message in your EDCM Portal"
             # Try to build a link if possible, otherwise just inform
-            # We don't have a reliable PUBLIC_PORTAL_URL here, so we give a general message
-            message = f"Hello,\n\n{text}.\n\nPlease log in to your EDCM Client Portal to view the details.\n\nThank you,\nThe EDCM Team"
+            portal_url = getattr(settings, 'PUBLIC_PORTAL_URL', None)
+            if portal_url:
+                portal_link = f"{portal_url.rstrip('/')}/"
+            else:
+                portal_link = "your EDCM Client Portal"
+
+            message = (
+                f"Hello,\n\n{text}.\n\n"
+                f"Please visit {portal_link} to view the details.\n\n"
+                "Thank you,\nThe EDCM Team"
+            )
             
             send_mail(
                 subject,

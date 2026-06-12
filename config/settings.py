@@ -278,6 +278,7 @@ REST_FRAMEWORK = {
 # Public portal intake configuration.
 # All portal-submitted documents are assigned to this specific staff member.
 PORTAL_INBOX_USERNAME = os.getenv("PORTAL_INBOX_USERNAME", "portal_manager")
+PUBLIC_PORTAL_URL = os.getenv("PUBLIC_PORTAL_URL", "http://localhost:8002")
 
 # Email Configuration
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')

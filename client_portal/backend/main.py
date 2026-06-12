@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, status
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
@@ -41,8 +41,22 @@ EMAIL_NAME = os.getenv("DEFAULT_FROM_EMAIL_NAME", "EDCM Administrator")
 APP_URL = os.getenv("APP_URL", "http://localhost:8002")
 
 
-def google_redirect_uri() -> str:
-    return os.getenv("GOOGLE_REDIRECT_URI") or f"{APP_URL.rstrip('/')}/google-callback"
+def google_redirect_uri(request: Optional[Request] = None) -> str:
+    explicit_redirect = os.getenv("GOOGLE_REDIRECT_URI")
+    if explicit_redirect:
+        return explicit_redirect
+
+    explicit_app_url = os.getenv("APP_URL")
+    if explicit_app_url:
+        return f"{explicit_app_url.rstrip('/')}/google-callback"
+
+    if request is not None:
+        scheme = request.headers.get("x-forwarded-proto") or request.url.scheme
+        host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.hostname
+        if host:
+            return f"{scheme}://{host.rstrip('/')}/google-callback"
+
+    return "http://localhost:8002/google-callback"
 
 
 def validate_google_redirect_uri(uri: str) -> None:
@@ -311,9 +325,9 @@ async def submit(title: str = Form(...), description: str = Form(""), files: Opt
         return resp.json()
 
 @app.get("/auth/google/login")
-async def google_login():
+async def google_login(request: Request):
     """Build and return the Google OAuth2 redirect URL."""
-    redirect_uri = google_redirect_uri()
+    redirect_uri = google_redirect_uri(request)
     validate_google_redirect_uri(redirect_uri)
 
     async with httpx.AsyncClient() as client:
@@ -334,9 +348,9 @@ async def google_login():
     return {"url": f"{auth_endpoint}?{encoded_params}"}
 
 @app.get("/auth/google/callback")
-async def google_callback(code: str):
+async def google_callback(code: str, request: Request):
     """Exchange the Google code for User info and issue a Portal token."""
-    redirect_uri = google_redirect_uri()
+    redirect_uri = google_redirect_uri(request)
     validate_google_redirect_uri(redirect_uri)
 
     async with httpx.AsyncClient() as client:
