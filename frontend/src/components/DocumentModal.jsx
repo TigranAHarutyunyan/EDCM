@@ -26,6 +26,21 @@ const DocumentModal = ({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
+    const translateDocumentType = (type) => {
+        const code = type?.code?.toLowerCase();
+        if (code && t(`documentTypes.${code}`, { defaultValue: "" })) {
+            return t(`documentTypes.${code}`);
+        }
+        return type?.name || "";
+    };
+
+    const translateConfidentiality = (code) => {
+        if (!code) return "";
+        return t(`confidentialityLevels.${code.toLowerCase()}`, {
+            defaultValue: code,
+        });
+    };
+
     const resetForm = () => {
         setFormData({
             title: "",
@@ -273,7 +288,7 @@ const DocumentModal = ({
                                     </option>
                                     {documentTypes?.map((type) => (
                                         <option key={type.id} value={type.code}>
-                                            {type.name}
+                                            {translateDocumentType(type)}
                                         </option>
                                     ))}
                                 </select>
@@ -349,7 +364,7 @@ const DocumentModal = ({
                                                 ${loading ? "opacity-50 cursor-not-allowed" : ""}
                                             `}
                                         >
-                                            {level}
+                                            {translateConfidentiality(level)}
                                         </div>
                                     ))}
                                 </div>

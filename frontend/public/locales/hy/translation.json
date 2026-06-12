@@ -93,6 +93,12 @@
         "report": "Հաշվետվություն",
         "order": "Հրաման"
     },
+    "confidentialityLevels": {
+        "public": "Հանրային",
+        "internal": "Ներքին",
+        "confidential": "Գաղտնի",
+        "secret": "Հույժ գաղտնի"
+    },
     "audit": {
         "actions": {
             "routed": "Ուղղորդված",

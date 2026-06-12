@@ -102,6 +102,22 @@ const DocumentDetailModal = ({
         return t(`departments.${key}`, { defaultValue: name });
     };
 
+    const translateDocumentType = (type) => {
+        const code = type?.code?.toLowerCase();
+        if (code && t(`documentTypes.${code}`, { defaultValue: "" })) {
+            return t(`documentTypes.${code}`);
+        }
+        return type?.name || t("common.notAvailable");
+    };
+
+    const translateConfidentiality = (level) => {
+        const code = level?.code?.toLowerCase();
+        if (code && t(`confidentialityLevels.${code}`, { defaultValue: "" })) {
+            return t(`confidentialityLevels.${code}`);
+        }
+        return level?.name || t("common.notAvailable");
+    };
+
     const translateHistoryAction = (action) => {
         if (!action) return "";
         const key = action.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
@@ -262,8 +278,8 @@ const DocumentDetailModal = ({
                             <tr><th>${escapeHtml(t("documentDetail.creator"))}</th><td>${escapeHtml(document.creator?.profile?.full_name || document.creator?.username || "-")}</td></tr>
                             <tr><th>${escapeHtml(t("table.assignedTo"))}</th><td>${escapeHtml(document.assigned_to?.profile?.full_name || document.assigned_to?.username || t("common.unassigned"))}</td></tr>
                             <tr><th>${escapeHtml(t("table.department"))}</th><td>${escapeHtml(document.department?.name ? translateDepartment(document.department.name) : "-")}</td></tr>
-                            <tr><th>${escapeHtml(t("documentModal.fields.type"))}</th><td>${escapeHtml(document.document_type_details?.name || "-")}</td></tr>
-                            <tr><th>${escapeHtml(t("documentModal.fields.confidentiality"))}</th><td>${escapeHtml(document.confidentiality_level_details?.name || "-")}</td></tr>
+                            <tr><th>${escapeHtml(t("documentModal.fields.type"))}</th><td>${escapeHtml(document.document_type_details ? translateDocumentType(document.document_type_details) : "-")}</td></tr>
+                            <tr><th>${escapeHtml(t("documentModal.fields.confidentiality"))}</th><td>${escapeHtml(document.confidentiality_level_details ? translateConfidentiality(document.confidentiality_level_details) : "-")}</td></tr>
                             <tr><th>${escapeHtml(t("documentModal.fields.description"))}</th><td>${escapeHtml(document.description || t("documentDetail.noDescription"))}</td></tr>
                         </table>
                     </section>
@@ -588,7 +604,7 @@ const DocumentDetailModal = ({
                                                             key={d.id}
                                                             value={d.id}
                                                         >
-                                                            {d.name}
+                                                            {translateDepartment(d.name)}
                                                         </option>
                                                     ))}
                                                 </select>
@@ -615,7 +631,7 @@ const DocumentDetailModal = ({
                                                             key={t.id}
                                                             value={t.code}
                                                         >
-                                                            {t.name}
+                                                            {translateDocumentType(t)}
                                                         </option>
                                                     ))}
                                                 </select>
@@ -643,7 +659,7 @@ const DocumentDetailModal = ({
                                                                 key={c.id}
                                                                 value={c.code}
                                                             >
-                                                                {c.name}
+                                                                {translateConfidentiality(c)}
                                                             </option>
                                                         ),
                                                     )}
@@ -876,7 +892,7 @@ const DocumentDetailModal = ({
                                                             key={d.id}
                                                             value={d.id}
                                                         >
-                                                            {d.name}
+                                                            {translateDepartment(d.name)}
                                                         </option>
                                                     ))}
                                                 </select>

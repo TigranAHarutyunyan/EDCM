@@ -93,6 +93,12 @@
         "report": "Report",
         "order": "Order"
     },
+    "confidentialityLevels": {
+        "public": "Public",
+        "internal": "Internal",
+        "confidential": "Confidential",
+        "secret": "Secret"
+    },
     "audit": {
         "actions": {
             "routed": "Routed",

@@ -93,6 +93,12 @@
         "report": "Отчет",
         "order": "Приказ"
     },
+    "confidentialityLevels": {
+        "public": "Публичный",
+        "internal": "Внутренний",
+        "confidential": "Конфиденциальный",
+        "secret": "Секретный"
+    },
     "audit": {
         "actions": {
             "routed": "Направлено",
