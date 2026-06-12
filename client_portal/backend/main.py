@@ -15,11 +15,12 @@ import secrets
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from urllib.parse import urlencode
 
 # Google OAuth Settings
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
-GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8002/google-callback")
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://3.82.45.111:8002/google-callback")
 GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
 
 SECRET_KEY = os.getenv("SECRET_KEY", "prod-portal-secret-key-change-this")
@@ -293,7 +294,7 @@ async def google_login():
         "prompt": "select_account"
     }
     print(f"DEBUG: Using GOOGLE_REDIRECT_URI = {GOOGLE_REDIRECT_URI}", flush=True)
-    encoded_params = "&".join([f"{k}={v}" for k, v in params.items()])
+    encoded_params = urlencode(params)
     return {"url": f"{auth_endpoint}?{encoded_params}"}
 
 @app.get("/auth/google/callback")
