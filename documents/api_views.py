@@ -657,8 +657,13 @@ class DocumentRouteToDepartmentView(APIView):
         document = generics.get_object_or_404(Document, pk=pk)
 
         department_id = request.data.get("department_id", None)
-        if not department_id:
+        if department_id in (None, "", "null"):
             raise ValidationError({"department_id": "This field is required."})
+
+        try:
+            department_id = int(department_id)
+        except (TypeError, ValueError):
+            raise ValidationError({"department_id": "Invalid department selected."})
 
         department = generics.get_object_or_404(Department, pk=department_id)
 

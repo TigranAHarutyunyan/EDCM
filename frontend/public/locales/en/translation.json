@@ -1,200 +1,212 @@
 {
-  "nav": {
-    "dashboard": "Dashboard",
-    "documents": "Documents",
-    "departments": "Departments",
-    "profile": "Profile",
-    "logout": "Logout",
-    "login": "Login",
-    "portal": "Client Portal",
-    "loggedInAs": "Logged in as"
-  },
-  "dashboard": {
-    "title": "Document Control Dashboard",
-    "subtitle": "Overview of your document activities",
-    "stats": {
-      "total": "Total Documents",
-      "pending": "Pending Actions",
-      "active": "Active Projects",
-      "completed": "Completed"
+    "nav": {
+        "dashboard": "Dashboard",
+        "documents": "Documents",
+        "departments": "Departments",
+        "profile": "Profile",
+        "logout": "Logout",
+        "login": "Login",
+        "portal": "Client Portal",
+        "loggedInAs": "Logged in as"
     },
-    "recent": "Recent Activity",
-    "addNew": "Add New Document",
-    "actions": {
-      "adminPanel": "Admin Panel",
-      "departmentPanel": "Department Panel"
+    "dashboard": {
+        "title": "Document Control Dashboard",
+        "subtitle": "Overview of your document activities",
+        "stats": {
+            "total": "Total Documents",
+            "pending": "Pending Actions",
+            "active": "Active Projects",
+            "completed": "Completed"
+        },
+        "recent": "Recent Activity",
+        "addNew": "Add New Document",
+        "actions": {
+            "adminPanel": "Admin Panel",
+            "departmentPanel": "Department Panel"
+        },
+        "search": {
+            "placeholder": "View Document by ID...",
+            "view": "View",
+            "notFound": "Document not found",
+            "error": "Error fetching document"
+        },
+        "newDocument": {
+            "title": "New Document",
+            "subtitle": "Start a new document workflow",
+            "create": "+ Create New"
+        },
+        "tabs": {
+            "all": "All",
+            "myDocuments": "My Documents",
+            "portalInbox": "Portal Inbox"
+        },
+        "empty": "No documents found. Start by creating one!"
     },
-    "search": {
-      "placeholder": "View Document by ID...",
-      "view": "View",
-      "notFound": "Document not found",
-      "error": "Error fetching document"
+    "table": {
+        "id": "ID",
+        "title": "Title",
+        "status": "Status",
+        "type": "Type",
+        "created": "Created",
+        "department": "Department",
+        "assignedTo": "Assigned To"
     },
-    "newDocument": {
-      "title": "New Document",
-      "subtitle": "Start a new document workflow",
-      "create": "+ Create New"
+    "common": {
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "edit": "Edit",
+        "search": "Search...",
+        "language": "Language",
+        "submit": "Submit",
+        "submitting": "Submitting...",
+        "username": "Username",
+        "password": "Password",
+        "email": "Email",
+        "notAvailable": "N/A",
+        "unassigned": "Unassigned"
     },
-    "tabs": {
-      "all": "All",
-      "myDocuments": "My Documents",
-      "portalInbox": "Portal Inbox"
+    "portal": {
+        "title": "Public Portal",
+        "subtitle": "Submit a document. It will be received by our intake team and routed to the correct department.",
+        "success_title": "Submission Received!",
+        "success_message": "Your document has been safely submitted.",
+        "name": "Your Name",
+        "email": "Email",
+        "phone": "Phone",
+        "company": "Company",
+        "doc_title": "Document Title",
+        "doc_description": "Description",
+        "attachments": "Attachments (PDF, Word, Excel, PowerPoint)"
     },
-    "empty": "No documents found. Start by creating one!"
-  },
-  "table": {
-    "id": "ID",
-    "title": "Title",
-    "status": "Status",
-    "type": "Type",
-    "created": "Created",
-    "department": "Department",
-    "assignedTo": "Assigned To"
-  },
-  "common": {
-    "save": "Save",
-    "cancel": "Cancel",
-    "delete": "Delete",
-    "edit": "Edit",
-    "search": "Search...",
-    "language": "Language",
-    "submit": "Submit",
-    "submitting": "Submitting...",
-    "username": "Username",
-    "password": "Password",
-    "email": "Email",
-    "notAvailable": "N/A",
-    "unassigned": "Unassigned"
-  },
-  "portal": {
-    "title": "Public Portal",
-    "subtitle": "Submit a document. It will be received by our intake team and routed to the correct department.",
-    "success_title": "Submission Received!",
-    "success_message": "Your document has been safely submitted.",
-    "name": "Your Name",
-    "email": "Email",
-    "phone": "Phone",
-    "company": "Company",
-    "doc_title": "Document Title",
-    "doc_description": "Description",
-    "attachments": "Attachments (PDF, Word, Excel, PowerPoint)"
-  },
-  "documentModal": {
-    "title": "Create New Document",
-    "subtitle": "Fill in the details to register a new record.",
-    "created": "Document successfully created (ID: #{{id}}). You can now upload attachments.",
-    "fields": {
-      "name": "Document Name",
-      "description": "Description",
-      "type": "Document Type",
-      "assignTo": "Assign To",
-      "confidentiality": "Confidentiality Level",
-      "attachments": "Attachments"
+    "documentModal": {
+        "title": "Create New Document",
+        "subtitle": "Fill in the details to register a new record.",
+        "created": "Document successfully created (ID: #{{id}}). You can now upload attachments.",
+        "fields": {
+            "name": "Document Name",
+            "description": "Description",
+            "type": "Document Type",
+            "assignTo": "Assign To",
+            "confidentiality": "Confidentiality Level",
+            "attachments": "Attachments"
+        },
+        "placeholders": {
+            "name": "e.g., Q1 Financial Report",
+            "description": "Summary of the document content..."
+        },
+        "options": {
+            "selectType": "Select Type",
+            "selfUnassigned": "Self / Unassigned"
+        },
+        "attachments": {
+            "selected": "{{count}} file(s) selected",
+            "drop": "Drop files here or click to browse",
+            "formats": "PDF, Word, Excel, PowerPoint"
+        },
+        "buttons": {
+            "create": "Create Document",
+            "creating": "Creating...",
+            "uploadAttachments": "Upload Attachments"
+        },
+        "errors": {
+            "create": "Error creating document. Please try again."
+        },
+        "comingSoon": "New document form coming soon..."
     },
-    "placeholders": {
-      "name": "e.g., Q1 Financial Report",
-      "description": "Summary of the document content..."
+    "documentDetail": {
+        "selectStatus": "Select status",
+        "creator": "Creator",
+        "takeDocument": "Take Document",
+        "portalSubmission": "Portal Submission",
+        "routeToDepartment": "Route To Department",
+        "selectDepartment": "Select department",
+        "route": "Route",
+        "routeError": "Error routing document. Please select a department and try again.",
+        "noHistory": "No history available.",
+        "upload": "Upload",
+        "attachment": "Attachment",
+        "by": "By",
+        "noAttachments": "No attachments.",
+        "addComment": "Add a comment...",
+        "publishToPortal": "Publish to Portal (Client can see)",
+        "postComment": "Post Comment"
     },
-    "options": {
-      "selectType": "Select Type",
-      "selfUnassigned": "Self / Unassigned"
+    "documents": {
+        "title": "Documents",
+        "subtitle": "Manage and view all your documents",
+        "addDocument": "+ Add Document",
+        "filters": {
+            "creationDate": "Filter by Creation Date:",
+            "from": "From",
+            "to": "To",
+            "clear": "Clear Filters"
+        },
+        "empty": "No documents found matching your criteria."
     },
-    "attachments": {
-      "selected": "{{count}} file(s) selected",
-      "drop": "Drop files here or click to browse",
-      "formats": "PDF, Word, Excel, PowerPoint"
+    "notifications": {
+        "title": "Notifications",
+        "systemTitle": "System Notifications",
+        "subtitle": "Stay updated on document routing and status changes.",
+        "viewAll": "View All",
+        "update": "Update",
+        "markRead": "Mark Read",
+        "markAsRead": "Mark as read",
+        "allCaughtUp": "All caught up!",
+        "backToDashboard": "Back to Dashboard",
+        "loading": "Loading Activity...",
+        "empty": "No notifications found.",
+        "activityAlert": "Activity Alert",
+        "archived": "Archived",
+        "newActivity": "New Activity",
+        "systemWide": "System-wide",
+        "viewDetails": "View Details",
+        "errors": {
+            "load": "Unable to load notifications right now.",
+            "update": "Unable to update notification status."
+        },
+        "payloads": {
+            "newDocument": "New document created: {{title}}",
+            "needsApproval": "{{title}} requires your approval.",
+            "documentApproved": "{{title}} has been approved.",
+            "documentRouted": "{{title}} was routed successfully.",
+            "documentAssigned": "{{title}} has been assigned to you.",
+            "documentCommented": "New comment added to {{title}}."
+        },
+        "routeError": "Error routing document. Please select a department and try again.",
+        "documentRouted": "Document routed",
+        "documentAssigned": "Document assigned"
     },
-    "buttons": {
-      "create": "Create Document",
-      "creating": "Creating...",
-      "uploadAttachments": "Upload Attachments"
+    "profile": {
+        "title": "My Profile",
+        "edit_profile": "Edit Profile",
+        "full_name": "Full Name",
+        "position": "Position",
+        "bio": "Biography / Bio",
+        "profile_picture": "Profile Picture",
+        "about": "About",
+        "created": "Created Documents",
+        "assigned": "Assigned Documents",
+        "save_changes": "Save Changes",
+        "no_created": "No documents created yet.",
+        "no_assigned": "No documents assigned yet."
     },
-    "errors": {
-      "create": "Error creating document. Please try again."
-    },
-    "comingSoon": "New document form coming soon..."
-  },
-  "documentDetail": {
-    "selectStatus": "Select status",
-    "creator": "Creator",
-    "takeDocument": "Take Document",
-    "portalSubmission": "Portal Submission",
-    "routeToDepartment": "Route To Department",
-    "selectDepartment": "Select department",
-    "route": "Route",
-    "noHistory": "No history available.",
-    "upload": "Upload",
-    "attachment": "Attachment",
-    "by": "By",
-    "noAttachments": "No attachments.",
-    "addComment": "Add a comment...",
-    "publishToPortal": "Publish to Portal (Client can see)",
-    "postComment": "Post Comment"
-  },
-  "documents": {
-    "title": "Documents",
-    "subtitle": "Manage and view all your documents",
-    "addDocument": "+ Add Document",
-    "filters": {
-      "creationDate": "Filter by Creation Date:",
-      "from": "From",
-      "to": "To",
-      "clear": "Clear Filters"
-    },
-    "empty": "No documents found matching your criteria."
-  },
-  "notifications": {
-    "title": "Notifications",
-    "systemTitle": "System Notifications",
-    "subtitle": "Stay updated on document routing and status changes.",
-    "viewAll": "View All",
-    "update": "Update",
-    "markRead": "Mark Read",
-    "markAsRead": "Mark as read",
-    "allCaughtUp": "All caught up!",
-    "backToDashboard": "Back to Dashboard",
-    "loading": "Loading Activity...",
-    "empty": "No notifications found.",
-    "activityAlert": "Activity Alert",
-    "archived": "Archived",
-    "newActivity": "New Activity",
-    "systemWide": "System-wide",
-    "viewDetails": "View Details",
-    "errors": {
-      "load": "Unable to load notifications right now.",
-      "update": "Unable to update notification status."
+    "department": {
+        "panel_title": "Department Control Panel",
+        "manage_dept": "Manage department employees and documents.",
+        "manage_all_depts": "Manage employees and documents across all departments.",
+        "employees": "Team Members",
+        "add_employee": "Add Team Member",
+        "select_department": "Select department",
+        "no_employees": "No team members found.",
+        "new_user_hint": "New accounts will be created as 'Employee' in your department.",
+        "dept_documents": "Departmental Documents",
+        "no_documents": "No documents found in your department.",
+        "current_owner": "Current Owner",
+        "assigned_to": "Assigned To",
+        "no_owner": "No owner",
+        "unassigned": "Unassigned",
+        "change_hint": "Transfer ownership or reassign tasks.",
+        "access_denied": "You do not have access to this page."
     }
-  },
-  "profile": {
-    "title": "My Profile",
-    "edit_profile": "Edit Profile",
-    "full_name": "Full Name",
-    "position": "Position",
-    "bio": "Biography / Bio",
-    "profile_picture": "Profile Picture",
-    "about": "About",
-    "created": "Created Documents",
-    "assigned": "Assigned Documents",
-    "save_changes": "Save Changes",
-    "no_created": "No documents created yet.",
-    "no_assigned": "No documents assigned yet."
-  },
-  "department": {
-    "panel_title": "Department Control Panel",
-    "manage_dept": "Manage department employees and documents.",
-    "manage_all_depts": "Manage employees and documents across all departments.",
-    "employees": "Team Members",
-    "add_employee": "Add Team Member",
-    "select_department": "Select department",
-    "no_employees": "No team members found.",
-    "new_user_hint": "New accounts will be created as 'Employee' in your department.",
-    "dept_documents": "Departmental Documents",
-    "no_documents": "No documents found in your department.",
-    "current_owner": "Current Owner",
-    "assigned_to": "Assigned To",
-    "no_owner": "No owner",
-    "unassigned": "Unassigned",
-    "change_hint": "Transfer ownership or reassign tasks.",
-    "access_denied": "You do not have access to this page."
-  }
 }

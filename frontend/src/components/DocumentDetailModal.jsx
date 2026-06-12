@@ -53,8 +53,12 @@ const DocumentDetailModal = ({
                 status: document.status_details?.id || document.status,
                 assigned_to_id: document.assigned_to?.id || "",
                 department_id: document.department?.id || "",
-                document_type: document.document_type_details?.id || document.document_type,
-                confidentiality_level: document.confidentiality_level_details?.id || document.confidentiality_level,
+                document_type:
+                    document.document_type_details?.id ||
+                    document.document_type,
+                confidentiality_level:
+                    document.confidentiality_level_details?.id ||
+                    document.confidentiality_level,
             });
             setRouteDepartmentId(document.department?.id || "");
         }
@@ -231,12 +235,20 @@ const DocumentDetailModal = ({
         setError("");
         try {
             const resp = await api.patch(`documents/${document.id}/route/`, {
-                department_id: routeDepartmentId,
+                department_id: Number(routeDepartmentId),
             });
             setDocument(resp.data);
             onUpdate();
         } catch (err) {
-            setError(err?.response?.data?.detail || "Error routing document");
+            const detail = err?.response?.data?.detail;
+            const deptError = err?.response?.data?.department_id;
+            setError(
+                detail ||
+                    (Array.isArray(deptError)
+                        ? deptError.join(" ")
+                        : deptError) ||
+                    t("notifications.routeError"),
+            );
         } finally {
             setLoading(false);
         }
@@ -281,7 +293,7 @@ const DocumentDetailModal = ({
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                                    {t('table.status')}
+                                                    {t("table.status")}
                                                 </label>
                                                 <select
                                                     className="block w-full text-sm border-b focus:outline-none focus:border-purple-500 bg-transparent py-1"
@@ -289,15 +301,21 @@ const DocumentDetailModal = ({
                                                     onChange={(e) =>
                                                         setEditData({
                                                             ...editData,
-                                                            status: e.target.value,
+                                                            status: e.target
+                                                                .value,
                                                         })
                                                     }
                                                 >
                                                     <option value="">
-                                                        {t('documentDetail.selectStatus')}
+                                                        {t(
+                                                            "documentDetail.selectStatus",
+                                                        )}
                                                     </option>
                                                     {statuses.map((s) => (
-                                                        <option key={s.id} value={s.id}>
+                                                        <option
+                                                            key={s.id}
+                                                            value={s.id}
+                                                        >
                                                             {s.name}
                                                         </option>
                                                     ))}
@@ -305,42 +323,58 @@ const DocumentDetailModal = ({
                                             </div>
                                             <div>
                                                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                                    {t('table.assignedTo')}
+                                                    {t("table.assignedTo")}
                                                 </label>
                                                 <select
                                                     className="block w-full text-sm border-b focus:outline-none focus:border-purple-500 bg-transparent py-1"
-                                                    value={editData.assigned_to_id}
+                                                    value={
+                                                        editData.assigned_to_id
+                                                    }
                                                     onChange={(e) =>
                                                         setEditData({
                                                             ...editData,
-                                                            assigned_to_id: e.target.value,
+                                                            assigned_to_id:
+                                                                e.target.value,
                                                         })
                                                     }
                                                 >
-                                                    <option value="">{t('common.unassigned')}</option>
+                                                    <option value="">
+                                                        {t("common.unassigned")}
+                                                    </option>
                                                     {users.map((u) => (
-                                                        <option key={u.id} value={u.id}>
-                                                            {u.profile?.full_name || u.username}
+                                                        <option
+                                                            key={u.id}
+                                                            value={u.id}
+                                                        >
+                                                            {u.profile
+                                                                ?.full_name ||
+                                                                u.username}
                                                         </option>
                                                     ))}
                                                 </select>
                                             </div>
                                             <div>
                                                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                                    {t('table.department')}
+                                                    {t("table.department")}
                                                 </label>
                                                 <select
                                                     className="block w-full text-sm border-b focus:outline-none focus:border-purple-500 bg-transparent py-1"
-                                                    value={editData.department_id}
+                                                    value={
+                                                        editData.department_id
+                                                    }
                                                     onChange={(e) =>
                                                         setEditData({
                                                             ...editData,
-                                                            department_id: e.target.value,
+                                                            department_id:
+                                                                e.target.value,
                                                         })
                                                     }
                                                 >
                                                     {departments.map((d) => (
-                                                        <option key={d.id} value={d.id}>
+                                                        <option
+                                                            key={d.id}
+                                                            value={d.id}
+                                                        >
                                                             {d.name}
                                                         </option>
                                                     ))}
@@ -352,16 +386,22 @@ const DocumentDetailModal = ({
                                                 </label>
                                                 <select
                                                     className="block w-full text-sm border-b focus:outline-none focus:border-purple-500 bg-transparent py-1"
-                                                    value={editData.document_type}
+                                                    value={
+                                                        editData.document_type
+                                                    }
                                                     onChange={(e) =>
                                                         setEditData({
                                                             ...editData,
-                                                            document_type: e.target.value,
+                                                            document_type:
+                                                                e.target.value,
                                                         })
                                                     }
                                                 >
                                                     {documentTypes.map((t) => (
-                                                        <option key={t.id} value={t.id}>
+                                                        <option
+                                                            key={t.id}
+                                                            value={t.id}
+                                                        >
                                                             {t.name}
                                                         </option>
                                                     ))}
@@ -373,19 +413,27 @@ const DocumentDetailModal = ({
                                                 </label>
                                                 <select
                                                     className="block w-full text-sm border-b focus:outline-none focus:border-purple-500 bg-transparent py-1"
-                                                    value={editData.confidentiality_level}
+                                                    value={
+                                                        editData.confidentiality_level
+                                                    }
                                                     onChange={(e) =>
                                                         setEditData({
                                                             ...editData,
-                                                            confidentiality_level: e.target.value,
+                                                            confidentiality_level:
+                                                                e.target.value,
                                                         })
                                                     }
                                                 >
-                                                    {confidentialityLevels.map((c) => (
-                                                        <option key={c.id} value={c.id}>
-                                                            {c.name}
-                                                        </option>
-                                                    ))}
+                                                    {confidentialityLevels.map(
+                                                        (c) => (
+                                                            <option
+                                                                key={c.id}
+                                                                value={c.id}
+                                                            >
+                                                                {c.name}
+                                                            </option>
+                                                        ),
+                                                    )}
                                                 </select>
                                             </div>
                                         </div>
@@ -500,7 +548,7 @@ const DocumentDetailModal = ({
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                                            {t('documentDetail.creator')}
+                                            {t("documentDetail.creator")}
                                         </h3>
                                         <p className="mt-1 text-gray-900">
                                             {document.creator?.profile
@@ -510,7 +558,7 @@ const DocumentDetailModal = ({
                                     </div>
                                     <div>
                                         <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                                            {t('table.assignedTo')}
+                                            {t("table.assignedTo")}
                                         </h3>
                                         <div className="flex items-center mt-1">
                                             <p className="text-gray-900">
@@ -518,7 +566,7 @@ const DocumentDetailModal = ({
                                                     ?.full_name ||
                                                     document.assigned_to
                                                         ?.username ||
-                                                    t('common.unassigned')}
+                                                    t("common.unassigned")}
                                             </p>
                                             {!document.assigned_to && (
                                                 <button
@@ -526,7 +574,9 @@ const DocumentDetailModal = ({
                                                     disabled={loading}
                                                     className="ml-3 text-xs bg-purple-600 text-white px-2 py-1 rounded hover:bg-purple-700 disabled:opacity-50"
                                                 >
-                                                    {t('documentDetail.takeDocument')}
+                                                    {t(
+                                                        "documentDetail.takeDocument",
+                                                    )}
                                                 </button>
                                             )}
                                         </div>
@@ -536,33 +586,35 @@ const DocumentDetailModal = ({
                                 {document.portal_submission && (
                                     <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
                                         <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                                            {t('documentDetail.portalSubmission')}
+                                            {t(
+                                                "documentDetail.portalSubmission",
+                                            )}
                                         </h3>
                                         <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
                                             <div>
                                                 <span className="font-semibold">
-                                                    {t('portal.name')}:
+                                                    {t("portal.name")}:
                                                 </span>{" "}
                                                 {document.portal_submission
                                                     .client_name || "-"}
                                             </div>
                                             <div>
                                                 <span className="font-semibold">
-                                                    {t('common.email')}:
+                                                    {t("common.email")}:
                                                 </span>{" "}
                                                 {document.portal_submission
                                                     .client_email || "-"}
                                             </div>
                                             <div>
                                                 <span className="font-semibold">
-                                                    {t('portal.phone')}:
+                                                    {t("portal.phone")}:
                                                 </span>{" "}
                                                 {document.portal_submission
                                                     .client_phone || "-"}
                                             </div>
                                             <div>
                                                 <span className="font-semibold">
-                                                    {t('portal.company')}:
+                                                    {t("portal.company")}:
                                                 </span>{" "}
                                                 {document.portal_submission
                                                     .company || "-"}
@@ -577,12 +629,14 @@ const DocumentDetailModal = ({
                                         className="rounded-lg border border-purple-200 bg-purple-50 p-4"
                                     >
                                         <h3 className="text-sm font-semibold text-purple-800 uppercase tracking-wider">
-                                            {t('documentDetail.routeToDepartment')}
+                                            {t(
+                                                "documentDetail.routeToDepartment",
+                                            )}
                                         </h3>
                                         <div className="mt-3 flex flex-col sm:flex-row gap-3 items-start sm:items-end">
                                             <div className="w-full">
                                                 <label className="block text-xs font-semibold text-purple-900">
-                                                    {t('table.department')}
+                                                    {t("table.department")}
                                                 </label>
                                                 <select
                                                     value={routeDepartmentId}
@@ -595,7 +649,9 @@ const DocumentDetailModal = ({
                                                     disabled={loading}
                                                 >
                                                     <option value="">
-                                                        {t('documentDetail.selectDepartment')}
+                                                        {t(
+                                                            "documentDetail.selectDepartment",
+                                                        )}
                                                     </option>
                                                     {departments.map((d) => (
                                                         <option
@@ -615,7 +671,7 @@ const DocumentDetailModal = ({
                                                 }
                                                 className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-purple-700 disabled:opacity-50"
                                             >
-                                                {t('documentDetail.route')}
+                                                {t("documentDetail.route")}
                                             </button>
                                         </div>
                                     </form>
@@ -653,7 +709,7 @@ const DocumentDetailModal = ({
                                     ))
                                 ) : (
                                     <p className="text-sm text-gray-500">
-                                        {t('documentDetail.noHistory')}
+                                        {t("documentDetail.noHistory")}
                                     </p>
                                 )}
                             </div>
@@ -686,7 +742,7 @@ const DocumentDetailModal = ({
                                         }
                                         className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-purple-700 disabled:opacity-50"
                                     >
-                                        {t('documentDetail.upload')}
+                                        {t("documentDetail.upload")}
                                     </button>
                                 </form>
 
@@ -709,12 +765,14 @@ const DocumentDetailModal = ({
                                                         }
                                                     >
                                                         {att.original_name ||
-                                                            t('documentDetail.attachment')}
+                                                            t(
+                                                                "documentDetail.attachment",
+                                                            )}
                                                     </a>
                                                     <p className="text-xs text-gray-500">
                                                         {att.uploaded_by
                                                             ?.username
-                                                            ? `${t('documentDetail.by')} ${att.uploaded_by.username} • `
+                                                            ? `${t("documentDetail.by")} ${att.uploaded_by.username} • `
                                                             : ""}
                                                         {att.size
                                                             ? `${Math.round(att.size / 1024)} KB • `
@@ -732,13 +790,13 @@ const DocumentDetailModal = ({
                                                     disabled={loading}
                                                     className="ml-3 text-xs font-semibold text-red-600 hover:text-red-800 disabled:opacity-50"
                                                 >
-                                                    {t('common.delete')}
+                                                    {t("common.delete")}
                                                 </button>
                                             </div>
                                         ))
                                     ) : (
                                         <p className="text-sm text-gray-500">
-                                            {t('documentDetail.noAttachments')}
+                                            {t("documentDetail.noAttachments")}
                                         </p>
                                     )}
                                 </div>
@@ -756,7 +814,9 @@ const DocumentDetailModal = ({
                                         onChange={(e) =>
                                             setCommentText(e.target.value)
                                         }
-                                        placeholder={t('documentDetail.addComment')}
+                                        placeholder={t(
+                                            "documentDetail.addComment",
+                                        )}
                                         className="w-full border rounded-lg p-3 text-sm focus:ring-purple-500 focus:border-purple-500"
                                         rows="3"
                                     ></textarea>
@@ -765,10 +825,18 @@ const DocumentDetailModal = ({
                                             <input
                                                 type="checkbox"
                                                 checked={isExternalComment}
-                                                onChange={(e) => setIsExternalComment(e.target.checked)}
+                                                onChange={(e) =>
+                                                    setIsExternalComment(
+                                                        e.target.checked,
+                                                    )
+                                                }
                                                 className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                                             />
-                                            <span className="text-sm font-semibold text-gray-700">{t('documentDetail.publishToPortal')}</span>
+                                            <span className="text-sm font-semibold text-gray-700">
+                                                {t(
+                                                    "documentDetail.publishToPortal",
+                                                )}
+                                            </span>
                                         </label>
                                         <button
                                             type="submit"
@@ -777,7 +845,7 @@ const DocumentDetailModal = ({
                                             }
                                             className="bg-purple-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-purple-700 disabled:opacity-50 shadow-md transition-all"
                                         >
-                                            {t('documentDetail.postComment')}
+                                            {t("documentDetail.postComment")}
                                         </button>
                                     </div>
                                 </form>
@@ -785,15 +853,20 @@ const DocumentDetailModal = ({
                                     {document.comments?.map((comment) => (
                                         <div
                                             key={comment.id}
-                                            className={`p-4 rounded-xl border ${comment.is_external ? 'bg-blue-50 border-blue-100' : 'bg-gray-50 border-gray-100'}`}
+                                            className={`p-4 rounded-xl border ${comment.is_external ? "bg-blue-50 border-blue-100" : "bg-gray-50 border-gray-100"}`}
                                         >
                                             <div className="flex justify-between items-start mb-2">
                                                 <div>
                                                     <span className="text-sm font-bold text-gray-900 block">
-                                                        {comment.user?.profile?.full_name || comment.user?.username}
+                                                        {comment.user?.profile
+                                                            ?.full_name ||
+                                                            comment.user
+                                                                ?.username}
                                                     </span>
                                                     <span className="text-xs text-gray-500">
-                                                        {new Date(comment.created_at).toLocaleString()}
+                                                        {new Date(
+                                                            comment.created_at,
+                                                        ).toLocaleString()}
                                                     </span>
                                                 </div>
                                                 {comment.is_external && (
