@@ -44,7 +44,19 @@ APP_URL = os.getenv("APP_URL", "http://localhost:8002")
 def google_redirect_uri(request: Optional[Request] = None) -> str:
     explicit_redirect = os.getenv("GOOGLE_REDIRECT_URI")
     if explicit_redirect:
-        return explicit_redirect
+        if request is not None:
+            parsed = urlparse(explicit_redirect)
+            explicit_host = parsed.hostname or ""
+            request_host = request.url.hostname or ""
+            is_explicit_local = explicit_host in {"localhost", "127.0.0.1", "::1"}
+            is_request_local = request_host in {"localhost", "127.0.0.1", "::1"}
+
+            if not is_request_local and is_explicit_local:
+                explicit_redirect = None
+            else:
+                return explicit_redirect
+        else:
+            return explicit_redirect
 
     explicit_app_url = os.getenv("APP_URL")
     if explicit_app_url:
