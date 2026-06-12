@@ -30,15 +30,11 @@ graph TD
 
 ## 🚀 Key Features
 
-<<<<<<< HEAD
-- **⚡ Dynamic Dashboard**: real-time overview of document statistics, recent activity, and global search.
-=======
 - **🌍 World-Class Localization (i18n)**:
     - Full support for **Armenian (hy)**, **Russian (ru)**, and **English (en)**.
     - Premium language selector with flag indicators synchronized across all portals.
     - Automated cache-busting for real-time translation updates.
 - **⚡ Dynamic Dashboard**: Real-time overview of document statistics, recent activity, and global search.
->>>>>>> d48b664 (improve README.md files)
 - **🛠 Advanced Workflow**:
     - Full CRUD operations with archiving capabilities.
     - **"Take" System**: Instant document claiming for unassigned tasks.
@@ -46,11 +42,7 @@ graph TD
 - **🤝 Collaboration Suite**:
     - **Live Comments**: Threaded discussions on every document.
     - **Deep Audit Log**: Transparent tracking of every field change and ownership transfer.
-<<<<<<< HEAD
-    - **Multi-Format Attachments**: Support for PDF, Word, Excel, and PowerPoint.
-=======
     - **Multi-Format Attachments**: Support for large files (**up to 100MB**) including PDF, Word, Excel, and PowerPoint.
->>>>>>> d48b664 (improve README.md files)
 - **🔐 Secure RBAC**:
     - **Admin**: System-wide configuration and Django Admin access.
     - **Manager**: Departmental control and employee management.
@@ -58,25 +50,6 @@ graph TD
 - **💎 Premium UI**: Built with Tailwind CSS v4, featuring glassmorphism, smooth transitions, and a mobile-first responsive design.
 
 ---
-<<<<<<< HEAD
-=======
-- **Dynamic Dashboard**: Full overview of document statistics, recent activity, and quick search.
-- **Advanced Document Workflow**: 
-    - Create, edit, and archive documents.
-    - **"Take" System**: Users can claim unassigned documents.
-    - **Manager Assignment**: Managers can assign documents to specific employees within their department.
-- **Collaboration Suite**:
-    - **Comments**: Real-time discussion on every document.
-    - **Audit History**: Transparent tracking of every change, including field updates and ownership transfers.
-- **Personalized Profiles**:
-    - Detailed user profiles with personal bios and avatars.
-    - Individual tracking of "Created" vs. "Taken" documents.
-- **Role-Based Access Control (RBAC)**:
-    - **Admins**: Full system control.
-    - **Managers**: Department-level oversight of documents and employees.
-    - **Employees**: Focus on assigned tasks and department-wide collaboration.
-- **Modern UI/UX**: Premium design using Tailwind CSS with glassmorphism effects and smooth transitions.
->>>>>>> d48b664 (improve README.md files)
 
 ## 🛠 Tech Stack
 

@@ -36,8 +36,6 @@ Generate production assets:
 npm run build
 ```
 
-<<<<<<< HEAD
-=======
 ## Internationalization (i18n)
   
 The frontend uses `react-i18next` for full localization:
@@ -45,7 +43,6 @@ The frontend uses `react-i18next` for full localization:
 - **Cache Busting**: A timestamp query string is added to translation requests to prevent stale browser cache issues.
 - **Selector**: A premium `LanguageSelector` component with flag indicators is used throughout the app.
 
->>>>>>> d48b664 (improve README.md files)
 ## Notes
 
 - Uses Vite proxy to `/api/` and `/admin/` in `vite.config.js`.
