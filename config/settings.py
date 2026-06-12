@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 import dj_database_url
 from pathlib import Path
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -35,6 +36,16 @@ def origin_list(name, default=''):
     return origins
 
 
+def host_list(name, default=''):
+    hosts = []
+    for host in env_list(name, default):
+        parsed = urlparse(host if '://' in host else f'//{host}')
+        hostname = parsed.hostname or host
+        if hostname not in hosts:
+            hosts.append(hostname)
+    return hosts
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -46,7 +57,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-for-build-only-ch
 # Any value other than the string "True" (case-sensitive) will be treated as False.
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', 'localhost,127.0.0.1,edcm.onrender.com,.onrender.com')
+ALLOWED_HOSTS = host_list('ALLOWED_HOSTS', 'localhost,127.0.0.1,edcm.onrender.com,.onrender.com')
 
 # CSRF settings for production
 CSRF_TRUSTED_ORIGINS = origin_list(
