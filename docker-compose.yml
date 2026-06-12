@@ -96,19 +96,19 @@ services:
             - edcm_network
         restart: unless-stopped
 
-    Optional: Frontend development server (Uncomment to use)
+    # Frontend development server
     frontend:
         build:
             context: ./frontend
             dockerfile: Dockerfile
         container_name: edcm_frontend
         ports:
-            - "5173:5173"
+            - "8001:8001"
         volumes:
             - ./frontend:/app
             - /app/node_modules
         environment:
-            - VITE_API_URL=http://localhost:8000/api/
+            - VITE_BACKEND_URL=http://web:8000
         depends_on:
             - web
         networks:
