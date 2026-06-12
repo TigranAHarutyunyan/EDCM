@@ -133,6 +133,13 @@ const DocumentDetailModal = ({
                 user: statusMatch[2],
             });
         }
+        const assignmentMatch = details.match(/^Document assigned to (.+) by (.+)$/i);
+        if (assignmentMatch) {
+            return t("audit.details.assignedTo", {
+                assignee: assignmentMatch[1],
+                user: assignmentMatch[2],
+            });
+        }
         return details;
     };
 

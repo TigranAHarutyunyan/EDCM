@@ -24,8 +24,9 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (username, password) => {
+    const normalizedUsername = username.trim();
     const formData = new FormData();
-    formData.append('username', username);
+    formData.append('username', normalizedUsername);
     formData.append('password', password);
     
     const res = await api.post('/token', formData);

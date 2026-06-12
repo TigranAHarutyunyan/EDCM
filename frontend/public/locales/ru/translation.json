@@ -86,13 +86,17 @@
     "audit": {
         "actions": {
             "routed": "Направлено",
-            "department_update": "Обновление отдела"
+            "department_update": "Обновление отдела",
+            "updated_fields": "Обновлены поля",
+            "status_updated": "Статус обновлен",
+            "assignment_updated": "Назначение обновлено"
         },
         "details": {
             "routedTo": "Направлено в отдел {{department}}",
             "updatedBy": "Обновлено пользователем {{user}}",
             "takenBy": "Документ взял {{user}}",
-            "statusChanged": "Статус изменен на {{status}} пользователем {{user}}"
+            "statusChanged": "Статус изменен на {{status}} пользователем {{user}}",
+            "assignedTo": "Документ назначен пользователю {{assignee}} пользователем {{user}}"
         }
     },
     "portal": {

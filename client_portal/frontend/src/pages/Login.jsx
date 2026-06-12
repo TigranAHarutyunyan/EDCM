@@ -25,7 +25,7 @@ const Login = () => {
             navigate("/");
         } catch (err) {
             const msg =
-                err.response?.data?.detail || "Invalid username or password";
+                err.response?.data?.detail || "Invalid username, email, or password";
             setError(msg);
             setShowVerification(err.response?.status === 403 && msg.includes("Email not verified"));
         }
@@ -143,7 +143,7 @@ const Login = () => {
                                 htmlFor="username"
                                 className={`block text-[10px] font-black uppercase tracking-widest mb-1 ${isDarkMode ? "text-slate-500" : "text-gray-500"}`}
                             >
-                                Username
+                                Username or email
                             </label>
                             <input
                                 id="username"
@@ -155,7 +155,7 @@ const Login = () => {
                                         ? "bg-slate-900 border-slate-700 text-white placeholder-slate-600 focus:ring-blue-500/20 focus:border-blue-500"
                                         : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:ring-blue-100 focus:border-blue-500"
                                 }`}
-                                placeholder="Your username"
+                                placeholder="Your username or email"
                                 value={formData.username}
                                 onChange={(e) =>
                                     setFormData({

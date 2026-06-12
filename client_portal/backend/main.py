@@ -148,10 +148,18 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+def normalize_identifier(value: str) -> str:
+    return (value or "").strip()
+
+
 def get_user(username: str):
+    normalized = normalize_identifier(username)
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
-    c.execute("SELECT * FROM users WHERE username=? OR email=?", (username, username))
+    c.execute(
+        "SELECT * FROM users WHERE lower(username)=lower(?) OR lower(email)=lower(?)",
+        (normalized, normalized),
+    )
     row = c.fetchone()
     conn.close()
     if row:
@@ -254,10 +262,14 @@ class ResendVerificationRequest(BaseModel):
 
 @app.post("/verify-code")
 async def verify_code(req: VerifyRequest):
+    identifier = normalize_identifier(req.email)
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     # The frontend may pass either email or username here.
-    c.execute("SELECT id, username FROM users WHERE email=? OR username=?", (req.email, req.email))
+    c.execute(
+        "SELECT id, username FROM users WHERE lower(email)=lower(?) OR lower(username)=lower(?)",
+        (identifier, identifier),
+    )
     user_row = c.fetchone()
     if not user_row:
         conn.close()
@@ -284,9 +296,13 @@ async def verify_code(req: VerifyRequest):
 
 @app.post("/resend-verification-code")
 async def resend_verification_code(req: ResendVerificationRequest):
+    identifier = normalize_identifier(req.email)
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
-    c.execute("SELECT id, email, is_verified FROM users WHERE email=? OR username=?", (req.email, req.email))
+    c.execute(
+        "SELECT id, email, is_verified FROM users WHERE lower(email)=lower(?) OR lower(username)=lower(?)",
+        (identifier, identifier),
+    )
     row = c.fetchone()
     if not row:
         conn.close()

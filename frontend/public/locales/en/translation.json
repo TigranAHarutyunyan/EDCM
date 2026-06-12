@@ -86,13 +86,17 @@
     "audit": {
         "actions": {
             "routed": "Routed",
-            "department_update": "Department update"
+            "department_update": "Department update",
+            "updated_fields": "Updated fields",
+            "status_updated": "Status updated",
+            "assignment_updated": "Assignment updated"
         },
         "details": {
             "routedTo": "Routed to {{department}}",
             "updatedBy": "Updated by {{user}}",
             "takenBy": "Document taken by {{user}}",
-            "statusChanged": "Status changed to {{status}} by {{user}}"
+            "statusChanged": "Status changed to {{status}} by {{user}}",
+            "assignedTo": "Document assigned to {{assignee}} by {{user}}"
         }
     },
     "portal": {
