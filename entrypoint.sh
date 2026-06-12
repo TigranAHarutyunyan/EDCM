@@ -12,6 +12,7 @@ DB_USER=${DB_USER:-postgres}
 DB_NAME=${DB_NAME:-edcm_db}
 DEBUG=${DEBUG:-}
 SEED_DATA=${SEED_DATA:-}
+SEED_ARMENIAN_DATA=${SEED_ARMENIAN_DATA:-True}
 PORT=${PORT:-8000}
 BACKEND_PORT=${BACKEND_PORT:-8000}
 FRONTEND_PORT=${FRONTEND_PORT:-3000}
@@ -164,6 +165,20 @@ seed_data() {
     fi
 }
 
+# Function to seed Armenian sample documents
+seed_armenian_data() {
+    if [ "$SEED_ARMENIAN_DATA" != "False" ] && [ "$SEED_ARMENIAN_DATA" != "false" ]; then
+        echo -e "${YELLOW}📄 Inserting Armenian sample portal documents...${NC}"
+        if python manage.py seed_armenian_documents; then
+            echo -e "${GREEN}✅ Armenian sample documents seeded successfully.${NC}"
+        else
+            echo -e "${RED}⚠️  Armenian seeding failed. Check the backend logs for details.${NC}"
+        fi
+    else
+        echo -e "${YELLOW}⏭️  Skipping Armenian sample data seeding (SEED_ARMENIAN_DATA=False).${NC}"
+    fi
+}
+
 # Main execution
 echo -e "${YELLOW}📋 Environment Variables:${NC}"
 echo "  DB_HOST: $DB_HOST"
@@ -187,6 +202,9 @@ create_superuser
 
 # Step 5: Seed initial data
 seed_data
+
+# Step 6: Seed Armenian sample data
+seed_armenian_data
 
 echo -e "${GREEN}════════════════════════════════════${NC}"
 echo -e "${GREEN}🎉 EDCM Application Starting${NC}"

@@ -54,10 +54,10 @@ const DocumentDetailModal = ({
                 assigned_to_id: document.assigned_to?.id || "",
                 department_id: document.department?.id || "",
                 document_type:
-                    document.document_type_details?.id ||
+                    document.document_type_details?.code ||
                     document.document_type,
                 confidentiality_level:
-                    document.confidentiality_level_details?.id ||
+                    document.confidentiality_level_details?.code ||
                     document.confidentiality_level,
             });
             setRouteDepartmentId(document.department?.id || "");
@@ -400,7 +400,7 @@ const DocumentDetailModal = ({
                                                     {documentTypes.map((t) => (
                                                         <option
                                                             key={t.id}
-                                                            value={t.id}
+                                                            value={t.code}
                                                         >
                                                             {t.name}
                                                         </option>
@@ -428,7 +428,7 @@ const DocumentDetailModal = ({
                                                         (c) => (
                                                             <option
                                                                 key={c.id}
-                                                                value={c.id}
+                                                                value={c.code}
                                                             >
                                                                 {c.name}
                                                             </option>

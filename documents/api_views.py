@@ -305,18 +305,18 @@ class DepartmentDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAdminOrDepartmentChef]
 
 class DocumentTypeListView(generics.ListAPIView):
-    queryset = DocumentType.objects.all()
+    queryset = DocumentType.objects.all().order_by('name')
     serializer_class = DocumentTypeSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 class ConfidentialityLevelListView(generics.ListAPIView):
-    queryset = ConfidentialityLevel.objects.all()
+    queryset = ConfidentialityLevel.objects.all().order_by('name')
     serializer_class = ConfidentialityLevelSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 # API view for listing document statuses
 class DocumentStatusListView(generics.ListAPIView):
-    queryset = DocumentStatus.objects.all()
+    queryset = DocumentStatus.objects.all().order_by('name')
     serializer_class = DocumentStatusSerializer
     permission_classes = [permissions.IsAuthenticated]
 

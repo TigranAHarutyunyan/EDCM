@@ -178,13 +178,19 @@ class DocumentSerializer(serializers.ModelSerializer):
     portal_submission = PortalSubmissionSerializer(read_only=True)
 
     # Write-only fields for creation/update (frontend sends IDs)
-    document_type = serializers.PrimaryKeyRelatedField(
-        queryset=DocumentType.objects.all(), write_only=True, required=False
+    document_type = serializers.SlugRelatedField(
+        slug_field='code',
+        queryset=DocumentType.objects.all(),
+        write_only=True,
+        required=False,
+        allow_null=True,
     )
-    confidentiality_level = serializers.PrimaryKeyRelatedField(
-        queryset=ConfidentialityLevel.objects.all(), 
-        write_only=True, 
-        required=False
+    confidentiality_level = serializers.SlugRelatedField(
+        slug_field='code',
+        queryset=ConfidentialityLevel.objects.all(),
+        write_only=True,
+        required=False,
+        allow_null=True,
     )
     status = serializers.PrimaryKeyRelatedField(
         queryset=DocumentStatus.objects.all(),
