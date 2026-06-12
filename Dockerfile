@@ -2,9 +2,8 @@
 FROM node:20-slim AS frontend-build
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
-RUN npm install --frozen-lockfile
+RUN npm ci
 COPY frontend/ ./
-RUN npm install .
 RUN npm run build
 
 # --- Stage 2: Backend & Final Image ---
@@ -63,5 +62,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # Use entrypoint script for orchestration
 ENTRYPOINT ["/app/entrypoint.sh"]
-
 

@@ -15,7 +15,7 @@ pip install -r requirements.txt
 # Build frontend
 echo "⚛️  Building React frontend..."
 cd frontend
-npm install --frozen-lockfile
+npm ci
 npm run build
 cd ..
 

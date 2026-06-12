@@ -20,6 +20,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load .env file
 load_dotenv(BASE_DIR / '.env')
+
+
+def env_list(name, default=''):
+    return [item.strip() for item in os.getenv(name, default).split(',') if item.strip()]
+
+
+def origin_list(name, default=''):
+    origins = []
+    for origin in env_list(name, default):
+        if '://' not in origin:
+            origin = f'http://{origin}'
+        origins.append(origin)
+    return origins
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -31,13 +46,13 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-for-build-only-ch
 # Any value other than the string "True" (case-sensitive) will be treated as False.
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,edcm.onrender.com,.onrender.com').split(',')
+ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', 'localhost,127.0.0.1,edcm.onrender.com,.onrender.com')
 
 # CSRF settings for production
-CSRF_TRUSTED_ORIGINS = os.getenv(
+CSRF_TRUSTED_ORIGINS = origin_list(
     'CSRF_TRUSTED_ORIGINS',
     'https://*.onrender.com,http://localhost:3000,http://127.0.0.1:3000,https://*.runpod.net,https://*.runpod.io'
-).split(',')
+)
 
 # Security settings
 SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False') == 'True'
@@ -182,10 +197,10 @@ LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
 # CORS Configuration
-CORS_ALLOWED_ORIGINS = os.getenv(
+CORS_ALLOWED_ORIGINS = origin_list(
     'CORS_ALLOWED_ORIGINS',
     'http://localhost:3000,http://127.0.0.1:3000,https://edcm.onrender.com'
-).split(',')
+)
 
 # Support dynamic RunPod subdomains via regex
 CORS_ALLOWED_ORIGIN_REGEXES = [

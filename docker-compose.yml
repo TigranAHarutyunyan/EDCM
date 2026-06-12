@@ -65,10 +65,8 @@ services:
 
         # Volume mounts
         volumes:
-            - .:/app
             - static_volume:/app/staticfiles
             - media_volume:/app/media
-            - ./entrypoint.sh:/app/entrypoint.sh:ro
 
         # Port mapping
         ports:
