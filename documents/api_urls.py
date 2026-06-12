@@ -36,6 +36,7 @@ from .api_views import (
     NotificationUnreadCountView,
     PortalNotificationListView,
     PortalNotificationMarkReadView,
+    PortalDocumentCommentCreateView,
 )
 
 urlpatterns = [
@@ -73,6 +74,7 @@ urlpatterns = [
     path('portal/sync-status/', PortalStatusSyncView.as_view(), name='api_portal_status_sync'),
     path('portal/notifications/', PortalNotificationListView.as_view(), name='api_portal_notifications'),
     path('portal/notifications/<int:pk>/read/', PortalNotificationMarkReadView.as_view(), name='api_portal_notification_read'),
+    path('portal/documents/<int:pk>/comment/', PortalDocumentCommentCreateView.as_view(), name='api_portal_document_comment'),
     
     # User Management
     path('users/', UserListCreateView.as_view(), name='api_users'),

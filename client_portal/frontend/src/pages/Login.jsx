@@ -84,9 +84,9 @@ const Login = () => {
 
     return (
         <div
-            className={`min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 transition-all duration-500 ${isDarkMode ? "bg-slate-900" : "bg-gray-50"}`}
+            className={`min-h-screen flex flex-col justify-center px-4 py-8 sm:px-6 sm:py-12 lg:px-8 transition-all duration-500 ${isDarkMode ? "bg-slate-900" : "bg-gray-50"}`}
         >
-            <div className="absolute top-8 right-8 flex items-center space-x-4">
+            <div className="absolute left-4 right-4 top-4 flex items-center justify-end gap-3 sm:left-auto sm:right-8 sm:top-8">
                 <LanguageSelector />
                 <button
                     onClick={toggleTheme}
@@ -111,7 +111,7 @@ const Login = () => {
                     </div>
                 </div>
                 <h2
-                    className={`text-center text-4xl font-black ${isDarkMode ? "text-white" : "text-gray-900"}`}
+                    className={`text-center text-3xl font-black sm:text-4xl ${isDarkMode ? "text-white" : "text-gray-900"}`}
                 >
                     Client Portal
                 </h2>
@@ -124,7 +124,7 @@ const Login = () => {
 
             <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-md px-4">
                 <div
-                    className={`py-10 px-8 shadow-2xl rounded-3xl border backdrop-blur-xl transition-all duration-300 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
+                    className={`px-5 py-8 shadow-2xl rounded-3xl border backdrop-blur-xl transition-all duration-300 sm:px-8 sm:py-10 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
                 >
                     {error && (
                         <div className="mb-6 bg-red-500/10 border-l-4 border-red-500 text-red-500 px-4 py-3 rounded-xl text-sm font-bold">

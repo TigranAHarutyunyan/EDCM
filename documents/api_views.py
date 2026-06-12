@@ -749,10 +749,17 @@ class PortalStatusSyncView(APIView):
             
             external_comments = []
             for comment in external_comments_queryset.order_by('created_at'):
+                comment_user_email = (getattr(comment.user, "email", "") or "").strip().lower()
+                comment_username = (getattr(comment.user, "username", "") or "").strip().lower()
+                client_email = (sub.client_email or "").strip().lower()
+                is_client_comment = bool(client_email and client_email in {comment_user_email, comment_username})
                 external_comments.append({
                     "id": comment.id,
                     "text": comment.text,
-                    "sender_name": comment.user.profile.full_name or comment.user.username,
+                    "sender_name": (
+                        sub.client_name or sub.client_email or comment.user.username
+                    ) if is_client_comment else (comment.user.profile.full_name or comment.user.username),
+                    "sender_type": "client" if is_client_comment else "staff",
                     "created_at": comment.created_at
                 })
 
@@ -855,6 +862,65 @@ class PortalNotificationMarkReadView(APIView):
         except PortalNotification.DoesNotExist:
             return Response({"error": "not found"}, status=404)
 
+
+class PortalDocumentCommentCreateView(APIView):
+    """
+    Allow the client portal to reply to a portal-origin document thread.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    def post(self, request, pk):
+        document = generics.get_object_or_404(
+            Document.objects.select_related(
+                "portal_submission", "creator", "assigned_to", "current_owner"
+            ),
+            pk=pk,
+            portal_submission__isnull=False,
+        )
+
+        portal_submission = getattr(document, "portal_submission", None)
+        client_email = (request.data.get("email") or "").strip().lower()
+        client_name = (request.data.get("sender_name") or "").strip()
+        text = (request.data.get("text") or "").strip()
+
+        if not client_email:
+            raise ValidationError({"email": "This field is required."})
+        if not text:
+            raise ValidationError({"text": "This field is required."})
+        if not portal_submission or portal_submission.client_email.strip().lower() != client_email:
+            raise PermissionDenied("You do not have permission to reply to this document.")
+
+        portal_user = _get_or_create_portal_client_user(client_email, client_name)
+        comment = DocumentComment.objects.create(
+            document=document,
+            user=portal_user,
+            text=text,
+            is_external=True,
+        )
+
+        AuditLog.objects.create(
+            user=portal_user,
+            document=document,
+            action="Client replied",
+            details=f"Client replied from portal: {client_email}",
+        )
+
+        notified_user_ids = set()
+        for recipient in [document.assigned_to, document.current_owner, document.creator]:
+            if recipient and recipient.id not in notified_user_ids:
+                _create_notification(
+                    recipient,
+                    "DOCUMENT_COMMENTED",
+                    document=document,
+                    payload=f"Portal client replied on {document.title}",
+                )
+                notified_user_ids.add(recipient.id)
+
+        serializer = DocumentCommentSerializer(comment, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 def _get_notification_type(code, default_name=None):
     defaults = {"name": default_name or code.replace("_", " ").title()}
     obj, _ = NotificationType.objects.get_or_create(code=code, defaults=defaults)
@@ -871,6 +937,41 @@ def _create_notification(user, code, document=None, payload=None):
         document=document,
         payload=payload or "",
     )
+
+
+def _get_or_create_portal_client_user(email, full_name=""):
+    normalized_email = (email or "").strip().lower()
+    if not normalized_email:
+        raise ValidationError({"email": "This field is required."})
+
+    user = User.objects.filter(email__iexact=normalized_email).first()
+    if not user:
+        user = User.objects.filter(username__iexact=normalized_email).first()
+
+    if not user:
+        user = User.objects.create(
+            username=normalized_email,
+            email=normalized_email,
+            is_active=True,
+            is_staff=False,
+            is_superuser=False,
+        )
+        user.set_unusable_password()
+        user.save()
+
+    profile = getattr(user, "profile", None)
+    if profile:
+        updated = False
+        if full_name and profile.full_name != full_name:
+            profile.full_name = full_name
+            updated = True
+        if profile.role != "Employee":
+            profile.role = "Employee"
+            updated = True
+        if updated:
+            profile.save()
+
+    return user
 
 
 class NotificationListView(generics.ListAPIView):

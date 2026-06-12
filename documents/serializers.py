@@ -111,11 +111,33 @@ class ConfidentialityLevelSerializer(serializers.ModelSerializer):
 
 class DocumentCommentSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    sender_name = serializers.SerializerMethodField()
+    sender_type = serializers.SerializerMethodField()
     
     class Meta:
         model = DocumentComment
-        fields = ['id', 'user', 'text', 'is_external', 'created_at']
+        fields = ['id', 'user', 'text', 'is_external', 'created_at', 'sender_name', 'sender_type']
         read_only_fields = ['user', 'created_at']
+
+    def get_sender_type(self, obj):
+        portal_submission = getattr(obj.document, "portal_submission", None)
+        if obj.is_external and portal_submission:
+            client_email = (portal_submission.client_email or "").strip().lower()
+            user_email = (getattr(obj.user, "email", "") or "").strip().lower()
+            username = (getattr(obj.user, "username", "") or "").strip().lower()
+            if client_email and client_email in {user_email, username}:
+                return "client"
+        return "staff"
+
+    def get_sender_name(self, obj):
+        if self.get_sender_type(obj) == "client":
+            portal_submission = getattr(obj.document, "portal_submission", None)
+            if portal_submission:
+                return portal_submission.client_name or portal_submission.client_email or obj.user.username
+
+        if getattr(obj.user, "profile", None):
+            return obj.user.profile.full_name or obj.user.username
+        return obj.user.username
 
 class AuditLogSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)

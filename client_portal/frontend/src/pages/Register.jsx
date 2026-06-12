@@ -75,7 +75,7 @@ const Register = () => {
 
     return (
         <div
-            className={`min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 transition-colors duration-300 ${isDarkMode ? "bg-slate-900" : "bg-gray-50"}`}
+            className={`min-h-screen flex flex-col justify-center px-4 py-8 sm:px-6 sm:py-12 lg:px-8 transition-colors duration-300 ${isDarkMode ? "bg-slate-900" : "bg-gray-50"}`}
         >
             <div className="absolute top-4 right-4">
                 <button
@@ -96,7 +96,7 @@ const Register = () => {
                     />
                 </div>
                 <h2
-                    className={`mt-6 text-center text-3xl font-extrabold ${isDarkMode ? "text-white" : "text-gray-900"}`}
+                    className={`mt-6 text-center text-2xl font-extrabold sm:text-3xl ${isDarkMode ? "text-white" : "text-gray-900"}`}
                 >
                     {isVerifying
                         ? "Verify Your Account"
@@ -106,7 +106,7 @@ const Register = () => {
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div
-                    className={`py-8 px-4 shadow sm:rounded-lg sm:px-10 border transition-colors ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
+                    className={`px-4 py-8 shadow border transition-colors sm:rounded-lg sm:px-10 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-gray-100"}`}
                 >
                     {isSuccess && !isVerifying ? (
                         <div className="text-center py-4">

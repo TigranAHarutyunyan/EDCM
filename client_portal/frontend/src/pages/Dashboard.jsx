@@ -28,6 +28,8 @@ const Dashboard = () => {
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [replyText, setReplyText] = useState('');
+  const [replySubmitting, setReplySubmitting] = useState(false);
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
@@ -41,9 +43,12 @@ const Dashboard = () => {
   const fetchDocuments = async () => {
     try {
       const res = await api.get('/my-documents');
-      setDocuments(normalizeList(res.data));
+      const nextDocuments = normalizeList(res.data);
+      setDocuments(nextDocuments);
+      return nextDocuments;
     } catch (err) {
       console.error(err);
+      return [];
     } finally {
       setLoading(false);
     }
@@ -90,6 +95,37 @@ const Dashboard = () => {
     }
   };
 
+  const handleReplySubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedDoc || !replyText.trim()) {
+      setErrorMessage(t('reply_required'));
+      return;
+    }
+
+    setReplySubmitting(true);
+    setErrorMessage('');
+
+    try {
+      await api.post(`/documents/${selectedDoc.id}/reply`, { text: replyText.trim() });
+      setReplyText('');
+      const nextDocuments = await fetchDocuments();
+      const refreshedDoc = nextDocuments.find((doc) => doc.id === selectedDoc.id);
+      if (refreshedDoc) {
+        setSelectedDoc(refreshedDoc);
+      }
+      fetchNotifications();
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      const normalizedDetail =
+        typeof detail === 'string'
+          ? detail
+          : detail?.text?.[0] || detail?.email?.[0] || t('reply_failed');
+      setErrorMessage(normalizedDetail);
+    } finally {
+      setReplySubmitting(false);
+    }
+  };
+
   const getStatusIcon = (code) => {
     switch(code) {
         case 'APPROVED': return <CheckCircle className="h-5 w-5 text-green-500" />;
@@ -106,11 +142,22 @@ const Dashboard = () => {
     <div className={`min-h-screen ${isDarkMode ? 'dark bg-slate-900 text-white' : 'bg-gray-50 text-gray-900'} pb-12 transition-colors duration-300`}>
       <nav className={`${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white shadow'} relative z-10 border-b`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">EDCM Portal</span>
+          <div className="flex min-h-16 flex-col gap-3 py-3 sm:h-16 sm:flex-row sm:items-center sm:justify-between sm:py-0">
+            <div className="flex items-center justify-between">
+              <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 sm:text-xl">EDCM Portal</span>
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 transition sm:hidden"
+              >
+                <Bell className="h-6 w-6" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 h-5 w-5 bg-red-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold animate-pulse ring-2 ring-white">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
               {/* Language Selector */}
               <LanguageSelector />
 
@@ -121,7 +168,7 @@ const Dashboard = () => {
 
               <button 
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 transition"
+                className="relative hidden p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 transition sm:block"
               >
                 <Bell className="h-6 w-6" />
                 {unreadCount > 0 && (
@@ -136,7 +183,7 @@ const Dashboard = () => {
                  {t('profile')}
               </Link>
               
-              <div className="flex items-center space-x-4 border-l pl-4 border-gray-200 dark:border-slate-700">
+              <div className="ml-auto flex items-center gap-3 border-l border-gray-200 pl-3 dark:border-slate-700 sm:ml-0 sm:gap-4 sm:pl-4">
                 <span className="text-xs hidden md:inline">{t('hi')}, <span className="font-bold text-blue-600">{user.full_name}</span></span>
                 <button 
                     onClick={logout} 
@@ -150,7 +197,7 @@ const Dashboard = () => {
         </div>
         
         {showNotifications && (
-          <div className={`absolute right-4 top-16 w-96 shadow-2xl rounded-3xl border overflow-hidden transform transition-all animate-in fade-in slide-in-from-top-4 duration-300 z-50 ${
+          <div className={`absolute left-3 right-3 top-[calc(100%+0.5rem)] w-auto shadow-2xl rounded-3xl border overflow-hidden transform transition-all animate-in fade-in slide-in-from-top-4 duration-300 z-50 sm:left-auto sm:right-4 sm:top-16 sm:w-96 ${
             isDarkMode ? 'bg-slate-800 border-slate-700 shadow-blue-900/10' : 'bg-white border-gray-100 shadow-gray-200'
           }`}>
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6">
@@ -258,7 +305,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Submission Form */}
@@ -327,10 +374,13 @@ const Dashboard = () => {
                     documents.map(doc => (
                       <div 
                         key={doc.id} 
-                        onClick={() => setSelectedDoc(doc)}
+                        onClick={() => {
+                          setSelectedDoc(doc);
+                          setReplyText('');
+                        }}
                         className={`p-6 transition cursor-pointer group ${isDarkMode ? 'hover:bg-slate-700/50' : 'hover:bg-blue-50/30'}`}
                       >
-                         <div className="flex justify-between items-start">
+                         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                             <div className="flex-1">
                                <div className="flex items-center space-x-2">
                                  <h3 className={`font-bold transition ${isDarkMode ? 'group-hover:text-blue-400' : 'group-hover:text-blue-700 text-gray-900'}`}>{doc.title}</h3>
@@ -343,7 +393,7 @@ const Dashboard = () => {
                                </div>
                                <p className="text-xs text-gray-500 mt-1">ID: #{doc.id} • {t('date')}: {new Date(doc.updated_at).toLocaleDateString()}</p>
                             </div>
-                            <div className={`flex items-center space-x-2 px-3 py-1 rounded-full border transition ${isDarkMode ? 'bg-slate-900 border-slate-700 group-hover:bg-slate-800' : 'bg-gray-100 border-gray-200 group-hover:bg-white'}`}>
+                            <div className={`inline-flex w-fit items-center space-x-2 px-3 py-1 rounded-full border transition ${isDarkMode ? 'bg-slate-900 border-slate-700 group-hover:bg-slate-800' : 'bg-gray-100 border-gray-200 group-hover:bg-white'}`}>
                                {getStatusIcon(doc.status_code)}
                                <span className="text-sm font-bold">{t(doc.status_code?.toLowerCase() || 'pending')}</span>
                             </div>
@@ -367,33 +417,33 @@ const Dashboard = () => {
       {selectedDoc && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setSelectedDoc(null)}></div>
-          <div className="flex min-h-full items-center justify-center p-4">
-            <div className={`relative w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border transition ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
+          <div className="flex min-h-full items-end justify-center p-0 sm:items-center sm:p-4">
+            <div className={`relative w-full max-w-2xl overflow-hidden border transition shadow-2xl sm:rounded-2xl ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
               <div className="h-2 bg-blue-600 w-full"></div>
               
-              <div className="px-8 py-6 flex justify-between items-start">
-                <div>
-                  <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoc.title}</h2>
+              <div className="flex flex-col gap-4 px-4 py-5 sm:flex-row sm:items-start sm:justify-between sm:px-8 sm:py-6">
+                <div className="min-w-0">
+                  <h2 className={`text-xl font-bold break-words sm:text-2xl ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoc.title}</h2>
                   <p className="text-sm text-gray-400 mt-1">{t('submission_id')}: #{selectedDoc.id}</p>
                 </div>
-                <div className={`flex items-center space-x-2 px-3 py-1 rounded-full border ${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-blue-50 border-blue-100 text-blue-700'}`}>
+                <div className={`inline-flex w-fit items-center space-x-2 px-3 py-1 rounded-full border ${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-blue-50 border-blue-100 text-blue-700'}`}>
                    {getStatusIcon(selectedDoc.status_code)}
                    <span className="text-sm font-bold">{t(selectedDoc.status_code?.toLowerCase() || 'pending')}</span>
                 </div>
               </div>
 
-              <div className={`px-8 py-4 border-y grid grid-cols-2 gap-4 ${isDarkMode ? 'bg-slate-900/50 border-slate-700' : 'bg-gray-50'}`}>
+              <div className={`grid grid-cols-1 gap-4 border-y px-4 py-4 sm:grid-cols-2 sm:px-8 ${isDarkMode ? 'bg-slate-900/50 border-slate-700' : 'bg-gray-50'}`}>
                  <div>
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('date')}</span>
                     <p className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{new Date(selectedDoc.updated_at).toLocaleString()}</p>
                  </div>
-                 <div className="text-right">
+                 <div className="sm:text-right">
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('reference')}</span>
-                    <p className="text-sm font-medium text-blue-500 font-mono">EDCM-PRT-{selectedDoc.id}</p>
+                    <p className="text-sm font-medium text-blue-500 font-mono break-all">EDCM-PRT-{selectedDoc.id}</p>
                  </div>
               </div>
 
-              <div className="px-8 py-6 space-y-6 max-h-[60vh] overflow-y-auto">
+              <div className="max-h-[70vh] overflow-y-auto px-4 py-5 space-y-6 sm:max-h-[60vh] sm:px-8 sm:py-6">
                 {/* Description */}
                 <div>
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{t('description_label')}</h3>
@@ -436,9 +486,18 @@ const Dashboard = () => {
                   <div className="space-y-4">
                     {selectedDoc.comments && selectedDoc.comments.length > 0 ? (
                       selectedDoc.comments.map(c => (
-                        <div key={c.id} className={`rounded-xl p-4 border ${isDarkMode ? 'bg-blue-900/10 border-blue-900/40' : 'bg-blue-50/50 border-blue-100'}`}>
+                        <div
+                          key={c.id}
+                          className={`rounded-xl p-4 border ${
+                            c.sender_type === 'client'
+                              ? (isDarkMode ? 'bg-emerald-900/10 border-emerald-900/40' : 'bg-emerald-50/60 border-emerald-100')
+                              : (isDarkMode ? 'bg-blue-900/10 border-blue-900/40' : 'bg-blue-50/50 border-blue-100')
+                          }`}
+                        >
                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-xs font-bold text-blue-600">{c.sender_name} ({t('staff')})</span>
+                              <span className={`text-xs font-bold ${c.sender_type === 'client' ? 'text-emerald-600' : 'text-blue-600'}`}>
+                                {c.sender_type === 'client' ? t('you') : c.sender_name} ({c.sender_type === 'client' ? t('client') : t('staff')})
+                              </span>
                               <span className="text-[10px] text-gray-500">{new Date(c.created_at).toLocaleString()}</span>
                            </div>
                            <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{c.text}</p>
@@ -451,9 +510,35 @@ const Dashboard = () => {
                     )}
                   </div>
                 </div>
+
+                <div>
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{t('reply_to_team')}</h3>
+                  <form onSubmit={handleReplySubmit} className="space-y-3">
+                    <textarea
+                      rows="4"
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      placeholder={t('write_reply')}
+                      className={`block w-full rounded-xl border p-4 text-sm outline-none transition ${
+                        isDarkMode
+                          ? 'bg-slate-900 border-slate-700 text-white placeholder-slate-500 focus:border-blue-500'
+                          : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-100 focus:border-blue-500'
+                      }`}
+                    />
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={replySubmitting || !replyText.trim()}
+                        className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {replySubmitting ? t('sending') : t('send_message')}
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
 
-              <div className={`px-8 py-4 border-t flex justify-end ${isDarkMode ? 'bg-slate-900/50 border-slate-700' : 'bg-gray-50'}`}>
+              <div className={`flex justify-end border-t px-4 py-4 sm:px-8 ${isDarkMode ? 'bg-slate-900/50 border-slate-700' : 'bg-gray-50'}`}>
                 <button 
                   onClick={() => setSelectedDoc(null)}
                   className={`py-2 px-8 rounded-lg font-bold transition shadow-sm border ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white hover:bg-slate-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-100'}`}

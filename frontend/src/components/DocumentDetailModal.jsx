@@ -143,6 +143,160 @@ const DocumentDetailModal = ({
         return details;
     };
 
+    const escapeHtml = (value) =>
+        String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+
+    const formatDateTime = (value) => {
+        if (!value) return "-";
+        try {
+            return new Date(value).toLocaleString();
+        } catch {
+            return value;
+        }
+    };
+
+    const handleDownloadPdf = () => {
+        const printWindow = window.open("", "_blank", "noopener,noreferrer");
+        if (!printWindow) {
+            setError(t("documentDetail.pdfPopupBlocked"));
+            return;
+        }
+
+        const attachmentsHtml =
+            document.attachments?.length > 0
+                ? `<ul>${document.attachments
+                      .map(
+                          (att) =>
+                              `<li>${escapeHtml(att.original_name || t("documentDetail.attachment"))}</li>`,
+                      )
+                      .join("")}</ul>`
+                : `<p>${escapeHtml(t("documentDetail.noAttachments"))}</p>`;
+
+        const historyHtml =
+            document.history?.length > 0
+                ? `<ul>${document.history
+                      .map(
+                          (log) => `
+                            <li>
+                                <strong>${escapeHtml(translateHistoryAction(log.action))}</strong><br />
+                                ${escapeHtml(translateHistoryDetails(log.details))}<br />
+                                <span class="meta">${escapeHtml(formatDateTime(log.timestamp))}</span>
+                            </li>`,
+                      )
+                      .join("")}</ul>`
+                : `<p>${escapeHtml(t("documentDetail.noHistory"))}</p>`;
+
+        const commentsHtml =
+            document.comments?.length > 0
+                ? `<ul>${document.comments
+                      .map(
+                          (comment) => `
+                            <li>
+                                <strong>${escapeHtml(
+                                    comment.user?.profile?.full_name ||
+                                        comment.user?.username ||
+                                        "-",
+                                )}</strong>
+                                ${comment.is_external ? ` (${escapeHtml(t("documentDetail.portalMessage"))})` : ""}
+                                <br />
+                                ${escapeHtml(comment.text)}<br />
+                                <span class="meta">${escapeHtml(formatDateTime(comment.created_at))}</span>
+                            </li>`,
+                      )
+                      .join("")}</ul>`
+                : `<p>-</p>`;
+
+        const portalSubmissionHtml = document.portal_submission
+            ? `
+                <section>
+                    <h2>${escapeHtml(t("documentDetail.portalSubmission"))}</h2>
+                    <table>
+                        <tr><th>${escapeHtml(t("portal.name"))}</th><td>${escapeHtml(document.portal_submission.client_name || "-")}</td></tr>
+                        <tr><th>${escapeHtml(t("common.email"))}</th><td>${escapeHtml(document.portal_submission.client_email || "-")}</td></tr>
+                        <tr><th>${escapeHtml(t("portal.phone"))}</th><td>${escapeHtml(document.portal_submission.client_phone || "-")}</td></tr>
+                        <tr><th>${escapeHtml(t("portal.company"))}</th><td>${escapeHtml(document.portal_submission.company || "-")}</td></tr>
+                    </table>
+                </section>
+            `
+            : "";
+
+        const html = `
+            <!doctype html>
+            <html lang="en">
+                <head>
+                    <meta charset="utf-8" />
+                    <title>${escapeHtml(document.title)} - PDF</title>
+                    <style>
+                        @page { size: A4; margin: 18mm; }
+                        body { font-family: Arial, Helvetica, sans-serif; color: #111827; line-height: 1.45; }
+                        h1 { font-size: 24px; margin: 0 0 6px; }
+                        h2 { font-size: 14px; margin: 24px 0 8px; text-transform: uppercase; color: #6b7280; letter-spacing: 0.06em; }
+                        p, li, td, th { font-size: 12px; }
+                        .sub { color: #6b7280; margin-bottom: 18px; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid #e5e7eb; }
+                        th { width: 32%; color: #6b7280; font-weight: 700; }
+                        ul { margin: 0; padding-left: 18px; }
+                        li { margin-bottom: 10px; }
+                        .meta { color: #6b7280; font-size: 11px; }
+                        .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; background: #f3e8ff; color: #7e22ce; font-weight: 700; font-size: 11px; }
+                    </style>
+                </head>
+                <body>
+                    <h1>${escapeHtml(document.title)}</h1>
+                    <div class="sub">
+                        ID: #${escapeHtml(document.id)} |
+                        ${escapeHtml(translateStatus(document.status_details))}
+                    </div>
+
+                    <section>
+                        <h2>${escapeHtml(t("documentDetail.tabs.details"))}</h2>
+                        <table>
+                            <tr><th>ID</th><td>#${escapeHtml(document.id)}</td></tr>
+                            <tr><th>${escapeHtml(t("table.status"))}</th><td><span class="badge">${escapeHtml(translateStatus(document.status_details))}</span></td></tr>
+                            <tr><th>${escapeHtml(t("documentDetail.creator"))}</th><td>${escapeHtml(document.creator?.profile?.full_name || document.creator?.username || "-")}</td></tr>
+                            <tr><th>${escapeHtml(t("table.assignedTo"))}</th><td>${escapeHtml(document.assigned_to?.profile?.full_name || document.assigned_to?.username || t("common.unassigned"))}</td></tr>
+                            <tr><th>${escapeHtml(t("table.department"))}</th><td>${escapeHtml(document.department?.name ? translateDepartment(document.department.name) : "-")}</td></tr>
+                            <tr><th>${escapeHtml(t("documentModal.fields.type"))}</th><td>${escapeHtml(document.document_type_details?.name || "-")}</td></tr>
+                            <tr><th>${escapeHtml(t("documentModal.fields.confidentiality"))}</th><td>${escapeHtml(document.confidentiality_level_details?.name || "-")}</td></tr>
+                            <tr><th>${escapeHtml(t("documentModal.fields.description"))}</th><td>${escapeHtml(document.description || t("documentDetail.noDescription"))}</td></tr>
+                        </table>
+                    </section>
+
+                    ${portalSubmissionHtml}
+
+                    <section>
+                        <h2>${escapeHtml(t("documentDetail.tabs.attachments"))}</h2>
+                        ${attachmentsHtml}
+                    </section>
+
+                    <section>
+                        <h2>${escapeHtml(t("documentDetail.tabs.history"))}</h2>
+                        ${historyHtml}
+                    </section>
+
+                    <section>
+                        <h2>${escapeHtml(t("documentDetail.tabs.comments"))}</h2>
+                        ${commentsHtml}
+                    </section>
+                </body>
+            </html>
+        `;
+
+        printWindow.document.open();
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+        }, 300);
+    };
+
     useEffect(() => {
         if (!isOpen) return;
 
@@ -511,6 +665,12 @@ const DocumentDetailModal = ({
                             )}
                         </div>
                         <div className="flex items-center space-x-2">
+                            <button
+                                onClick={handleDownloadPdf}
+                                className="text-blue-600 hover:text-blue-800 text-sm font-bold"
+                            >
+                                {t("documentDetail.downloadPdf")}
+                            </button>
                             {!isEditing && (
                                 <button
                                     onClick={() => setIsEditing(true)}

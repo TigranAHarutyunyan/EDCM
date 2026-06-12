@@ -168,10 +168,13 @@
         "upload": "Upload",
         "attachment": "Attachment",
         "by": "By",
+        "downloadPdf": "Download PDF",
         "noAttachments": "No attachments.",
         "addComment": "Add a comment...",
         "publishToPortal": "Publish to Portal (Client can see)",
-        "postComment": "Post Comment"
+        "postComment": "Post Comment",
+        "portalMessage": "Portal Message",
+        "pdfPopupBlocked": "PDF window was blocked by the browser. Please allow pop-ups and try again."
     },
     "documents": {
         "title": "Documents",

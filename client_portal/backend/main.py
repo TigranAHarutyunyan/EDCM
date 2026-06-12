@@ -260,6 +260,10 @@ class VerifyRequest(BaseModel):
 class ResendVerificationRequest(BaseModel):
     email: str
 
+
+class PortalReplyRequest(BaseModel):
+    text: str
+
 @app.post("/verify-code")
 async def verify_code(req: VerifyRequest):
     identifier = normalize_identifier(req.email)
@@ -484,5 +488,34 @@ async def mark_notification_read(notif_id: int, current_user: dict = Depends(get
                 timeout=10.0
             )
             return resp.json()
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Backend unreachable: {str(e)}")
+
+
+@app.post("/documents/{doc_id}/reply")
+async def reply_to_document(doc_id: int, req: PortalReplyRequest, current_user: dict = Depends(get_current_user)):
+    text = (req.text or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Message text is required.")
+
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{EDCM_BACKEND_URL}/portal/documents/{doc_id}/comment/",
+                data={
+                    "email": current_user["email"],
+                    "sender_name": current_user.get("full_name") or current_user["username"],
+                    "text": text,
+                },
+                timeout=10.0,
+            )
+            resp.raise_for_status()
+            return resp.json()
+    except httpx.HTTPStatusError as e:
+        try:
+            detail = e.response.json()
+        except Exception:
+            detail = e.response.text
+        raise HTTPException(status_code=e.response.status_code, detail=detail)
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Backend unreachable: {str(e)}")
