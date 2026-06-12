@@ -34,6 +34,7 @@ class Command(BaseCommand):
             DocumentStatus.objects.get_or_create(code="PENDING", defaults={"name": "Pending Approval"})
             DocumentStatus.objects.get_or_create(code="APPROVED", defaults={"name": "Approved"})
             DocumentStatus.objects.get_or_create(code="REJECTED", defaults={"name": "Rejected"})
+            DocumentStatus.objects.get_or_create(code="DELAYED", defaults={"name": "Delayed"})
             
             ConfidentialityLevel.objects.get_or_create(code="PUBLIC", defaults={"name": "Public"})
             ConfidentialityLevel.objects.get_or_create(code="INTERNAL", defaults={"name": "Internal"})

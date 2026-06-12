@@ -42,6 +42,32 @@ const Dashboard = () => {
     const [selectedDocument, setSelectedDocument] = useState(null);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
+    const translateStatus = (status) => {
+        const code = status?.code?.toLowerCase();
+        if (code && t(`status.${code}`, { defaultValue: "" })) {
+            return t(`status.${code}`);
+        }
+        const normalizedName = status?.name?.toLowerCase().replace(/\s+/g, "_");
+        if (normalizedName && t(`status.${normalizedName}`, { defaultValue: "" })) {
+            return t(`status.${normalizedName}`);
+        }
+        return status?.name || t("common.notAvailable");
+    };
+
+    const translateDepartment = (name) => {
+        if (!name) return t("common.notAvailable");
+        const key = name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+        return t(`departments.${key}`, { defaultValue: name });
+    };
+
+    const translateDocumentType = (type) => {
+        const code = type?.code?.toLowerCase();
+        if (code && t(`documentTypes.${code}`, { defaultValue: "" })) {
+            return t(`documentTypes.${code}`);
+        }
+        return type?.name || t("common.notAvailable");
+    };
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -71,12 +97,41 @@ const Dashboard = () => {
             if (mode === 'portal') url = 'portal/inbox/';
             
             const response = await api.get(url);
+            const nextDocuments = normalizeList(response.data);
             setStats(prev => ({
                 ...prev,
-                recent_docs: normalizeList(response.data)
+                recent_docs: nextDocuments
             }));
+            if (selectedDocument?.id) {
+                const refreshedSelected = nextDocuments.find((doc) => doc.id === selectedDocument.id);
+                if (refreshedSelected) {
+                    setSelectedDocument(refreshedSelected);
+                }
+            }
         } catch (error) {
             console.error("Error fetching documents", error);
+        }
+    };
+
+    const refreshCurrentView = async () => {
+        try {
+            if (viewMode === "all") {
+                const res = await api.get("dashboard/");
+                const nextStats = normalizeStats(res.data);
+                setStats(nextStats);
+                if (selectedDocument?.id) {
+                    const refreshedSelected = normalizeList(nextStats.recent_docs).find(
+                        (doc) => doc.id === selectedDocument.id,
+                    );
+                    if (refreshedSelected) {
+                        setSelectedDocument(refreshedSelected);
+                    }
+                }
+            } else {
+                await fetchDocuments(viewMode);
+            }
+        } catch (error) {
+            console.error("Error refreshing current view", error);
         }
     };
 
@@ -141,6 +196,13 @@ const Dashboard = () => {
             : user?.role === "Manager"
               ? { kind: "department", label: t('dashboard.actions.departmentPanel') }
               : null;
+
+    const activeRecentDocs = normalizeList(stats.recent_docs).filter(
+        (doc) => doc.status_details?.code !== "DELAYED",
+    );
+    const delayedRecentDocs = normalizeList(stats.recent_docs).filter(
+        (doc) => doc.status_details?.code === "DELAYED",
+    );
 
     return (
         <div className={`space-y-6 transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -227,7 +289,7 @@ const Dashboard = () => {
                                       : "bg-yellow-100 text-yellow-800"
                             }`}
                         >
-                            {searchResult.status_details?.name || t('common.notAvailable')}
+                            {translateStatus(searchResult.status_details)}
                         </span>
                     </div>
                     <div className="border-t pt-4">
@@ -354,8 +416,8 @@ const Dashboard = () => {
                             </tr>
                         </thead>
                         <tbody className={`divide-y ${isDarkMode ? 'divide-slate-700' : 'divide-gray-100'}`}>
-                            {normalizeList(stats.recent_docs).length > 0 ? (
-                                normalizeList(stats.recent_docs).map((doc) => (
+                            {activeRecentDocs.length > 0 ? (
+                                activeRecentDocs.map((doc) => (
                                     <tr
                                         key={doc.id}
                                         onClick={() => handleViewDocument(doc)}
@@ -385,12 +447,11 @@ const Dashboard = () => {
                                                             : "bg-gray-100 text-gray-800"
                                                 }`}
                                             >
-                                                {doc.status_details?.name ||
-                                                    t('common.notAvailable')}
+                                                {translateStatus(doc.status_details)}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {doc.document_type_details?.name}
+                                            {translateDocumentType(doc.document_type_details)}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {new Date(
@@ -401,7 +462,7 @@ const Dashboard = () => {
                                             {doc.department?.name ? (
                                                 <span className="flex items-center text-purple-600 font-medium">
                                                     <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
-                                                    {doc.department.name}
+                                                    {translateDepartment(doc.department.name)}
                                                 </span>
                                             ) : (
                                                 <span className="text-gray-400 italic">{t('common.notAvailable')}</span>
@@ -412,7 +473,7 @@ const Dashboard = () => {
                             ) : (
                                 <tr>
                                     <td
-                                        colSpan="4"
+                                        colSpan="6"
                                         className="px-6 py-4 text-center text-gray-500 text-sm"
                                     >
                                         {t('dashboard.empty')}
@@ -423,6 +484,68 @@ const Dashboard = () => {
                     </table>
                 </div>
             </div>
+
+            {delayedRecentDocs.length > 0 && (
+                <div className={`shadow-xl rounded-2xl overflow-hidden transition-colors border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
+                    <div className={`px-6 py-4 border-b ${isDarkMode ? 'border-slate-700 bg-slate-900/50' : 'border-gray-100 bg-orange-50'}`}>
+                        <h3 className="text-lg font-bold">
+                            {t('dashboard.delayed.title')}
+                        </h3>
+                        <p className={`mt-1 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+                            {t('dashboard.delayed.subtitle')}
+                        </p>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full">
+                            <thead className={isDarkMode ? 'bg-slate-900/50' : 'bg-gray-50'}>
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('table.id')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('table.title')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('table.status')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('table.type')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('table.created')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('table.department')}</th>
+                                </tr>
+                            </thead>
+                            <tbody className={`divide-y ${isDarkMode ? 'divide-slate-700' : 'divide-gray-100'}`}>
+                                {delayedRecentDocs.map((doc) => (
+                                    <tr
+                                        key={doc.id}
+                                        onClick={() => handleViewDocument(doc)}
+                                        className={`transition-colors cursor-pointer ${isDarkMode ? 'hover:bg-slate-700/50' : 'hover:bg-gray-50'}`}
+                                    >
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-400">#{doc.id}</td>
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                            {doc.title}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">
+                                                {translateStatus(doc.status_details)}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {translateDocumentType(doc.document_type_details)}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {new Date(doc.created_at).toLocaleDateString()}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {doc.department?.name ? (
+                                                <span className="flex items-center text-orange-600 font-medium">
+                                                    <span className="w-2 h-2 bg-orange-500 rounded-full mr-2"></span>
+                                                    {translateDepartment(doc.department.name)}
+                                                </span>
+                                            ) : (
+                                                <span className="text-gray-400 italic">{t('common.notAvailable')}</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
 
             {/* Document Modal */}
             <DocumentModal
@@ -439,7 +562,7 @@ const Dashboard = () => {
                 isOpen={isDetailModalOpen}
                 onClose={() => setIsDetailModalOpen(false)}
                 document={selectedDocument}
-                onUpdate={() => fetchDocuments(viewMode)}
+                onUpdate={refreshCurrentView}
             />
         </div>
     );

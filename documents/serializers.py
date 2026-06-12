@@ -295,7 +295,17 @@ class DocumentSerializer(serializers.ModelSerializer):
         if "status" in validated_data and old_status_id != new_instance.status_id:
             from .api_views import _create_portal_notification
             current_status_name = new_instance.status.name if new_instance.status else "Updated"
-            _create_portal_notification(new_instance, f"Status of '{new_instance.title}' updated to {current_status_name}")
+            status_code = (new_instance.status.code or "").upper() if new_instance.status else ""
+            if status_code == "DELAYED":
+                _create_portal_notification(
+                    new_instance,
+                    f"Your document '{new_instance.title}' has been delayed. Please check the portal for the latest update",
+                )
+            else:
+                _create_portal_notification(
+                    new_instance,
+                    f"Status of '{new_instance.title}' updated to {current_status_name}",
+                )
             AuditLog.objects.create(
                 user=user,
                 document=new_instance,

@@ -71,7 +71,8 @@
         "pending": "В ожидании",
         "pending_approval": "Ожидает одобрения",
         "approved": "Одобрено",
-        "rejected": "Отклонено"
+        "rejected": "Отклонено",
+        "delayed": "Отложено"
     },
     "departments": {
         "hr": "HR",
@@ -82,6 +83,11 @@
         "sales": "Продажи",
         "operations": "Операции",
         "troubleshooting": "Поддержка"
+    },
+    "documentTypes": {
+        "request": "Запрос",
+        "report": "Отчет",
+        "order": "Приказ"
     },
     "audit": {
         "actions": {
@@ -179,6 +185,8 @@
         "title": "Документы",
         "subtitle": "Управляйте и просматривайте все ваши документы",
         "addDocument": "+ Добавить документ",
+        "delayedTitle": "Отложенные документы",
+        "delayedSubtitle": "Все отложенные документы собраны здесь и убраны из активного списка.",
         "filters": {
             "creationDate": "Фильтр по дате создания:",
             "from": "С",
@@ -221,6 +229,11 @@
         "documentRouted": "Документ направлен",
         "documentAssigned": "Документ назначен"
     },
+    "dashboard": {
+        "delayed": {
+            "title": "Отложенные документы",
+            "subtitle": "Отложенные элементы показаны отдельно от активного списка."
+        },
     "profile": {
         "title": "Мой профиль",
         "edit_profile": "Редактировать профиль",

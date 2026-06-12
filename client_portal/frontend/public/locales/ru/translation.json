@@ -12,6 +12,7 @@
   "approved": "Одобрено",
   "rejected": "Отклонено",
   "pending": "В ожидании",
+  "delayed": "Отложено",
   "no_notifications": "Нет уведомлений",
   "close": "Закрыть",
   "language": "Язык",

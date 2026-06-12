@@ -12,6 +12,7 @@
   "approved": "Approved",
   "rejected": "Rejected",
   "pending": "Pending",
+  "delayed": "Delayed",
   "no_notifications": "No notifications",
   "close": "Close",
   "language": "Language",

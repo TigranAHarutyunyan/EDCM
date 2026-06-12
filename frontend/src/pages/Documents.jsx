@@ -18,6 +18,32 @@ const Documents = () => {
     const [selectedDocument, setSelectedDocument] = useState(null);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
+    const translateStatus = (status) => {
+        const code = status?.code?.toLowerCase();
+        if (code && t(`status.${code}`, { defaultValue: "" })) {
+            return t(`status.${code}`);
+        }
+        const normalizedName = status?.name?.toLowerCase().replace(/\s+/g, "_");
+        if (normalizedName && t(`status.${normalizedName}`, { defaultValue: "" })) {
+            return t(`status.${normalizedName}`);
+        }
+        return status?.name || t("common.notAvailable");
+    };
+
+    const translateDepartment = (name) => {
+        if (!name) return t("common.notAvailable");
+        const key = name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+        return t(`departments.${key}`, { defaultValue: name });
+    };
+
+    const translateDocumentType = (type) => {
+        const code = type?.code?.toLowerCase();
+        if (code && t(`documentTypes.${code}`, { defaultValue: "" })) {
+            return t(`documentTypes.${code}`);
+        }
+        return type?.name || t("common.notAvailable");
+    };
+
     const fetchDocuments = async (cancelled = false) => {
         setLoading(true);
         try {
@@ -27,7 +53,14 @@ const Documents = () => {
 
             const response = await api.get("documents/", { params });
             if (!cancelled) {
-                setDocuments(response.data.results || response.data);
+                const nextDocuments = response.data.results || response.data;
+                setDocuments(nextDocuments);
+                if (selectedDocument?.id) {
+                    const refreshedSelected = nextDocuments.find((doc) => doc.id === selectedDocument.id);
+                    if (refreshedSelected) {
+                        setSelectedDocument(refreshedSelected);
+                    }
+                }
             }
         } catch (error) {
             if (!cancelled) console.error("Error fetching documents", error);
@@ -73,6 +106,13 @@ const Documents = () => {
         setSelectedDocument(doc);
         setIsDetailModalOpen(true);
     };
+
+    const activeDocuments = documents.filter(
+        (doc) => doc.status_details?.code !== "DELAYED",
+    );
+    const delayedDocuments = documents.filter(
+        (doc) => doc.status_details?.code === "DELAYED",
+    );
 
     return (
         <div className={`space-y-6 transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -150,8 +190,8 @@ const Documents = () => {
                                 </tr>
                             </thead>
                             <tbody className={`divide-y ${isDarkMode ? 'divide-slate-700' : 'divide-gray-100'}`}>
-                                {documents.length > 0 ? (
-                                    documents.map((doc) => (
+                                {activeDocuments.length > 0 ? (
+                                    activeDocuments.map((doc) => (
                                         <tr 
                                             key={doc.id} 
                                             onClick={() => handleViewDocument(doc)}
@@ -164,17 +204,17 @@ const Documents = () => {
                                                       doc.status_details?.code === 'REJECTED' ? 'bg-red-100 text-red-800' : 
                                                       doc.status_details?.code === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 
                                                       'bg-gray-100 text-gray-800'}`}>
-                                                    {doc.status_details?.name || t('common.notAvailable')}
+                                                    {translateStatus(doc.status_details)}
                                                 </span>
                                             </td>
                                             <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-                                                {doc.document_type_details?.name}
+                                                {translateDocumentType(doc.document_type_details)}
                                             </td>
                                             <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
                                                 {new Date(doc.created_at).toLocaleDateString()}
                                             </td>
                                             <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-                                                {doc.department?.name || '-'}
+                                                {doc.department?.name ? translateDepartment(doc.department.name) : '-'}
                                             </td>
                                         </tr>
                                     ))
@@ -190,6 +230,57 @@ const Documents = () => {
                     </div>
                 )}
             </div>
+
+            {!loading && delayedDocuments.length > 0 && (
+                <div className={`shadow-xl rounded-2xl overflow-hidden transition-colors border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
+                    <div className={`px-6 py-4 border-b ${isDarkMode ? 'border-slate-700 bg-slate-900/50' : 'border-gray-100 bg-orange-50'}`}>
+                        <h2 className="text-lg font-bold">
+                            {t('documents.delayedTitle')}
+                        </h2>
+                        <p className={`mt-1 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+                            {t('documents.delayedSubtitle')}
+                        </p>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full">
+                            <thead className={isDarkMode ? 'bg-slate-900/50' : 'bg-gray-50'}>
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t('table.title')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t('table.status')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t('table.type')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t('table.created')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t('table.department')}</th>
+                                </tr>
+                            </thead>
+                            <tbody className={`divide-y ${isDarkMode ? 'divide-slate-700' : 'divide-gray-100'}`}>
+                                {delayedDocuments.map((doc) => (
+                                    <tr
+                                        key={doc.id}
+                                        onClick={() => handleViewDocument(doc)}
+                                        className={`transition-colors cursor-pointer ${isDarkMode ? 'hover:bg-slate-700/50' : 'hover:bg-gray-50'}`}
+                                    >
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{doc.title}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <span className="px-2 inline-flex text-xs leading-5 font-bold rounded-full bg-orange-100 text-orange-800">
+                                                {translateStatus(doc.status_details)}
+                                            </span>
+                                        </td>
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+                                            {translateDocumentType(doc.document_type_details)}
+                                        </td>
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+                                            {new Date(doc.created_at).toLocaleDateString()}
+                                        </td>
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+                                            {doc.department?.name ? translateDepartment(doc.department.name) : '-'}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
 
             <DocumentModal
                 isOpen={isModalOpen}

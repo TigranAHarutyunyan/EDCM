@@ -71,7 +71,8 @@
         "pending": "Pending",
         "pending_approval": "Pending Approval",
         "approved": "Approved",
-        "rejected": "Rejected"
+        "rejected": "Rejected",
+        "delayed": "Delayed"
     },
     "departments": {
         "hr": "HR",
@@ -82,6 +83,11 @@
         "sales": "Sales",
         "operations": "Operations",
         "troubleshooting": "Troubleshooting"
+    },
+    "documentTypes": {
+        "request": "Request",
+        "report": "Report",
+        "order": "Order"
     },
     "audit": {
         "actions": {
@@ -180,6 +186,8 @@
         "title": "Documents",
         "subtitle": "Manage and view all your documents",
         "addDocument": "+ Add Document",
+        "delayedTitle": "Delayed Documents",
+        "delayedSubtitle": "All delayed documents are grouped here and removed from the active list.",
         "filters": {
             "creationDate": "Filter by Creation Date:",
             "from": "From",
@@ -222,6 +230,11 @@
         "documentRouted": "Document routed",
         "documentAssigned": "Document assigned"
     },
+    "dashboard": {
+        "delayed": {
+            "title": "Delayed Documents",
+            "subtitle": "Delayed items are grouped separately from the active list."
+        },
     "profile": {
         "title": "My Profile",
         "edit_profile": "Edit Profile",
