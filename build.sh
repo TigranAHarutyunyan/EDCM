@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build script for Render deployment
+# Build script for AWS/Docker deployment
 # This script builds both frontend and backend
 
 set -e

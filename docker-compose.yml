@@ -32,10 +32,8 @@ services:
         container_name: edcm_backend
         env_file:
             - .env
-        # ADDED VOLUMES FOR HOT RELOAD
         volumes:
-            - .:/app
-            - static_volume:/app/staticfiles,
+            - static_volume:/app/staticfiles
             - media_volume:/app/media
         environment:
             DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres1}@db:5432/${DB_NAME:-edcm_db}
@@ -56,9 +54,6 @@ services:
             context: ./frontend
             dockerfile: Dockerfile
         container_name: edcm_frontend
-        volumes:
-            - ./frontend:/app
-            - /app/node_modules
         ports:
             - "${FRONTEND_PORT}:8080"
         depends_on:
@@ -76,8 +71,6 @@ services:
             context: ./client_portal/backend
             dockerfile: Dockerfile
         container_name: edcm_client_portal
-        volumes:
-            - ./client_portal/backend:/app
         env_file:
             - .env
         environment:
@@ -95,9 +88,6 @@ services:
             context: ./client_portal/frontend
             dockerfile: Dockerfile
         container_name: edcm_client_portal_frontend
-        volumes:
-            - ./client_portal/frontend:/app
-            - /app/node_modules
         env_file:
             - .env
         ports:
