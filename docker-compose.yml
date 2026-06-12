@@ -96,24 +96,24 @@ services:
             - edcm_network
         restart: unless-stopped
 
-    # Optional: Frontend development server (Uncomment to use)
-    # frontend:
-    #   build:
-    #     context: ./frontend
-    #     dockerfile: Dockerfile
-    #   container_name: edcm_frontend
-    #   ports:
-    #     - "5173:5173"
-    #   volumes:
-    #     - ./frontend:/app
-    #     - /app/node_modules
-    #   environment:
-    #     - VITE_API_URL=http://localhost:8000/api/
-    #   depends_on:
-    #     - web
-    #   networks:
-    #     - edcm_network
-    #   restart: unless-stopped
+    Optional: Frontend development server (Uncomment to use)
+    frontend:
+        build:
+            context: ./frontend
+            dockerfile: Dockerfile
+        container_name: edcm_frontend
+        ports:
+            - "5173:5173"
+        volumes:
+            - ./frontend:/app
+            - /app/node_modules
+        environment:
+            - VITE_API_URL=http://localhost:8000/api/
+        depends_on:
+            - web
+        networks:
+            - edcm_network
+        restart: unless-stopped
 
 # Docker volumes for data persistence
 volumes:
