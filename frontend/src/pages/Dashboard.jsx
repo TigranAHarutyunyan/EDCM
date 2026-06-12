@@ -349,7 +349,7 @@ const Dashboard = () => {
                                     scope="col"
                                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                 >
-                                    {t('table.assignedTo')}
+                                    {t('table.department')}
                                 </th>
                             </tr>
                         </thead>
@@ -398,13 +398,13 @@ const Dashboard = () => {
                                             ).toLocaleDateString()}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {doc.assigned_to ? (
+                                            {doc.department?.name ? (
                                                 <span className="flex items-center text-purple-600 font-medium">
                                                     <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
-                                                    {doc.assigned_to.profile?.full_name || doc.assigned_to.username}
+                                                    {doc.department.name}
                                                 </span>
                                             ) : (
-                                                <span className="text-gray-400 italic">{t('common.unassigned')}</span>
+                                                <span className="text-gray-400 italic">{t('common.notAvailable')}</span>
                                             )}
                                         </td>
                                     </tr>

@@ -84,6 +84,58 @@ const DocumentDetailModal = ({
             document?.assigned_to?.id === user.id),
     );
 
+    const translateStatus = (status) => {
+        const code = status?.code?.toLowerCase();
+        if (code && t(`status.${code}`, { defaultValue: "" })) {
+            return t(`status.${code}`);
+        }
+        const normalizedName = status?.name?.toLowerCase().replace(/\s+/g, "_");
+        if (normalizedName && t(`status.${normalizedName}`, { defaultValue: "" })) {
+            return t(`status.${normalizedName}`);
+        }
+        return status?.name || t("common.notAvailable");
+    };
+
+    const translateDepartment = (name) => {
+        if (!name) return "";
+        const key = name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+        return t(`departments.${key}`, { defaultValue: name });
+    };
+
+    const translateHistoryAction = (action) => {
+        if (!action) return "";
+        const key = action.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+        return t(`audit.actions.${key}`, { defaultValue: action });
+    };
+
+    const translateHistoryDetails = (details) => {
+        if (!details) return "";
+        const routedMatch = details.match(/^Routed to (.+)$/i);
+        if (routedMatch) {
+            return t("audit.details.routedTo", {
+                department: translateDepartment(routedMatch[1]),
+            });
+        }
+        const updatedByMatch = details.match(/^Updated by (.+)$/i);
+        if (updatedByMatch) {
+            return t("audit.details.updatedBy", { user: updatedByMatch[1] });
+        }
+        const takenByMatch = details.match(/^Document taken by (.+)$/i);
+        if (takenByMatch) {
+            return t("audit.details.takenBy", { user: takenByMatch[1] });
+        }
+        const statusMatch = details.match(/^Status changed to (.+) by (.+)$/i);
+        if (statusMatch) {
+            return t("audit.details.statusChanged", {
+                status: t(`status.${statusMatch[1].toLowerCase().replace(/\s+/g, "_")}`, {
+                    defaultValue: statusMatch[1],
+                }),
+                user: statusMatch[2],
+            });
+        }
+        return details;
+    };
+
     useEffect(() => {
         if (!isOpen) return;
 
@@ -316,7 +368,7 @@ const DocumentDetailModal = ({
                                                             key={s.id}
                                                             value={s.id}
                                                         >
-                                                            {s.name}
+                                                            {translateStatus(s)}
                                                         </option>
                                                     ))}
                                                 </select>
@@ -382,7 +434,7 @@ const DocumentDetailModal = ({
                                             </div>
                                             <div>
                                                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                                    Document Type
+                                                    {t("documentModal.fields.type")}
                                                 </label>
                                                 <select
                                                     className="block w-full text-sm border-b focus:outline-none focus:border-purple-500 bg-transparent py-1"
@@ -409,7 +461,7 @@ const DocumentDetailModal = ({
                                             </div>
                                             <div>
                                                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                                    Confidentiality
+                                                    {t("documentModal.fields.confidentiality")}
                                                 </label>
                                                 <select
                                                     className="block w-full text-sm border-b focus:outline-none focus:border-purple-500 bg-transparent py-1"
@@ -441,14 +493,13 @@ const DocumentDetailModal = ({
                                 ) : (
                                     <p className="text-sm text-gray-500">
                                         ID: #{document.id} •{" "}
-                                        {document.status_details?.name} (status
-                                        changes not allowed)
+                                        {translateStatus(document.status_details)} ({t("documentDetail.statusChangesNotAllowed")})
                                     </p>
                                 )
                             ) : (
                                 <p className="text-sm text-gray-500">
                                     ID: #{document.id} •{" "}
-                                    {document.status_details?.name}
+                                    {translateStatus(document.status_details)}
                                 </p>
                             )}
                         </div>
@@ -458,7 +509,7 @@ const DocumentDetailModal = ({
                                     onClick={() => setIsEditing(true)}
                                     className="text-purple-600 hover:text-purple-800 text-sm font-bold"
                                 >
-                                    Edit
+                                    {t("common.edit")}
                                 </button>
                             )}
                             {isEditing && (
@@ -468,13 +519,13 @@ const DocumentDetailModal = ({
                                         disabled={loading}
                                         className="text-green-600 hover:text-green-800 text-sm font-bold"
                                     >
-                                        Save
+                                        {t("common.save")}
                                     </button>
                                     <button
                                         onClick={() => setIsEditing(false)}
                                         className="text-gray-500 hover:text-gray-700 text-sm font-bold"
                                     >
-                                        Cancel
+                                        {t("common.cancel")}
                                     </button>
                                 </>
                             )}
@@ -507,7 +558,7 @@ const DocumentDetailModal = ({
                                     onClick={() => setActiveTab(tab)}
                                     className={`px-4 py-2 text-sm font-medium rounded-md transition ${activeTab === tab ? "bg-purple-100 text-purple-700" : "text-gray-500 hover:text-gray-700"}`}
                                 >
-                                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                                    {t(`documentDetail.tabs.${tab}`)}
                                 </button>
                             ),
                         )}
@@ -524,7 +575,7 @@ const DocumentDetailModal = ({
                             <div className="space-y-6">
                                 <div>
                                     <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                                        Description
+                                        {t("documentModal.fields.description")}
                                     </h3>
                                     {isEditing ? (
                                         <textarea
@@ -541,7 +592,7 @@ const DocumentDetailModal = ({
                                     ) : (
                                         <p className="mt-2 text-gray-700 whitespace-pre-wrap">
                                             {document.description ||
-                                                "No description provided."}
+                                                t("documentDetail.noDescription")}
                                         </p>
                                     )}
                                 </div>
@@ -690,7 +741,7 @@ const DocumentDetailModal = ({
                                             <div className="flex-1">
                                                 <div className="flex justify-between">
                                                     <span className="text-sm font-bold text-gray-900">
-                                                        {log.action}
+                                                        {translateHistoryAction(log.action)}
                                                     </span>
                                                     <span className="text-xs text-gray-500">
                                                         {new Date(
@@ -699,10 +750,10 @@ const DocumentDetailModal = ({
                                                     </span>
                                                 </div>
                                                 <p className="text-sm text-gray-600">
-                                                    {log.details}
+                                                    {translateHistoryDetails(log.details)}
                                                 </p>
                                                 <p className="text-xs text-gray-400">
-                                                    By {log.user?.username}
+                                                    {t("documentDetail.by")} {log.user?.username}
                                                 </p>
                                             </div>
                                         </div>

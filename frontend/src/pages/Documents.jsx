@@ -18,6 +18,24 @@ const Documents = () => {
     const [selectedDocument, setSelectedDocument] = useState(null);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
+    const fetchDocuments = async (cancelled = false) => {
+        setLoading(true);
+        try {
+            const params = {};
+            if (startDate) params.start_date = startDate;
+            if (endDate) params.end_date = endDate;
+
+            const response = await api.get("documents/", { params });
+            if (!cancelled) {
+                setDocuments(response.data.results || response.data);
+            }
+        } catch (error) {
+            if (!cancelled) console.error("Error fetching documents", error);
+        } finally {
+            if (!cancelled) setLoading(false);
+        }
+    };
+
     useEffect(() => {
         // Fetch dependencies for modal
         const fetchDeps = async () => {
@@ -39,25 +57,7 @@ const Documents = () => {
     useEffect(() => {
         let cancelled = false;
 
-        const fetchDocuments = async () => {
-            setLoading(true);
-            try {
-                const params = {};
-                if (startDate) params.start_date = startDate;
-                if (endDate) params.end_date = endDate;
-
-                const response = await api.get("documents/", { params });
-                if (!cancelled) {
-                    setDocuments(response.data.results || response.data);
-                }
-            } catch (error) {
-                if (!cancelled) console.error("Error fetching documents", error);
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
-        };
-
-        fetchDocuments();
+        fetchDocuments(cancelled);
 
         return () => {
             cancelled = true;
@@ -203,7 +203,7 @@ const Documents = () => {
                 isOpen={isDetailModalOpen}
                 onClose={() => setIsDetailModalOpen(false)}
                 document={selectedDocument}
-                onUpdate={() => {}} // Could refetch if needed
+                onUpdate={() => fetchDocuments(false)}
             />
         </div>
     );

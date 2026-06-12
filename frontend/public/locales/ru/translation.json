@@ -66,6 +66,35 @@
         "notAvailable": "Н/Д",
         "unassigned": "Не назначено"
     },
+    "status": {
+        "draft": "Черновик",
+        "pending": "В ожидании",
+        "pending_approval": "Ожидает одобрения",
+        "approved": "Одобрено",
+        "rejected": "Отклонено"
+    },
+    "departments": {
+        "hr": "HR",
+        "it": "IT",
+        "finance": "Финансы",
+        "legal": "Юридический отдел",
+        "marketing": "Маркетинг",
+        "sales": "Продажи",
+        "operations": "Операции",
+        "troubleshooting": "Поддержка"
+    },
+    "audit": {
+        "actions": {
+            "routed": "Направлено",
+            "department_update": "Обновление отдела"
+        },
+        "details": {
+            "routedTo": "Направлено в отдел {{department}}",
+            "updatedBy": "Обновлено пользователем {{user}}",
+            "takenBy": "Документ взял {{user}}",
+            "statusChanged": "Статус изменен на {{status}} пользователем {{user}}"
+        }
+    },
     "portal": {
         "title": "Публичный портал",
         "subtitle": "Отправьте документ. Наша команда примет его и направит в соответствующий отдел.",
@@ -115,6 +144,12 @@
         "comingSoon": "Форма нового документа скоро будет доступна..."
     },
     "documentDetail": {
+        "tabs": {
+            "details": "Детали",
+            "attachments": "Вложения",
+            "history": "История",
+            "comments": "Комментарии"
+        },
         "selectStatus": "Выберите статус",
         "creator": "Создатель",
         "takeDocument": "Взять документ",
@@ -122,6 +157,8 @@
         "routeToDepartment": "Направить в отдел",
         "selectDepartment": "Выберите отдел",
         "route": "Направить",
+        "statusChangesNotAllowed": "изменение статуса недоступно",
+        "noDescription": "Описание не указано.",
         "noHistory": "История отсутствует.",
         "upload": "Загрузить",
         "attachment": "Вложение",
@@ -169,6 +206,7 @@
             "needsApproval": "{{title}} требует вашего одобрения.",
             "documentApproved": "{{title}} был одобрен.",
             "documentRouted": "{{title}} был успешно маршрутизирован.",
+            "documentRoutedTo": "{{title}} направлен в отдел {{department}}.",
             "documentAssigned": "{{title}} назначен вам.",
             "documentCommented": "Добавлен новый комментарий к {{title}}."
         },

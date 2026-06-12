@@ -66,6 +66,35 @@
         "notAvailable": "N/A",
         "unassigned": "Unassigned"
     },
+    "status": {
+        "draft": "Draft",
+        "pending": "Pending",
+        "pending_approval": "Pending Approval",
+        "approved": "Approved",
+        "rejected": "Rejected"
+    },
+    "departments": {
+        "hr": "HR",
+        "it": "IT",
+        "finance": "Finance",
+        "legal": "Legal",
+        "marketing": "Marketing",
+        "sales": "Sales",
+        "operations": "Operations",
+        "troubleshooting": "Troubleshooting"
+    },
+    "audit": {
+        "actions": {
+            "routed": "Routed",
+            "department_update": "Department update"
+        },
+        "details": {
+            "routedTo": "Routed to {{department}}",
+            "updatedBy": "Updated by {{user}}",
+            "takenBy": "Document taken by {{user}}",
+            "statusChanged": "Status changed to {{status}} by {{user}}"
+        }
+    },
     "portal": {
         "title": "Public Portal",
         "subtitle": "Submit a document. It will be received by our intake team and routed to the correct department.",
@@ -115,6 +144,12 @@
         "comingSoon": "New document form coming soon..."
     },
     "documentDetail": {
+        "tabs": {
+            "details": "Details",
+            "attachments": "Attachments",
+            "history": "History",
+            "comments": "Comments"
+        },
         "selectStatus": "Select status",
         "creator": "Creator",
         "takeDocument": "Take Document",
@@ -123,6 +158,8 @@
         "selectDepartment": "Select department",
         "route": "Route",
         "routeError": "Error routing document. Please select a department and try again.",
+        "statusChangesNotAllowed": "status changes not allowed",
+        "noDescription": "No description provided.",
         "noHistory": "No history available.",
         "upload": "Upload",
         "attachment": "Attachment",
@@ -170,6 +207,7 @@
             "needsApproval": "{{title}} requires your approval.",
             "documentApproved": "{{title}} has been approved.",
             "documentRouted": "{{title}} was routed successfully.",
+            "documentRoutedTo": "{{title}} was routed to {{department}}.",
             "documentAssigned": "{{title}} has been assigned to you.",
             "documentCommented": "New comment added to {{title}}."
         },

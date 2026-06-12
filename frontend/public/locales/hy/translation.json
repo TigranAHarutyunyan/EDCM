@@ -66,6 +66,35 @@
         "notAvailable": "Չկա",
         "unassigned": "Կցված չէ"
     },
+    "status": {
+        "draft": "Սևագիր",
+        "pending": "Սպասման մեջ",
+        "pending_approval": "Սպասում է հաստատման",
+        "approved": "Հաստատված",
+        "rejected": "Մերժված"
+    },
+    "departments": {
+        "hr": "ՄՌ",
+        "it": "ՏՏ",
+        "finance": "Ֆինանսներ",
+        "legal": "Իրավաբանական",
+        "marketing": "Մարքեթինգ",
+        "sales": "Վաճառքներ",
+        "operations": "Գործառնական",
+        "troubleshooting": "Խնդիրների լուծում"
+    },
+    "audit": {
+        "actions": {
+            "routed": "Ուղղորդված",
+            "department_update": "Բաժնի թարմացում"
+        },
+        "details": {
+            "routedTo": "Ուղղորդվել է {{department}} բաժին",
+            "updatedBy": "Թարմացվել է {{user}} օգտատիրոջ կողմից",
+            "takenBy": "Փաստաթուղթը վերցրել է {{user}} օգտատերը",
+            "statusChanged": "Կարգավիճակը փոխվել է՝ {{status}}, օգտատեր՝ {{user}}"
+        }
+    },
     "portal": {
         "title": "Հանրային պորտալ",
         "subtitle": "Ուղարկեք փաստաթուղթ: Այն կստացվի մեր ընդունման թիմի կողմից և կուղղվի համապատասխան բաժին:",
@@ -115,6 +144,12 @@
         "comingSoon": "Նոր փաստաթղթի ձևը շուտով հասանելի կլինի..."
     },
     "documentDetail": {
+        "tabs": {
+            "details": "Մանրամասներ",
+            "attachments": "Կցորդներ",
+            "history": "Պատմություն",
+            "comments": "Մեկնաբանություններ"
+        },
         "selectStatus": "Ընտրեք կարգավիճակը",
         "creator": "Ստեղծող",
         "takeDocument": "Վերցնել փաստաթուղթը",
@@ -122,6 +157,8 @@
         "routeToDepartment": "Ուղղորդել բաժին",
         "selectDepartment": "Ընտրեք բաժինը",
         "route": "Ուղղորդել",
+        "statusChangesNotAllowed": "կարգավիճակի փոփոխությունը հասանելի չէ",
+        "noDescription": "Նկարագրություն չի տրամադրվել։",
         "noHistory": "Պատմություն չկա։",
         "upload": "Վերբեռնել",
         "attachment": "Կցորդ",
@@ -169,6 +206,7 @@
             "needsApproval": "{{title}} պահանջում է ձեր հաստատումը։",
             "documentApproved": "{{title}} հաստատվել է։",
             "documentRouted": "{{title}} հաջողությամբ ուղարկվեց։",
+            "documentRoutedTo": "{{title}} ուղղորդվել է {{department}} բաժին։",
             "documentAssigned": "{{title}} ձեզ է նշանակվել։",
             "documentCommented": "{{title}}-ի համար նոր մեկնաբանություն է ավելացվել։"
         },

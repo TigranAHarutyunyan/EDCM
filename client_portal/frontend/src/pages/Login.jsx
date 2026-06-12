@@ -9,12 +9,17 @@ import LanguageSelector from "../components/LanguageSelector";
 const Login = () => {
     const [formData, setFormData] = useState({ username: "", password: "" });
     const [error, setError] = useState("");
-    const { login } = useAuth();
+    const [verificationCode, setVerificationCode] = useState("");
+    const [showVerification, setShowVerification] = useState(false);
+    const [notice, setNotice] = useState("");
+    const { login, setUser } = useAuth();
     const { isDarkMode, toggleTheme } = useTheme();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError("");
+        setNotice("");
         try {
             await login(formData.username, formData.password);
             navigate("/");
@@ -22,6 +27,40 @@ const Login = () => {
             const msg =
                 err.response?.data?.detail || "Invalid username or password";
             setError(msg);
+            setShowVerification(err.response?.status === 403 && msg.includes("Email not verified"));
+        }
+    };
+
+    const handleVerifyCode = async (e) => {
+        e.preventDefault();
+        setError("");
+        setNotice("");
+        try {
+            const response = await api.post("/verify-code", {
+                email: formData.username,
+                code: verificationCode,
+            });
+            const { access_token } = response.data;
+            localStorage.setItem("token", access_token);
+            const userResp = await api.get("/me");
+            setUser(userResp.data);
+            navigate("/");
+        } catch (err) {
+            setError(err.response?.data?.detail || "Invalid verification code");
+        }
+    };
+
+    const handleResendCode = async () => {
+        setError("");
+        setNotice("");
+        try {
+            const response = await api.post("/resend-verification-code", {
+                email: formData.username,
+            });
+            setNotice(response.data.message || "Verification code sent.");
+            setShowVerification(true);
+        } catch (err) {
+            setError(err.response?.data?.detail || "Could not resend verification code.");
         }
     };
 
@@ -92,6 +131,11 @@ const Login = () => {
                             {error}
                         </div>
                     )}
+                    {notice && (
+                        <div className="mb-6 bg-green-500/10 border-l-4 border-green-500 text-green-600 px-4 py-3 rounded-xl text-sm font-bold">
+                            {notice}
+                        </div>
+                    )}
 
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         <div>
@@ -158,6 +202,48 @@ const Login = () => {
                             Sign in
                         </button>
                     </form>
+
+                    {showVerification && (
+                        <form className="mt-6 space-y-4" onSubmit={handleVerifyCode}>
+                            <div>
+                                <label
+                                    htmlFor="verification-code"
+                                    className={`block text-[10px] font-black uppercase tracking-widest mb-1 ${isDarkMode ? "text-slate-500" : "text-gray-500"}`}
+                                >
+                                    Verification code
+                                </label>
+                                <input
+                                    id="verification-code"
+                                    type="text"
+                                    maxLength="6"
+                                    required
+                                    className={`text-center tracking-[0.75em] block w-full px-5 py-4 rounded-2xl border text-xl font-black outline-none transition-all focus:ring-4 ${
+                                        isDarkMode
+                                            ? "bg-slate-900 border-slate-700 text-white placeholder-slate-600 focus:ring-blue-500/20 focus:border-blue-500"
+                                            : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:ring-blue-100 focus:border-blue-500"
+                                    }`}
+                                    placeholder="000000"
+                                    value={verificationCode}
+                                    onChange={(e) =>
+                                        setVerificationCode(e.target.value.replace(/[^0-9]/g, ""))
+                                    }
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                className="w-full flex justify-center py-3 px-4 rounded-2xl text-sm font-black text-white bg-green-600 hover:bg-green-500 transition-all"
+                            >
+                                Verify and sign in
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleResendCode}
+                                className={`w-full text-sm font-bold transition-colors ${isDarkMode ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-800"}`}
+                            >
+                                Resend verification code
+                            </button>
+                        </form>
+                    )}
 
                     <div className="mt-8">
                         <div className="relative">

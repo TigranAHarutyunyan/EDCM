@@ -151,7 +151,7 @@ class Token(BaseModel):
 def get_user(username: str):
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
-    c.execute("SELECT * FROM users WHERE username=?", (username,))
+    c.execute("SELECT * FROM users WHERE username=? OR email=?", (username, username))
     row = c.fetchone()
     conn.close()
     if row:
@@ -248,12 +248,16 @@ class VerifyRequest(BaseModel):
     email: str
     code: str
 
+
+class ResendVerificationRequest(BaseModel):
+    email: str
+
 @app.post("/verify-code")
 async def verify_code(req: VerifyRequest):
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
-    # Find user by email first
-    c.execute("SELECT id, username FROM users WHERE email=?", (req.email,))
+    # The frontend may pass either email or username here.
+    c.execute("SELECT id, username FROM users WHERE email=? OR username=?", (req.email, req.email))
     user_row = c.fetchone()
     if not user_row:
         conn.close()
@@ -276,6 +280,31 @@ async def verify_code(req: VerifyRequest):
     # Generate token for auto-login
     access_token = create_access_token(data={"sub": username})
     return {"access_token": access_token, "token_type": "bearer", "message": "Account activated successfully!"}
+
+
+@app.post("/resend-verification-code")
+async def resend_verification_code(req: ResendVerificationRequest):
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute("SELECT id, email, is_verified FROM users WHERE email=? OR username=?", (req.email, req.email))
+    row = c.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user_id, email, is_verified = row
+    if is_verified:
+        conn.close()
+        return {"message": "Account is already verified. You can log in."}
+
+    code = ''.join(secrets.choice('0123456789') for _ in range(6))
+    c.execute("DELETE FROM verification_tokens WHERE user_id=?", (user_id,))
+    c.execute("INSERT INTO verification_tokens (user_id, token) VALUES (?, ?)", (user_id, code))
+    conn.commit()
+    conn.close()
+
+    send_verification_email(email, code)
+    return {"message": "Verification code sent to your email."}
 
 @app.get("/verify-email")
 async def verify_email(token: str):

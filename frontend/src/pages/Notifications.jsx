@@ -69,6 +69,14 @@ const Notifications = () => {
     const getNotificationMessage = (notification) => {
         const code = notification.notification_type?.code;
         const title = notification.document?.title || "";
+        const departmentName = notification.document?.department?.name || "";
+        const departmentKey = departmentName
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "_")
+            .replace(/^_|_$/g, "");
+        const department = departmentName
+            ? t(`departments.${departmentKey}`, { defaultValue: departmentName })
+            : "";
 
         switch (code) {
             case "NEW_DOCUMENT":
@@ -78,7 +86,12 @@ const Notifications = () => {
             case "DOCUMENT_APPROVED":
                 return t("notifications.payloads.documentApproved", { title });
             case "DOCUMENT_ROUTED":
-                return t("notifications.payloads.documentRouted", { title });
+                return department
+                    ? t("notifications.payloads.documentRoutedTo", {
+                          title,
+                          department,
+                      })
+                    : t("notifications.payloads.documentRouted", { title });
             case "DOCUMENT_ASSIGNED":
                 return t("notifications.payloads.documentAssigned", { title });
             case "DOCUMENT_COMMENTED":
