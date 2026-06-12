@@ -1117,5 +1117,5 @@ class NotificationMarkReadView(APIView):
 
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
-    callback_url = "http://localhost:8002/google-callback"
+    callback_url = os.getenv("GOOGLE_REDIRECT_URI", "http://3.82.45.111:8002/google-callback")
     client_class = OAuth2Client

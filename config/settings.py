@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 import dj_database_url
 from pathlib import Path
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,24 +21,52 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load .env file
 load_dotenv(BASE_DIR / '.env')
+
+
+def env_list(name, default=''):
+    return [item.strip() for item in os.getenv(name, default).split(',') if item.strip()]
+
+
+def origin_list(name, default=''):
+    origins = []
+    for origin in env_list(name, default):
+        if '://' not in origin:
+            origin = f'http://{origin}'
+        origins.append(origin)
+    return origins
+
+
+def host_list(name, default=''):
+    hosts = []
+    for host in env_list(name, default):
+        parsed = urlparse(host if '://' in host else f'//{host}')
+        hostname = parsed.hostname or host
+        if hostname not in hosts:
+            hosts.append(hostname)
+    return hosts
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-for-build-only-change-in-render-dashboard')
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-this-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Cast DEBUG from environment to a proper boolean.
 # Any value other than the string "True" (case-sensitive) will be treated as False.
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,backend,frontend,edcm.onrender.com,.onrender.com').split(',')
+ALLOWED_HOSTS = host_list(
+    'ALLOWED_HOSTS',
+    'localhost,127.0.0.1,backend,frontend,client-portal,client-portal-frontend,3.82.45.111',
+)
 
 # CSRF settings for production
-CSRF_TRUSTED_ORIGINS = os.getenv(
+CSRF_TRUSTED_ORIGINS = origin_list(
     'CSRF_TRUSTED_ORIGINS',
-    'http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000,http://127.0.0.1:8000,http://localhost:8001,http://127.0.0.1:8001,http://localhost:8002,http://127.0.0.1:8002,https://*.runpod.net,https://*.runpod.io'
-).split(',')
+    'http://localhost:8000,http://localhost:8001,http://localhost:8002,http://127.0.0.1:8000,http://127.0.0.1:8001,http://127.0.0.1:8002,http://3.82.45.111:8000,http://3.82.45.111:8001,http://3.82.45.111:8002',
+)
 
 # Security settings
 SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False') == 'True'
@@ -146,7 +175,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # Use DATABASE_URL from environment, fallback to local settings for dev
 if os.getenv('DATABASE_URL'):
-    # Environments providing DATABASE_URL (Render, Docker, etc.)
+    # Environments providing DATABASE_URL (Docker, AWS, etc.)
     # Control SSL with DB_SSL_REQUIRE env (default: False for local/Docker).
     DATABASES = {
         'default': dj_database_url.config(
@@ -223,16 +252,10 @@ LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
 # CORS Configuration
-CORS_ALLOWED_ORIGINS = os.getenv(
+CORS_ALLOWED_ORIGINS = origin_list(
     'CORS_ALLOWED_ORIGINS',
-    'http://localhost:3000,http://127.0.0.1:3000,https://edcm.onrender.com'
-).split(',')
-
-# Support dynamic RunPod subdomains via regex
-CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^https://.*\.proxy\.runpod\.net$",
-    r"^https://.*\.runpod\.io$",
-]
+    'http://localhost:8000,http://localhost:8001,http://localhost:8002,http://127.0.0.1:8000,http://127.0.0.1:8001,http://127.0.0.1:8002,http://3.82.45.111:8000,http://3.82.45.111:8001,http://3.82.45.111:8002',
+)
 
 # In development, allow all origins if explicitly set
 if DEBUG:
