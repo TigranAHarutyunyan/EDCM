@@ -1,3 +1,13 @@
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /frontend
+
+COPY frontend/package*.json ./
+RUN npm ci
+
+COPY frontend/ ./
+RUN npm run build
+
 FROM python:3.10-slim AS builder
 
 WORKDIR /app
@@ -27,6 +37,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY --from=builder /install  /usr/local/
 COPY . /app
+COPY --from=frontend-builder /frontend/dist /app/frontend/dist
 
 RUN chmod +x /app/entrypoint.sh  \
     && useradd --create-home --uid 1000 appuser \

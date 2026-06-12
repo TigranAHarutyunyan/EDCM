@@ -48,13 +48,13 @@ def react_app(request):
 def department_entry(request):
     """
     Entry point for the Department Panel SPA route.
-    Only Heads of Department (Managers) can access `/department/`.
+    Managers and admins can access `/department/`.
     """
     user = request.user if request.user.is_authenticated else _app_user_from_auth_cookie(request)
     role = getattr(getattr(user, "profile", None), "role", None) if user else None
     dept_id = getattr(getattr(user, "profile", None), "department_id", None) if user else None
 
-    if user and user.is_active and role == "Manager" and dept_id:
+    if user and user.is_active and (user.is_superuser or role == "Admin" or (role == "Manager" and dept_id)):
         return JsonResponse({
             "status": "ready",
             "message": "Authorized. Please use the Department Panel in the Frontend."

@@ -15,8 +15,11 @@ import Documents from "./pages/Documents";
 import Profile from "./pages/Profile";
 import DepartmentPanel from "./pages/DepartmentPanel";
 import Notifications from "./pages/Notifications";
+import { useTranslation } from "react-i18next";
 
 function App() {
+    const { t } = useTranslation();
+
     return (
         <Router>
             <ThemeProvider>
@@ -48,7 +51,7 @@ function App() {
                                 path="/documents/new"
                                 element={
                                     <div className="text-center py-10">
-                                        New Document form coming soon...
+                                        {t('documentModal.comingSoon')}
                                     </div>
                                 }
                             />

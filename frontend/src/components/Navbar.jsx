@@ -74,7 +74,7 @@ const Navbar = () => {
                         <NotificationBell />
                         <div className="flex items-center space-x-4 pl-4 border-l border-gray-100">
                             <div className="hidden lg:flex flex-col items-end">
-                                <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">Logged in as</span>
+                                <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{t('nav.loggedInAs')}</span>
                                 <span className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
                                     {user?.username}
                                 </span>

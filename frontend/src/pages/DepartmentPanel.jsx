@@ -10,6 +10,7 @@ const DepartmentPanel = () => {
     const { t } = useTranslation();
     const [employees, setEmployees] = useState([]);
     const [documents, setDocuments] = useState([]);
+    const [departments, setDepartments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -19,20 +20,32 @@ const DepartmentPanel = () => {
         password: "",
         full_name: "",
         position: "",
+        department_id: "",
     });
 
     const employeeOptions = useMemo(() => employees || [], [employees]);
+    const canAccessDepartmentPanel = Boolean(
+        user?.is_superuser || user?.role === "Admin" || user?.role === "Manager",
+    );
+    const isAdminView = Boolean(user?.is_superuser || user?.role === "Admin");
 
     const fetchAll = async () => {
         setLoading(true);
         setError("");
         try {
-            const [empRes, docRes] = await Promise.all([
+            const requests = [
                 api.get("department/employees/"),
                 api.get("department/documents/"),
-            ]);
+            ];
+            if (isAdminView) {
+                requests.push(api.get("departments/"));
+            }
+            const [empRes, docRes, deptRes] = await Promise.all(requests);
             setEmployees(empRes.data.results || empRes.data);
             setDocuments(docRes.data.results || docRes.data);
+            if (deptRes) {
+                setDepartments(deptRes.data.results || deptRes.data);
+            }
         } catch {
             setError(t('error.load_dept_data') || "Failed to load department panel data.");
         } finally {
@@ -55,6 +68,7 @@ const DepartmentPanel = () => {
                 password: "",
                 full_name: "",
                 position: "",
+                department_id: "",
             });
             await fetchAll();
         } catch {
@@ -96,7 +110,7 @@ const DepartmentPanel = () => {
         );
     }
 
-    if (user?.role !== "Manager") {
+    if (!canAccessDepartmentPanel) {
         return (
             <div className={`p-10 rounded-3xl shadow-2xl border transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
                 <h1 className={`text-2xl font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -116,7 +130,7 @@ const DepartmentPanel = () => {
                     {t('department.panel_title')}
                 </h1>
                 <p className={`text-lg font-medium ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-                    {t('department.manage_dept')}
+                    {isAdminView ? t('department.manage_all_depts') : t('department.manage_dept')}
                 </p>
             </header>
 
@@ -182,6 +196,23 @@ const DepartmentPanel = () => {
                                     value={newEmployee.position}
                                     onChange={(e) => setNewEmployee((p) => ({ ...p, position: e.target.value }))}
                                 />
+                                {isAdminView && (
+                                    <select
+                                        className={`w-full rounded-2xl border px-5 py-4 text-sm font-bold outline-none transition-all focus:ring-4 focus:ring-purple-500/20 ${
+                                            isDarkMode ? 'bg-slate-900 border-slate-700 text-white focus:border-purple-500' : 'bg-gray-50 border-gray-100 text-gray-900 focus:border-purple-600 focus:bg-white'
+                                        }`}
+                                        required
+                                        value={newEmployee.department_id}
+                                        onChange={(e) => setNewEmployee((p) => ({ ...p, department_id: e.target.value }))}
+                                    >
+                                        <option value="">{t('department.select_department')}</option>
+                                        {departments.map((department) => (
+                                            <option key={department.id} value={department.id}>
+                                                {department.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
                             </div>
                         </div>
                         <button
@@ -212,7 +243,7 @@ const DepartmentPanel = () => {
                                             {u.profile?.full_name || u.username}
                                         </div>
                                         <div className={`text-xs font-bold uppercase tracking-widest ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
-                                            {u.profile?.position || u.profile?.role}
+                                            {[u.profile?.position || u.profile?.role, isAdminView ? u.profile?.department?.name : null].filter(Boolean).join(" • ")}
                                         </div>
                                     </div>
                                 </div>
@@ -254,6 +285,11 @@ const DepartmentPanel = () => {
                                             <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg ${isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-white text-gray-400 shadow-sm'}`}>
                                                 ID: #{d.id}
                                             </span>
+                                            {isAdminView && d.department?.name && (
+                                                <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg ${isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-white text-gray-400 shadow-sm'}`}>
+                                                    {d.department.name}
+                                                </span>
+                                            )}
                                             <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg bg-blue-500 text-white shadow-lg shadow-blue-500/20`}>
                                                 {d.status_details?.name}
                                             </span>

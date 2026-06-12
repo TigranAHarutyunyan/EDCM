@@ -54,6 +54,8 @@ services:
             context: ./frontend
             dockerfile: Dockerfile
         container_name: edcm_frontend
+        volumes:
+            - media_volume:/usr/share/nginx/media:ro
         ports:
             - "${FRONTEND_PORT}:8080"
         depends_on:

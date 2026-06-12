@@ -1,6 +1,7 @@
 import { useState } from "react";
 import api from "../services/api";
 import { useTheme } from "../context/ThemeContext";
+import { useTranslation } from "react-i18next";
 
 const DocumentModal = ({
     isOpen,
@@ -11,6 +12,7 @@ const DocumentModal = ({
     users,
 }) => {
     const { isDarkMode } = useTheme();
+    const { t } = useTranslation();
     const [formData, setFormData] = useState({
         title: "",
         description: "",
@@ -98,7 +100,7 @@ const DocumentModal = ({
                 if (Array.isArray(firstVal)) message = firstVal[0];
                 else if (typeof firstVal === "string") message = firstVal;
             }
-            setError(message || "Error creating document. Please try again.");
+            setError(message || t('documentModal.errors.create'));
         } finally {
             setLoading(false);
         }
@@ -129,10 +131,10 @@ const DocumentModal = ({
                     <div className={`flex justify-between items-center px-10 py-8 border-b ${isDarkMode ? 'border-slate-700' : 'border-gray-50'}`}>
                         <div>
                             <h2 className={`text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                Create New Document
+                                {t('documentModal.title')}
                             </h2>
                             <p className={`mt-2 text-sm font-bold ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-                                Fill in the details to register a new record.
+                                {t('documentModal.subtitle')}
                             </p>
                         </div>
                         <button
@@ -157,14 +159,14 @@ const DocumentModal = ({
                     <form onSubmit={handleSubmit} className="px-10 py-8 space-y-8">
                         {createdDocument?.id && (
                             <div className="rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm font-bold text-green-800 animate-pulse">
-                                Document successfully created (ID: #{createdDocument.id}). You can now upload attachments.
+                                {t('documentModal.created', { id: createdDocument.id })}
                             </div>
                         )}
                         
                         {/* Title Section */}
                         <div className="space-y-2">
                             <label className={`block text-xs font-black uppercase tracking-widest ml-1 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
-                                Document Name <span className="text-red-500">*</span>
+                                {t('documentModal.fields.name')} <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
@@ -172,7 +174,7 @@ const DocumentModal = ({
                                 value={formData.title}
                                 onChange={handleChange}
                                 required
-                                placeholder="e.g., Q1 Financial Report"
+                                placeholder={t('documentModal.placeholders.name')}
                                 className={`block w-full rounded-2xl border px-5 py-4 text-sm font-bold outline-none transition-all focus:ring-4 focus:ring-purple-500/10 ${
                                     isDarkMode 
                                     ? 'bg-slate-900 border-slate-700 text-white focus:border-purple-500' 
@@ -185,13 +187,13 @@ const DocumentModal = ({
                         {/* Description Section */}
                         <div className="space-y-2">
                              <label className={`block text-xs font-black uppercase tracking-widest ml-1 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
-                                Description
+                                {t('documentModal.fields.description')}
                             </label>
                             <textarea
                                 name="description"
                                 value={formData.description}
                                 onChange={handleChange}
-                                placeholder="Summary of the document content..."
+                                placeholder={t('documentModal.placeholders.description')}
                                 rows="4"
                                 className={`block w-full rounded-2xl border px-5 py-4 text-sm font-bold outline-none transition-all focus:ring-4 focus:ring-purple-500/10 resize-none ${
                                     isDarkMode 
@@ -207,7 +209,7 @@ const DocumentModal = ({
                             {/* Document Type */}
                             <div className="space-y-2">
                                 <label className={`block text-xs font-black uppercase tracking-widest ml-1 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
-                                    Document Type
+                                    {t('documentModal.fields.type')}
                                 </label>
                                 <select
                                     name="document_type"
@@ -220,7 +222,7 @@ const DocumentModal = ({
                                     }`}
                                     disabled={loading}
                                 >
-                                    <option value="">Select Type</option>
+                                    <option value="">{t('documentModal.options.selectType')}</option>
                                     {documentTypes?.map((type) => (
                                         <option key={type.id} value={type.id}>{type.name}</option>
                                     ))}
@@ -230,7 +232,7 @@ const DocumentModal = ({
                             {/* Assign To */}
                             <div className="space-y-2">
                                 <label className={`block text-xs font-black uppercase tracking-widest ml-1 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
-                                    Assign To
+                                    {t('documentModal.fields.assignTo')}
                                 </label>
                                 <select
                                     name="assigned_to_id"
@@ -243,7 +245,7 @@ const DocumentModal = ({
                                     }`}
                                     disabled={loading}
                                 >
-                                    <option value="">Self / Unassigned</option>
+                                    <option value="">{t('documentModal.options.selfUnassigned')}</option>
                                     {users?.map((user) => (
                                         <option key={user.id} value={user.id}>
                                             {user.profile?.full_name || user.username}
@@ -255,7 +257,7 @@ const DocumentModal = ({
                             {/* Confidentiality Level */}
                             <div className="space-y-2 sm:col-span-2">
                                 <label className={`block text-xs font-black uppercase tracking-widest ml-1 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
-                                    Confidentiality Level <span className="text-red-500">*</span>
+                                    {t('documentModal.fields.confidentiality')} <span className="text-red-500">*</span>
                                 </label>
                                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                                     {['PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'SECRET'].map((level) => (
@@ -280,7 +282,7 @@ const DocumentModal = ({
                         {/* Attachments */}
                         <div className="space-y-2">
                             <label className={`block text-xs font-black uppercase tracking-widest ml-1 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
-                                Attachments
+                                {t('documentModal.fields.attachments')}
                             </label>
                             <div className={`relative rounded-3xl border-2 border-dashed p-10 transition-all text-center ${
                                 isDarkMode ? 'border-slate-700 bg-slate-900/50' : 'border-gray-100 bg-gray-50'
@@ -295,9 +297,11 @@ const DocumentModal = ({
                                 />
                                 <div className="space-y-2">
                                     <p className={`text-sm font-black ${isDarkMode ? 'text-slate-300' : 'text-gray-900'}`}>
-                                        {attachmentFiles.length > 0 ? `${attachmentFiles.length} file(s) selected` : 'Drop files here or click to browse'}
+                                        {attachmentFiles.length > 0
+                                            ? t('documentModal.attachments.selected', { count: attachmentFiles.length })
+                                            : t('documentModal.attachments.drop')}
                                     </p>
-                                    <p className="text-[10px] font-bold text-gray-500">PDF, Word, Excel, PowerPoint</p>
+                                    <p className="text-[10px] font-bold text-gray-500">{t('documentModal.attachments.formats')}</p>
                                 </div>
                             </div>
                         </div>
@@ -312,14 +316,16 @@ const DocumentModal = ({
                                     isDarkMode ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                                 }`}
                             >
-                                Cancel
+                                {t('common.cancel')}
                             </button>
                             <button
                                 type="submit"
                                 disabled={loading}
                                 className="px-12 py-5 rounded-3xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-sm font-black shadow-2xl shadow-purple-600/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
                             >
-                                {loading ? "Creating..." : (createdDocument ? "Upload Attachments" : "Create Document")}
+                                {loading
+                                    ? t('documentModal.buttons.creating')
+                                    : (createdDocument ? t('documentModal.buttons.uploadAttachments') : t('documentModal.buttons.create'))}
                             </button>
                         </div>
                     </form>

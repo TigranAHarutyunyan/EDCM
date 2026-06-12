@@ -117,13 +117,18 @@ class IsAdminOrDepartmentChef(permissions.BasePermission):
 
 class IsDepartmentManager(permissions.BasePermission):
     def has_permission(self, request, view):
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and hasattr(request.user, "profile")
-            and request.user.profile.role == "Manager"
-            and request.user.profile.department_id
-        )
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        if request.user.is_superuser:
+            return True
+
+        profile = getattr(request.user, "profile", None)
+        role = getattr(profile, "role", None)
+        if role == "Admin":
+            return True
+
+        return bool(role == "Manager" and getattr(profile, "department_id", None))
 
 class HealthCheckView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -932,7 +937,7 @@ class UserProfileView(APIView):
             # Refresh user from DB to pick up the profile
             user = User.objects.get(pk=user.pk)
 
-        profile_serializer = UserSerializer(user)
+        profile_serializer = UserSerializer(user, context={"request": request})
         
         # Documents created by user
         created_docs = Document.objects.filter(creator=user).order_by('-created_at')
@@ -966,7 +971,7 @@ class UserProfileView(APIView):
             profile.profile_picture = request.FILES['profile_picture']
             
         profile.save()
-        return Response(UserSerializer(user).data)
+        return Response(UserSerializer(user, context={"request": request}).data)
 
 class AdminUserCreateView(generics.CreateAPIView):
     """
@@ -991,35 +996,47 @@ class AdminUserCreateView(generics.CreateAPIView):
 
 class DepartmentDocumentsView(generics.ListAPIView):
     """
-    Head of Department (Manager) can see all documents in their own department.
+    Admin can see all department documents. Managers see documents in their own department.
     """
 
     serializer_class = DocumentSerializer
     permission_classes = [IsDepartmentManager]
 
     def get_queryset(self):
+        profile = getattr(self.request.user, "profile", None)
+        if self.request.user.is_superuser or getattr(profile, "role", None) == "Admin":
+            return Document.objects.select_related("department", "status").all().order_by("-created_at")
+
         dept = self.request.user.profile.department
         return Document.objects.filter(department=dept).order_by("-created_at")
 
 
 class DepartmentEmployeesView(generics.ListCreateAPIView):
     """
-    Head of Department (Manager) can list all users in their own department and create Employees.
+    Admin can list all users. Managers can list users in their own department and create Employees.
     """
 
     serializer_class = UserSerializer
     permission_classes = [IsDepartmentManager]
 
     def get_queryset(self):
+        profile = getattr(self.request.user, "profile", None)
+        if self.request.user.is_superuser or getattr(profile, "role", None) == "Admin":
+            return User.objects.select_related("profile", "profile__department").all().order_by("username")
+
         dept = self.request.user.profile.department
         return User.objects.filter(profile__department=dept).order_by("username")
 
     def perform_create(self, serializer):
-        dept = self.request.user.profile.department
+        profile = getattr(self.request.user, "profile", None)
+        is_admin = self.request.user.is_superuser or getattr(profile, "role", None) == "Admin"
+        dept_id = self.request.data.get("department_id") if is_admin else getattr(profile, "department_id", None)
         # Force role/department to avoid privilege escalation.
         if not self.request.data.get("password"):
             raise ValidationError({"password": "This field is required."})
-        serializer.save(role="Employee", department_id=dept)
+        if not dept_id:
+            raise ValidationError({"department": "A department is required to create an employee from this panel."})
+        serializer.save(role="Employee", department_id=dept_id)
 
 
 class DepartmentEmployeeDeleteView(generics.DestroyAPIView):
@@ -1034,7 +1051,9 @@ class DepartmentEmployeeDeleteView(generics.DestroyAPIView):
     def get_object(self):
         obj = super().get_object()
         actor = self.request.user
-        dept = actor.profile.department
+        actor_profile = getattr(actor, "profile", None)
+        is_admin = actor.is_superuser or getattr(actor_profile, "role", None) == "Admin"
+        dept = getattr(actor_profile, "department", None)
 
         if obj.is_superuser or obj == actor:
             raise PermissionDenied("You do not have permission to delete this user.")
@@ -1043,7 +1062,7 @@ class DepartmentEmployeeDeleteView(generics.DestroyAPIView):
         if obj_role != "Employee":
             raise PermissionDenied("You can only delete employees.")
 
-        if not hasattr(obj, "profile") or obj.profile.department_id != dept.id:
+        if not is_admin and (not hasattr(obj, "profile") or obj.profile.department_id != dept.id):
             raise PermissionDenied("User is not in your department.")
 
         return obj
@@ -1051,17 +1070,19 @@ class DepartmentEmployeeDeleteView(generics.DestroyAPIView):
 
 class DepartmentDocumentOwnerUpdateView(APIView):
     """
-    Head of Department (Manager) can change document owner/assignee within their department.
+    Admin can change any department document owner/assignee. Managers can change documents within their department.
     """
 
     permission_classes = [IsDepartmentManager]
 
     def patch(self, request, pk):
         actor = request.user
-        dept = actor.profile.department
+        actor_profile = getattr(actor, "profile", None)
+        is_admin = actor.is_superuser or getattr(actor_profile, "role", None) == "Admin"
+        dept = getattr(actor_profile, "department", None)
         document = Document.objects.get(pk=pk)
 
-        if document.department_id != dept.id:
+        if not is_admin and document.department_id != dept.id:
             raise PermissionDenied("Document is not in your department.")
 
         current_owner_id = request.data.get("current_owner_id", None)
@@ -1073,7 +1094,7 @@ class DepartmentDocumentOwnerUpdateView(APIView):
             new_owner = None
             if current_owner_id != "" and current_owner_id is not None:
                 new_owner = User.objects.get(pk=current_owner_id)
-                if not hasattr(new_owner, "profile") or new_owner.profile.department_id != dept.id:
+                if not is_admin and (not hasattr(new_owner, "profile") or new_owner.profile.department_id != dept.id):
                     return Response({"error": "Owner must be in your department."}, status=status.HTTP_400_BAD_REQUEST)
             document.current_owner = new_owner
             changed_fields.append("current_owner")
@@ -1082,7 +1103,7 @@ class DepartmentDocumentOwnerUpdateView(APIView):
             new_assignee = None
             if assigned_to_id not in (None, "", "null"):
                 new_assignee = User.objects.get(pk=assigned_to_id)
-                if not hasattr(new_assignee, "profile") or new_assignee.profile.department_id != dept.id:
+                if not is_admin and (not hasattr(new_assignee, "profile") or new_assignee.profile.department_id != dept.id):
                     return Response({"error": "Assignee must be in your department."}, status=status.HTTP_400_BAD_REQUEST)
             document.assigned_to = new_assignee
             changed_fields.append("assigned_to")

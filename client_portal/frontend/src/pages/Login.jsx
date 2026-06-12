@@ -35,7 +35,7 @@ const Login = () => {
       }
     } catch (err) {
       console.error('Google button error:', err);
-      setError('Connection to Google Login failed. Please refresh your page or try again.');
+      setError(err.response?.data?.detail || 'Connection to Google Login failed. Please refresh your page or try again.');
     }
   };
 

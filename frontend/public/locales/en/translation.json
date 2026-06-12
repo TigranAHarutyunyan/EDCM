@@ -6,10 +6,12 @@
     "profile": "Profile",
     "logout": "Logout",
     "login": "Login",
-    "portal": "Client Portal"
+    "portal": "Client Portal",
+    "loggedInAs": "Logged in as"
   },
   "dashboard": {
     "title": "Document Control Dashboard",
+    "subtitle": "Overview of your document activities",
     "stats": {
       "total": "Total Documents",
       "pending": "Pending Actions",
@@ -17,7 +19,37 @@
       "completed": "Completed"
     },
     "recent": "Recent Activity",
-    "addNew": "Add New Document"
+    "addNew": "Add New Document",
+    "actions": {
+      "adminPanel": "Admin Panel",
+      "departmentPanel": "Department Panel"
+    },
+    "search": {
+      "placeholder": "View Document by ID...",
+      "view": "View",
+      "notFound": "Document not found",
+      "error": "Error fetching document"
+    },
+    "newDocument": {
+      "title": "New Document",
+      "subtitle": "Start a new document workflow",
+      "create": "+ Create New"
+    },
+    "tabs": {
+      "all": "All",
+      "myDocuments": "My Documents",
+      "portalInbox": "Portal Inbox"
+    },
+    "empty": "No documents found. Start by creating one!"
+  },
+  "table": {
+    "id": "ID",
+    "title": "Title",
+    "status": "Status",
+    "type": "Type",
+    "created": "Created",
+    "department": "Department",
+    "assignedTo": "Assigned To"
   },
   "common": {
     "save": "Save",
@@ -30,7 +62,9 @@
     "submitting": "Submitting...",
     "username": "Username",
     "password": "Password",
-    "email": "Email"
+    "email": "Email",
+    "notAvailable": "N/A",
+    "unassigned": "Unassigned"
   },
   "portal": {
     "title": "Public Portal",
@@ -44,6 +78,92 @@
     "doc_title": "Document Title",
     "doc_description": "Description",
     "attachments": "Attachments (PDF, Word, Excel, PowerPoint)"
+  },
+  "documentModal": {
+    "title": "Create New Document",
+    "subtitle": "Fill in the details to register a new record.",
+    "created": "Document successfully created (ID: #{{id}}). You can now upload attachments.",
+    "fields": {
+      "name": "Document Name",
+      "description": "Description",
+      "type": "Document Type",
+      "assignTo": "Assign To",
+      "confidentiality": "Confidentiality Level",
+      "attachments": "Attachments"
+    },
+    "placeholders": {
+      "name": "e.g., Q1 Financial Report",
+      "description": "Summary of the document content..."
+    },
+    "options": {
+      "selectType": "Select Type",
+      "selfUnassigned": "Self / Unassigned"
+    },
+    "attachments": {
+      "selected": "{{count}} file(s) selected",
+      "drop": "Drop files here or click to browse",
+      "formats": "PDF, Word, Excel, PowerPoint"
+    },
+    "buttons": {
+      "create": "Create Document",
+      "creating": "Creating...",
+      "uploadAttachments": "Upload Attachments"
+    },
+    "errors": {
+      "create": "Error creating document. Please try again."
+    },
+    "comingSoon": "New document form coming soon..."
+  },
+  "documentDetail": {
+    "selectStatus": "Select status",
+    "creator": "Creator",
+    "takeDocument": "Take Document",
+    "portalSubmission": "Portal Submission",
+    "routeToDepartment": "Route To Department",
+    "selectDepartment": "Select department",
+    "route": "Route",
+    "noHistory": "No history available.",
+    "upload": "Upload",
+    "attachment": "Attachment",
+    "by": "By",
+    "noAttachments": "No attachments.",
+    "addComment": "Add a comment...",
+    "publishToPortal": "Publish to Portal (Client can see)",
+    "postComment": "Post Comment"
+  },
+  "documents": {
+    "title": "Documents",
+    "subtitle": "Manage and view all your documents",
+    "addDocument": "+ Add Document",
+    "filters": {
+      "creationDate": "Filter by Creation Date:",
+      "from": "From",
+      "to": "To",
+      "clear": "Clear Filters"
+    },
+    "empty": "No documents found matching your criteria."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "systemTitle": "System Notifications",
+    "subtitle": "Stay updated on document routing and status changes.",
+    "viewAll": "View All",
+    "update": "Update",
+    "markRead": "Mark Read",
+    "markAsRead": "Mark as read",
+    "allCaughtUp": "All caught up!",
+    "backToDashboard": "Back to Dashboard",
+    "loading": "Loading Activity...",
+    "empty": "No notifications found.",
+    "activityAlert": "Activity Alert",
+    "archived": "Archived",
+    "newActivity": "New Activity",
+    "systemWide": "System-wide",
+    "viewDetails": "View Details",
+    "errors": {
+      "load": "Unable to load notifications right now.",
+      "update": "Unable to update notification status."
+    }
   },
   "profile": {
     "title": "My Profile",
@@ -62,8 +182,10 @@
   "department": {
     "panel_title": "Department Control Panel",
     "manage_dept": "Manage department employees and documents.",
+    "manage_all_depts": "Manage employees and documents across all departments.",
     "employees": "Team Members",
     "add_employee": "Add Team Member",
+    "select_department": "Select department",
     "no_employees": "No team members found.",
     "new_user_hint": "New accounts will be created as 'Employee' in your department.",
     "dept_documents": "Departmental Documents",

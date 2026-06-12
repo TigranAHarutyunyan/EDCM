@@ -3,9 +3,11 @@ import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 import { Bell, Check, ExternalLink } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const NotificationBell = () => {
     const { isDarkMode } = useTheme();
+    const { t } = useTranslation();
     const [unreadCount, setUnreadCount] = useState(0);
     const [recentNotifications, setRecentNotifications] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
@@ -60,7 +62,7 @@ const NotificationBell = () => {
                     ? 'hover:bg-slate-700 text-slate-400 hover:text-purple-400' 
                     : 'hover:bg-purple-50 text-gray-400 hover:text-purple-600'
                 }`}
-                aria-label="Notifications"
+                aria-label={t('notifications.title')}
             >
                 <Bell className="h-6 w-6" />
                 {unreadCount > 0 && (
@@ -75,9 +77,9 @@ const NotificationBell = () => {
                     isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
                 }`}>
                     <div className={`px-4 py-3 border-b flex justify-between items-center ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-gray-50 border-gray-100'}`}>
-                        <span className={`text-sm font-black uppercase tracking-wider ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Notifications</span>
+                        <span className={`text-sm font-black uppercase tracking-wider ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{t('notifications.title')}</span>
                         <Link to="/notifications" onClick={() => setIsOpen(false)} className="text-xs font-bold text-purple-600 hover:text-purple-400 flex items-center">
-                            View All <ExternalLink className="h-3 w-3 ml-1" />
+                            {t('notifications.viewAll')} <ExternalLink className="h-3 w-3 ml-1" />
                         </Link>
                     </div>
 
@@ -96,7 +98,7 @@ const NotificationBell = () => {
                                     <div className={`mt-1 h-2 w-2 rounded-full shrink-0 ${n.is_read ? 'bg-transparent' : 'bg-purple-600 shadow-sm'}`} />
                                     <div className="flex-1 min-w-0">
                                         <p className={`text-xs font-black uppercase tracking-tighter mb-1 ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-                                            {n.document?.title || "Update"}
+                                            {n.document?.title || t('notifications.update')}
                                         </p>
                                         <p className={`text-sm font-bold truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                                             {n.payload}
@@ -109,7 +111,7 @@ const NotificationBell = () => {
                                         <button 
                                             onClick={(e) => handleMarkRead(e, n.id)}
                                             className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-400 hover:text-purple-600 transition-colors"
-                                            title="Mark Read"
+                                            title={t('notifications.markRead')}
                                         >
                                             <Check className="h-4 w-4" />
                                         </button>
@@ -118,7 +120,7 @@ const NotificationBell = () => {
                             ))
                         ) : (
                             <div className={`px-4 py-10 text-center text-sm font-bold ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
-                                All caught up! 🎉
+                                {t('notifications.allCaughtUp')}
                             </div>
                         )}
                     </div>

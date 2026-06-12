@@ -15,12 +15,12 @@ import secrets
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from urllib.parse import urlencode
+from ipaddress import ip_address
+from urllib.parse import urlencode, urlparse
 
 # Google OAuth Settings
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
-GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://3.82.45.111:8002/google-callback")
 GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
 
 SECRET_KEY = os.getenv("SECRET_KEY", "prod-portal-secret-key-change-this")
@@ -38,7 +38,40 @@ SMTP_PORT = int(os.getenv("EMAIL_PORT", "587"))
 SMTP_USER = os.getenv("EMAIL_HOST_USER", "")
 SMTP_PASS = os.getenv("EMAIL_HOST_PASSWORD", "")
 EMAIL_NAME = os.getenv("DEFAULT_FROM_EMAIL_NAME", "EDCM Administrator")
-APP_URL = os.getenv("APP_URL", "http://localhost:3001")
+APP_URL = os.getenv("APP_URL", "http://localhost:8002")
+
+
+def google_redirect_uri() -> str:
+    return os.getenv("GOOGLE_REDIRECT_URI") or f"{APP_URL.rstrip('/')}/google-callback"
+
+
+def validate_google_redirect_uri(uri: str) -> None:
+    parsed = urlparse(uri)
+    host = parsed.hostname or ""
+    is_localhost = host in {"localhost", "127.0.0.1", "::1"}
+
+    if parsed.scheme == "https" or is_localhost:
+        return
+
+    try:
+        parsed_ip = ip_address(host)
+    except ValueError:
+        parsed_ip = None
+
+    if parsed_ip and not parsed_ip.is_loopback:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Google OAuth does not allow public HTTP IP redirect URIs. "
+                "Use http://localhost:8002/google-callback for local testing, "
+                "or configure APP_URL/GOOGLE_REDIRECT_URI with an HTTPS domain for AWS."
+            ),
+        )
+
+    raise HTTPException(
+        status_code=400,
+        detail="Google OAuth redirect URI must use HTTPS unless it is localhost.",
+    )
 
 app = FastAPI(title="EDCM Client Portal API")
 
@@ -280,6 +313,9 @@ async def submit(title: str = Form(...), description: str = Form(""), files: Opt
 @app.get("/auth/google/login")
 async def google_login():
     """Build and return the Google OAuth2 redirect URL."""
+    redirect_uri = google_redirect_uri()
+    validate_google_redirect_uri(redirect_uri)
+
     async with httpx.AsyncClient() as client:
         resp = await client.get(GOOGLE_DISCOVERY_URL)
         config = resp.json()
@@ -287,19 +323,22 @@ async def google_login():
         
     params = {
         "client_id": GOOGLE_CLIENT_ID,
-        "redirect_uri": GOOGLE_REDIRECT_URI,
+        "redirect_uri": redirect_uri,
         "response_type": "code",
         "scope": "openid email profile",
         "access_type": "offline",
         "prompt": "select_account"
     }
-    print(f"DEBUG: Using GOOGLE_REDIRECT_URI = {GOOGLE_REDIRECT_URI}", flush=True)
+    print(f"DEBUG: Using GOOGLE_REDIRECT_URI = {redirect_uri}", flush=True)
     encoded_params = urlencode(params)
     return {"url": f"{auth_endpoint}?{encoded_params}"}
 
 @app.get("/auth/google/callback")
 async def google_callback(code: str):
     """Exchange the Google code for User info and issue a Portal token."""
+    redirect_uri = google_redirect_uri()
+    validate_google_redirect_uri(redirect_uri)
+
     async with httpx.AsyncClient() as client:
         # 1. Get Google Discovery config
         resp = await client.get(GOOGLE_DISCOVERY_URL)
@@ -312,7 +351,7 @@ async def google_callback(code: str):
             "code": code,
             "client_id": GOOGLE_CLIENT_ID,
             "client_secret": GOOGLE_CLIENT_SECRET,
-            "redirect_uri": GOOGLE_REDIRECT_URI,
+            "redirect_uri": redirect_uri,
             "grant_type": "authorization_code"
         }
         token_resp = await client.post(token_endpoint, data=data)

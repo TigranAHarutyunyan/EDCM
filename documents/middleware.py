@@ -21,7 +21,7 @@ def _app_user_from_auth_cookie(request):
 
 class DepartmentGateMiddleware:
     """
-    Hide `/department/` from users who are not Heads of Department (Managers).
+    Hide `/department/` from users who are not department managers or admins.
 
     The SPA renders the UI, but this blocks the entry URL server-side in production.
     """
@@ -37,7 +37,11 @@ class DepartmentGateMiddleware:
             role = getattr(getattr(user, "profile", None), "role", None) if user else None
             dept_id = getattr(getattr(user, "profile", None), "department_id", None) if user else None
 
-            allowed = bool(user and user.is_active and role == "Manager" and dept_id)
+            allowed = bool(
+                user
+                and user.is_active
+                and (user.is_superuser or role == "Admin" or (role == "Manager" and dept_id))
+            )
             if not allowed:
                 return HttpResponseNotFound()
 

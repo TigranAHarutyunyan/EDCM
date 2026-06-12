@@ -3,9 +3,11 @@ import api from "../services/api";
 import DocumentModal from "../components/DocumentModal";
 import DocumentDetailModal from "../components/DocumentDetailModal";
 import { useTheme } from "../context/ThemeContext";
+import { useTranslation } from "react-i18next";
 
 const Documents = () => {
     const { isDarkMode } = useTheme();
+    const { t } = useTranslation();
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [startDate, setStartDate] = useState("");
@@ -77,10 +79,10 @@ const Documents = () => {
             <header className="flex justify-between items-end gap-4">
                 <div>
                     <h1 className="text-3xl font-black">
-                        Documents
+                        {t('documents.title')}
                     </h1>
                     <p className={`mt-1 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-                        Manage and view all your documents
+                        {t('documents.subtitle')}
                     </p>
                 </div>
 
@@ -89,16 +91,16 @@ const Documents = () => {
                         onClick={() => setIsModalOpen(true)}
                         className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition whitespace-nowrap font-medium"
                     >
-                        + Add Document
+                        {t('documents.addDocument')}
                     </button>
                 </div>
             </header>
 
             {/* Filters */}
             <div className={`p-5 rounded-2xl shadow-xl flex flex-wrap gap-4 items-center border transition-colors ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
-                <span className={`text-sm font-bold uppercase tracking-wider ${isDarkMode ? 'text-slate-400' : 'text-gray-700'}`}>Filter by Creation Date:</span>
+                <span className={`text-sm font-bold uppercase tracking-wider ${isDarkMode ? 'text-slate-400' : 'text-gray-700'}`}>{t('documents.filters.creationDate')}</span>
                 <div className="flex items-center gap-2">
-                    <label className={`text-xs font-semibold ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>From</label>
+                    <label className={`text-xs font-semibold ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>{t('documents.filters.from')}</label>
                     <input
                         type="date"
                         value={startDate}
@@ -109,7 +111,7 @@ const Documents = () => {
                     />
                 </div>
                 <div className="flex items-center gap-2">
-                    <label className={`text-xs font-semibold ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>To</label>
+                    <label className={`text-xs font-semibold ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>{t('documents.filters.to')}</label>
                     <input
                         type="date"
                         value={endDate}
@@ -124,7 +126,7 @@ const Documents = () => {
                         onClick={() => { setStartDate(""); setEndDate(""); }}
                         className="text-sm font-bold text-purple-600 hover:text-purple-400 transition-colors"
                     >
-                        Clear Filters
+                        {t('documents.filters.clear')}
                     </button>
                 )}
             </div>
@@ -140,11 +142,11 @@ const Documents = () => {
                         <table className="min-w-full">
                             <thead className={isDarkMode ? 'bg-slate-900/50' : 'bg-gray-50'}>
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Title</th>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Created</th>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Department</th>
+                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t('table.title')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t('table.status')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t('table.type')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t('table.created')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{t('table.department')}</th>
                                 </tr>
                             </thead>
                             <tbody className={`divide-y ${isDarkMode ? 'divide-slate-700' : 'divide-gray-100'}`}>
@@ -162,7 +164,7 @@ const Documents = () => {
                                                       doc.status_details?.code === 'REJECTED' ? 'bg-red-100 text-red-800' : 
                                                       doc.status_details?.code === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 
                                                       'bg-gray-100 text-gray-800'}`}>
-                                                    {doc.status_details?.name || 'N/A'}
+                                                    {doc.status_details?.name || t('common.notAvailable')}
                                                 </span>
                                             </td>
                                             <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
@@ -179,7 +181,7 @@ const Documents = () => {
                                 ) : (
                                     <tr>
                                         <td colSpan="5" className="px-6 py-4 text-center text-gray-500 text-sm">
-                                            No documents found matching your criteria.
+                                            {t('documents.empty')}
                                         </td>
                                     </tr>
                                 )}

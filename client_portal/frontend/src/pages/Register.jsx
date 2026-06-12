@@ -25,7 +25,7 @@ const Register = () => {
       const response = await api.get('/auth/google/login');
       window.location.href = response.data.url;
     } catch (err) {
-      setError('Could not connect to Google Login. Please try traditional registration instead.');
+      setError(err.response?.data?.detail || 'Could not connect to Google Login. Please try traditional registration instead.');
     }
   };
 

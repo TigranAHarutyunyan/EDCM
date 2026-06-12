@@ -2,10 +2,13 @@ import { useState, useEffect } from "react";
 import api from "../services/api";
 import { useTheme } from "../context/ThemeContext";
 import { Bell, CheckCircle, Info, AlertTriangle, FileText, ChevronLeft, Check } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const Notifications = () => {
     const { isDarkMode } = useTheme();
+    const { t } = useTranslation();
+    const navigate = useNavigate();
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -17,7 +20,7 @@ const Notifications = () => {
             const response = await api.get("notifications/");
             setNotifications(response.data.results || response.data);
         } catch (err) {
-            setError("Unable to load notifications right now.");
+            setError(t('notifications.errors.load'));
         } finally {
             setLoading(false);
         }
@@ -32,7 +35,7 @@ const Notifications = () => {
             await api.post(`notifications/${id}/read/`);
             loadNotifications();
         } catch (err) {
-            setError("Unable to update notification status.");
+            setError(t('notifications.errors.update'));
         }
     };
 
@@ -51,11 +54,11 @@ const Notifications = () => {
                 <div className="mb-8 flex items-center justify-between">
                     <div>
                         <Link to="/dashboard" className="flex items-center text-sm font-bold text-purple-600 hover:text-purple-400 mb-2 transition-colors">
-                            <ChevronLeft className="h-4 w-4 mr-1" /> Back to Dashboard
+                            <ChevronLeft className="h-4 w-4 mr-1" /> {t('notifications.backToDashboard')}
                         </Link>
-                        <h1 className="text-4xl font-black tracking-tight">System Notifications</h1>
+                        <h1 className="text-4xl font-black tracking-tight">{t('notifications.systemTitle')}</h1>
                         <p className={`mt-2 font-medium ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-                            Stay updated on document routing and status changes.
+                            {t('notifications.subtitle')}
                         </p>
                     </div>
                 </div>
@@ -70,12 +73,12 @@ const Notifications = () => {
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-20">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
-                        <p className="font-bold text-slate-500 uppercase tracking-widest text-xs">Loading Activity...</p>
+                        <p className="font-bold text-slate-500 uppercase tracking-widest text-xs">{t('notifications.loading')}</p>
                     </div>
                 ) : notifications.length === 0 ? (
                     <div className={`text-center py-20 rounded-3xl border-2 border-dashed ${isDarkMode ? 'bg-slate-800/30 border-slate-700 text-slate-500' : 'bg-white border-gray-200 text-gray-400'}`}>
                         <Bell className="h-16 w-16 mx-auto mb-4 opacity-20" />
-                        <p className="text-xl font-bold italic">No notifications found.</p>
+                        <p className="text-xl font-bold italic">{t('notifications.empty')}</p>
                     </div>
                 ) : (
                     <div className="space-y-4">
@@ -98,19 +101,19 @@ const Notifications = () => {
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-start mb-1">
                                             <h3 className={`text-lg font-black ${isDarkMode ? (n.is_read ? 'text-slate-400' : 'text-white') : (n.is_read ? 'text-gray-500' : 'text-gray-900')}`}>
-                                                {n.payload || "Activity Alert"}
+                                                {n.payload || t('notifications.activityAlert')}
                                             </h3>
                                             <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border transition-all ${
                                                 n.is_read 
                                                 ? (isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-500' : 'bg-gray-100 border-gray-200 text-gray-400') 
                                                 : 'bg-purple-600 border-purple-500 text-white shadow-lg'
                                             }`}>
-                                                {n.is_read ? "Archived" : "New Activity"}
+                                                {n.is_read ? t('notifications.archived') : t('notifications.newActivity')}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-3">
                                             <p className={`text-sm font-bold ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
-                                                {n.document?.title || "System-wide"}
+                                                {n.document?.title || t('notifications.systemWide')}
                                             </p>
                                             <span className="h-1 w-1 rounded-full bg-slate-400" />
                                             <p className="text-xs font-bold text-slate-500 uppercase tracking-tighter">
@@ -124,7 +127,7 @@ const Notifications = () => {
                                                     onClick={() => markRead(n.id)}
                                                     className="flex items-center px-4 py-2 bg-purple-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-purple-500 transition-all shadow-lg active:scale-95"
                                                 >
-                                                    <Check className="h-3 w-3 mr-2" /> Mark as read
+                                                    <Check className="h-3 w-3 mr-2" /> {t('notifications.markAsRead')}
                                                 </button>
                                                 <button
                                                     onClick={() => navigate(`/documents`)}
@@ -132,7 +135,7 @@ const Notifications = () => {
                                                         isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-300 hover:text-white' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-white'
                                                     }`}
                                                 >
-                                                    View Details
+                                                    {t('notifications.viewDetails')}
                                                 </button>
                                             </div>
                                         )}

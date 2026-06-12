@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import api from "../services/api";
 import { useAuth } from "../context/auth";
+import { useTranslation } from "react-i18next";
 
 const DocumentDetailModal = ({
     isOpen,
@@ -9,6 +10,7 @@ const DocumentDetailModal = ({
     onUpdate,
 }) => {
     const { user } = useAuth();
+    const { t } = useTranslation();
     const [document, setDocument] = useState(initialDocument);
     const [activeTab, setActiveTab] = useState("details"); // 'details', 'attachments', 'history', 'comments'
     const [commentText, setCommentText] = useState("");
@@ -279,7 +281,7 @@ const DocumentDetailModal = ({
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                                    Status
+                                                    {t('table.status')}
                                                 </label>
                                                 <select
                                                     className="block w-full text-sm border-b focus:outline-none focus:border-purple-500 bg-transparent py-1"
@@ -292,7 +294,7 @@ const DocumentDetailModal = ({
                                                     }
                                                 >
                                                     <option value="">
-                                                        Select status
+                                                        {t('documentDetail.selectStatus')}
                                                     </option>
                                                     {statuses.map((s) => (
                                                         <option key={s.id} value={s.id}>
@@ -303,7 +305,7 @@ const DocumentDetailModal = ({
                                             </div>
                                             <div>
                                                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                                    Assigned To
+                                                    {t('table.assignedTo')}
                                                 </label>
                                                 <select
                                                     className="block w-full text-sm border-b focus:outline-none focus:border-purple-500 bg-transparent py-1"
@@ -315,7 +317,7 @@ const DocumentDetailModal = ({
                                                         })
                                                     }
                                                 >
-                                                    <option value="">Unassigned</option>
+                                                    <option value="">{t('common.unassigned')}</option>
                                                     {users.map((u) => (
                                                         <option key={u.id} value={u.id}>
                                                             {u.profile?.full_name || u.username}
@@ -325,7 +327,7 @@ const DocumentDetailModal = ({
                                             </div>
                                             <div>
                                                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                                    Department
+                                                    {t('table.department')}
                                                 </label>
                                                 <select
                                                     className="block w-full text-sm border-b focus:outline-none focus:border-purple-500 bg-transparent py-1"
@@ -498,7 +500,7 @@ const DocumentDetailModal = ({
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                                            Creator
+                                            {t('documentDetail.creator')}
                                         </h3>
                                         <p className="mt-1 text-gray-900">
                                             {document.creator?.profile
@@ -508,7 +510,7 @@ const DocumentDetailModal = ({
                                     </div>
                                     <div>
                                         <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                                            Assigned To
+                                            {t('table.assignedTo')}
                                         </h3>
                                         <div className="flex items-center mt-1">
                                             <p className="text-gray-900">
@@ -516,7 +518,7 @@ const DocumentDetailModal = ({
                                                     ?.full_name ||
                                                     document.assigned_to
                                                         ?.username ||
-                                                    "Unassigned"}
+                                                    t('common.unassigned')}
                                             </p>
                                             {!document.assigned_to && (
                                                 <button
@@ -524,7 +526,7 @@ const DocumentDetailModal = ({
                                                     disabled={loading}
                                                     className="ml-3 text-xs bg-purple-600 text-white px-2 py-1 rounded hover:bg-purple-700 disabled:opacity-50"
                                                 >
-                                                    Take Document
+                                                    {t('documentDetail.takeDocument')}
                                                 </button>
                                             )}
                                         </div>
@@ -534,33 +536,33 @@ const DocumentDetailModal = ({
                                 {document.portal_submission && (
                                     <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
                                         <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                                            Portal Submission
+                                            {t('documentDetail.portalSubmission')}
                                         </h3>
                                         <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
                                             <div>
                                                 <span className="font-semibold">
-                                                    Name:
+                                                    {t('portal.name')}:
                                                 </span>{" "}
                                                 {document.portal_submission
                                                     .client_name || "-"}
                                             </div>
                                             <div>
                                                 <span className="font-semibold">
-                                                    Email:
+                                                    {t('common.email')}:
                                                 </span>{" "}
                                                 {document.portal_submission
                                                     .client_email || "-"}
                                             </div>
                                             <div>
                                                 <span className="font-semibold">
-                                                    Phone:
+                                                    {t('portal.phone')}:
                                                 </span>{" "}
                                                 {document.portal_submission
                                                     .client_phone || "-"}
                                             </div>
                                             <div>
                                                 <span className="font-semibold">
-                                                    Company:
+                                                    {t('portal.company')}:
                                                 </span>{" "}
                                                 {document.portal_submission
                                                     .company || "-"}
@@ -575,12 +577,12 @@ const DocumentDetailModal = ({
                                         className="rounded-lg border border-purple-200 bg-purple-50 p-4"
                                     >
                                         <h3 className="text-sm font-semibold text-purple-800 uppercase tracking-wider">
-                                            Route To Department
+                                            {t('documentDetail.routeToDepartment')}
                                         </h3>
                                         <div className="mt-3 flex flex-col sm:flex-row gap-3 items-start sm:items-end">
                                             <div className="w-full">
                                                 <label className="block text-xs font-semibold text-purple-900">
-                                                    Department
+                                                    {t('table.department')}
                                                 </label>
                                                 <select
                                                     value={routeDepartmentId}
@@ -593,7 +595,7 @@ const DocumentDetailModal = ({
                                                     disabled={loading}
                                                 >
                                                     <option value="">
-                                                        Select department
+                                                        {t('documentDetail.selectDepartment')}
                                                     </option>
                                                     {departments.map((d) => (
                                                         <option
@@ -613,7 +615,7 @@ const DocumentDetailModal = ({
                                                 }
                                                 className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-purple-700 disabled:opacity-50"
                                             >
-                                                Route
+                                                {t('documentDetail.route')}
                                             </button>
                                         </div>
                                     </form>
@@ -651,7 +653,7 @@ const DocumentDetailModal = ({
                                     ))
                                 ) : (
                                     <p className="text-sm text-gray-500">
-                                        No history available.
+                                        {t('documentDetail.noHistory')}
                                     </p>
                                 )}
                             </div>
@@ -684,7 +686,7 @@ const DocumentDetailModal = ({
                                         }
                                         className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-purple-700 disabled:opacity-50"
                                     >
-                                        Upload
+                                        {t('documentDetail.upload')}
                                     </button>
                                 </form>
 
@@ -707,12 +709,12 @@ const DocumentDetailModal = ({
                                                         }
                                                     >
                                                         {att.original_name ||
-                                                            "Attachment"}
+                                                            t('documentDetail.attachment')}
                                                     </a>
                                                     <p className="text-xs text-gray-500">
                                                         {att.uploaded_by
                                                             ?.username
-                                                            ? `By ${att.uploaded_by.username} • `
+                                                            ? `${t('documentDetail.by')} ${att.uploaded_by.username} • `
                                                             : ""}
                                                         {att.size
                                                             ? `${Math.round(att.size / 1024)} KB • `
@@ -730,13 +732,13 @@ const DocumentDetailModal = ({
                                                     disabled={loading}
                                                     className="ml-3 text-xs font-semibold text-red-600 hover:text-red-800 disabled:opacity-50"
                                                 >
-                                                    Delete
+                                                    {t('common.delete')}
                                                 </button>
                                             </div>
                                         ))
                                     ) : (
                                         <p className="text-sm text-gray-500">
-                                            No attachments.
+                                            {t('documentDetail.noAttachments')}
                                         </p>
                                     )}
                                 </div>
@@ -754,7 +756,7 @@ const DocumentDetailModal = ({
                                         onChange={(e) =>
                                             setCommentText(e.target.value)
                                         }
-                                        placeholder="Add a comment..."
+                                        placeholder={t('documentDetail.addComment')}
                                         className="w-full border rounded-lg p-3 text-sm focus:ring-purple-500 focus:border-purple-500"
                                         rows="3"
                                     ></textarea>
@@ -766,7 +768,7 @@ const DocumentDetailModal = ({
                                                 onChange={(e) => setIsExternalComment(e.target.checked)}
                                                 className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                                             />
-                                            <span className="text-sm font-semibold text-gray-700">Publish to Portal (Client can see)</span>
+                                            <span className="text-sm font-semibold text-gray-700">{t('documentDetail.publishToPortal')}</span>
                                         </label>
                                         <button
                                             type="submit"
@@ -775,7 +777,7 @@ const DocumentDetailModal = ({
                                             }
                                             className="bg-purple-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-purple-700 disabled:opacity-50 shadow-md transition-all"
                                         >
-                                            Post Comment
+                                            {t('documentDetail.postComment')}
                                         </button>
                                     </div>
                                 </form>

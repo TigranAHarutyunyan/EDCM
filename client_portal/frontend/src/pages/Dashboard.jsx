@@ -228,15 +228,15 @@ const Dashboard = () => {
               <div className="h-24 w-24 bg-green-500 rounded-[2rem] mx-auto mb-8 flex items-center justify-center shadow-2xl shadow-green-500/40 animate-bounce">
                  <CheckCircle className="h-12 w-12 text-white" />
               </div>
-              <h3 className={`text-3xl font-black mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{t('success_title') || 'Great!'}</h3>
+              <h3 className={`text-3xl font-black mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{t('success_title')}</h3>
               <p className={`text-base font-bold leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-                 {t('success_message') || "Your document has been submitted and is processing."}
+                 {t('success_message')}
               </p>
               <button 
                  onClick={() => setShowSuccessOverlay(false)}
                  className="mt-10 w-full py-5 bg-green-500 text-white rounded-2xl font-black hover:bg-green-600 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-green-500/20"
               >
-                 {t('close') || 'Got it'}
+                 {t('close')}
               </button>
            </div>
         </div>
@@ -374,7 +374,7 @@ const Dashboard = () => {
               <div className="px-8 py-6 flex justify-between items-start">
                 <div>
                   <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoc.title}</h2>
-                  <p className="text-sm text-gray-400 mt-1">Submission ID: #{selectedDoc.id}</p>
+                  <p className="text-sm text-gray-400 mt-1">{t('submission_id')}: #{selectedDoc.id}</p>
                 </div>
                 <div className={`flex items-center space-x-2 px-3 py-1 rounded-full border ${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-blue-50 border-blue-100 text-blue-700'}`}>
                    {getStatusIcon(selectedDoc.status_code)}
@@ -388,7 +388,7 @@ const Dashboard = () => {
                     <p className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{new Date(selectedDoc.updated_at).toLocaleString()}</p>
                  </div>
                  <div className="text-right">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Reference</span>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('reference')}</span>
                     <p className="text-sm font-medium text-blue-500 font-mono">EDCM-PRT-{selectedDoc.id}</p>
                  </div>
               </div>
@@ -398,7 +398,7 @@ const Dashboard = () => {
                 <div>
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{t('description_label')}</h3>
                   <div className={`border rounded-xl p-4 text-sm whitespace-pre-wrap min-h-[80px] ${isDarkMode ? 'bg-slate-900 border-slate-700 text-gray-300' : 'bg-white text-gray-700'}`}>
-                    {selectedDoc.description || "No description provided."}
+                    {selectedDoc.description || t('no_description')}
                   </div>
                 </div>
 
@@ -422,7 +422,7 @@ const Dashboard = () => {
                                 rel="noreferrer"
                                 className="text-[10px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded"
                              >
-                                Open
+                                {t('open')}
                              </a>
                           </div>
                        ))}

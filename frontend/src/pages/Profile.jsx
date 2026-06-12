@@ -16,6 +16,7 @@ const Profile = () => {
         bio: "",
     });
     const [profilePicture, setProfilePicture] = useState(null);
+    const [profilePicturePreview, setProfilePicturePreview] = useState("");
 
     useEffect(() => {
         fetchProfile();
@@ -44,6 +45,7 @@ const Profile = () => {
     const handleUpdate = async (e) => {
         e.preventDefault();
         setLoading(true);
+        setError("");
         try {
             const data = new FormData();
             data.append("full_name", formData.full_name);
@@ -55,12 +57,26 @@ const Profile = () => {
 
             await api.patch("profile/", data);
             setEditing(false);
+            setProfilePicture(null);
+            setProfilePicturePreview("");
             fetchProfile();
-        } catch {
-            setError(t('error.update_profile') || "Error updating profile");
+        } catch (err) {
+            const detail = err.response?.data?.detail;
+            const pictureError = err.response?.data?.profile_picture;
+            setError(
+                Array.isArray(pictureError)
+                    ? pictureError[0]
+                    : pictureError || detail || t('error.update_profile') || "Error updating profile",
+            );
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleProfilePictureChange = (e) => {
+        const file = e.target.files?.[0] || null;
+        setProfilePicture(file);
+        setProfilePicturePreview(file ? URL.createObjectURL(file) : "");
     };
 
     if (loading) return (
@@ -110,7 +126,7 @@ const Profile = () => {
                 <div className="px-8 pb-10">
                     <div className="relative -mt-20 mb-8 items-end flex">
                         <img 
-                            src={profile?.profile_picture || "https://ui-avatars.com/api/?name=" + (profile?.full_name || user.username) + "&background=random"} 
+                            src={profilePicturePreview || profile?.profile_picture || "https://ui-avatars.com/api/?name=" + (profile?.full_name || user.username) + "&background=random"} 
                             alt="Profile" 
                             className={`w-40 h-40 rounded-3xl object-cover border-8 shadow-2xl transition-colors ${isDarkMode ? 'border-slate-800 bg-slate-900' : 'border-white bg-white'}`}
                         />
@@ -168,7 +184,8 @@ const Profile = () => {
                                 <label className={`block text-xs font-black uppercase tracking-widest mb-1 ${isDarkMode ? 'text-slate-500' : 'text-gray-500'}`}>{t('profile.profile_picture')}</label>
                                 <input 
                                     type="file" 
-                                    onChange={e => setProfilePicture(e.target.files[0])}
+                                    accept="image/*"
+                                    onChange={handleProfilePictureChange}
                                     className={`block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold ${
                                         isDarkMode ? 'file:bg-slate-900 file:text-purple-400' : 'file:bg-purple-50 file:text-purple-700'
                                     }`}
@@ -176,7 +193,7 @@ const Profile = () => {
                             </div>
                             <div className="flex gap-4 pt-6">
                                 <button type="submit" className="flex-1 bg-purple-600 text-white px-8 py-4 rounded-2xl font-black hover:bg-purple-500 shadow-xl transition-all">{t('profile.save_changes')}</button>
-                                <button type="button" onClick={() => setEditing(false)} className={`flex-1 px-8 py-4 rounded-2xl font-black transition-all ${isDarkMode ? 'bg-slate-900 text-slate-400 hover:text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{t('common.cancel')}</button>
+                                <button type="button" onClick={() => { setEditing(false); setProfilePicture(null); setProfilePicturePreview(""); }} className={`flex-1 px-8 py-4 rounded-2xl font-black transition-all ${isDarkMode ? 'bg-slate-900 text-slate-400 hover:text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{t('common.cancel')}</button>
                             </div>
                         </form>
                     ) : (
