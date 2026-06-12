@@ -40,7 +40,11 @@
             "myDocuments": "My Documents",
             "portalInbox": "Portal Inbox"
         },
-        "empty": "No documents found. Start by creating one!"
+        "empty": "No documents found. Start by creating one!",
+        "delayed": {
+            "title": "Delayed Documents",
+            "subtitle": "Delayed items are grouped separately from the active list."
+        }
     },
     "table": {
         "id": "ID",
@@ -230,11 +234,6 @@
         "documentRouted": "Document routed",
         "documentAssigned": "Document assigned"
     },
-    "dashboard": {
-        "delayed": {
-            "title": "Delayed Documents",
-            "subtitle": "Delayed items are grouped separately from the active list."
-        },
     "profile": {
         "title": "My Profile",
         "edit_profile": "Edit Profile",

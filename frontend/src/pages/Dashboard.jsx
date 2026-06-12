@@ -275,7 +275,9 @@ const Dashboard = () => {
                             </h2>
                             <p className="text-sm text-gray-500">
                                 {t('table.id')}: {searchResult.id} • {t('table.department')}:{" "}
-                                {searchResult.department?.name || t('common.notAvailable')}
+                                {searchResult.department?.name
+                                    ? translateDepartment(searchResult.department.name)
+                                    : t('common.notAvailable')}
                             </p>
                         </div>
                         <span
@@ -286,6 +288,9 @@ const Dashboard = () => {
                                     : searchResult.status_details?.code ===
                                         "REJECTED"
                                       ? "bg-red-100 text-red-800"
+                                      : searchResult.status_details?.code ===
+                                          "DELAYED"
+                                        ? "bg-orange-100 text-orange-800"
                                       : "bg-yellow-100 text-yellow-800"
                             }`}
                         >
@@ -440,6 +445,10 @@ const Dashboard = () => {
                                                                 ?.code ===
                                                             "REJECTED"
                                                           ? "bg-red-100 text-red-800"
+                                                          : doc.status_details
+                                                                  ?.code ===
+                                                              "DELAYED"
+                                                            ? "bg-orange-100 text-orange-800"
                                                           : doc.status_details
                                                                   ?.code ===
                                                               "PENDING"

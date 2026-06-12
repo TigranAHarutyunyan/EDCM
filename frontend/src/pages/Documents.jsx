@@ -202,6 +202,7 @@ const Documents = () => {
                                                 <span className={`px-2 inline-flex text-xs leading-5 font-bold rounded-full 
                                                     ${doc.status_details?.code === 'APPROVED' ? 'bg-green-100 text-green-800' : 
                                                       doc.status_details?.code === 'REJECTED' ? 'bg-red-100 text-red-800' : 
+                                                      doc.status_details?.code === 'DELAYED' ? 'bg-orange-100 text-orange-800' : 
                                                       doc.status_details?.code === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 
                                                       'bg-gray-100 text-gray-800'}`}>
                                                     {translateStatus(doc.status_details)}
