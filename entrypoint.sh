@@ -117,8 +117,11 @@ run_migrations() {
 # Function to collect static files
 collect_static() {
     echo -e "${YELLOW}📦 Collecting static files...${NC}"
-    
+    mkdir -p /app/staticfiles /app/media
+    chown -R appuser:appuser /app/staticfiles /app/media
+
     if python manage.py collectstatic --noinput --clear; then
+        chown -R appuser:appuser /app/staticfiles /app/media
         echo -e "${GREEN}✅ Static files collected!${NC}"
     else
         echo -e "${RED}⚠️  Warning: Static file collection had issues (continuing anyway)${NC}"
@@ -194,13 +197,13 @@ echo "📱 Main Dashboard: http://localhost:${FRONTEND_PORT}"
 echo "🌐 Client Portal: http://localhost:${CLIENT_FRONTEND_PORT}"
 echo ""
 
-# Start server
+# Start server as non-root appuser
 if [ "$DEBUG" = "True" ] || [ "$DEBUG" = "true" ]; then
-    echo -e "${YELLOW}🚀 Starting Django development server (with hot-reload)...${NC}"
-    exec python manage.py runserver 0.0.0.0:${PORT}
+    echo -e "${YELLOW}🚀 Starting Django development server (with hot-reload) as appuser...${NC}"
+    exec runuser -u appuser -- python manage.py runserver 0.0.0.0:${PORT}
 else
-    echo -e "${YELLOW}🚀 Starting Gunicorn server...${NC}"
-    exec gunicorn \
+    echo -e "${YELLOW}🚀 Starting Gunicorn server as appuser...${NC}"
+    exec runuser -u appuser -- gunicorn \
         --bind 0.0.0.0:${PORT} \
         --workers 3 \
         --worker-class sync \

@@ -43,9 +43,6 @@ RUN chmod +x /app/entrypoint.sh  \
     && useradd --create-home --uid 1000 appuser \
     && chown -R appuser:appuser /app
 
-USER appuser
-
-
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
